@@ -1,3 +1,15 @@
-.snowpack
-build
 node_modules
+
+uploads/*
+!uploads/.gitkeep 
+
+.env
+
+/db/dbVersion.txt
+
+.DS_Store
+
+/logs/console/console.log
+/logs/morganBody/morganBody.log
+
+/test
