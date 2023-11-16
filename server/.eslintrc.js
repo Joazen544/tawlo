@@ -20,6 +20,9 @@ module.exports = {
     sourceType: 'module',
     project: './tsconfig.json',
   },
-  rules: { 'no-underscore-dangle': 'off' },
+  rules: {
+    'no-underscore-dangle': 'off',
+    'no-console': 'off',
+  },
   //excluded: ['.eslintrc.js'],
 };
