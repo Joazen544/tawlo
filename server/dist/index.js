@@ -1,36 +1,14 @@
 "use strict";
-// import express from 'express';
-// const app = express();
-// app.get('/', (req, res) => {
-//   res.send(req.body);
-// });
-// app.listen(3000, () => {
-//   console.log('port running on 3000');
-// });
-class Account {
-    constructor(id, owner, _balance) {
-        this.id = id;
-        this.owner = owner;
-        this._balance = _balance;
-    }
-    deposit(amount) {
-        if (amount <= 0) {
-            throw new Error('Invalid amount');
-        }
-        this.balance += amount;
-    }
-    get balance() {
-        return this._balance;
-    }
-    set balance(value) {
-        if (value < 0)
-            throw new Error('Invalid Value');
-        this._balance = value;
-    }
-}
-const account = new Account(1, 'Mosh', 0);
-console.log(account.owner);
-console.log(account.balance);
-account.deposit(55);
-console.log(account.balance);
-//# sourceMappingURL=index.js.map
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+require("./dotenv");
+const express_1 = __importDefault(require("express"));
+const app = (0, express_1.default)();
+app.get('/', (req, res) => {
+    res.send(req.body);
+});
+app.listen(3000, () => {
+    console.log('port running on 3000');
+});
