@@ -23,6 +23,8 @@ module.exports = {
   rules: {
     'no-underscore-dangle': 'off',
     'no-console': 'off',
+    'object-curly-newline': 'off',
+    'func-names': 'off',
   },
   //excluded: ['.eslintrc.js'],
 };
