@@ -3,7 +3,8 @@ import { ObjectId } from 'mongodb';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 
-interface UserDocument extends Document {
+export interface UserDocument extends Document {
+  _id: ObjectId;
   name: string;
   email: string;
   password: string;
@@ -19,6 +20,7 @@ interface UserDocument extends Document {
   downvote: number;
   honor_now: { name: string; id: ObjectId };
   honors: { name: string; id: ObjectId }[];
+  correctPassword: (arg1: string, arg2: string) => Boolean;
 }
 
 const userSchema = new mongoose.Schema<UserDocument>({
@@ -37,6 +39,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
     type: String,
     required: [true, 'Please provide a password'],
     minlength: [8, 'Password must contain at least 8 characters'],
+    select: false,
   },
   password_confirm: {
     type: String || undefined,
@@ -92,4 +95,15 @@ userSchema.pre('save', async function (next) {
   return next();
 });
 
-export default mongoose.model<UserDocument>('User', userSchema);
+userSchema.methods.correctPassword = async function (
+  candidatePassword: string,
+  userPassword: string,
+) {
+  const result = await bcrypt.compare(candidatePassword, userPassword);
+  console.log(`result is: ${result}`);
+
+  return result;
+};
+const User = mongoose.model('User', userSchema);
+
+export default User;

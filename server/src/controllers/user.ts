@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import User from '../models/user';
-import signJWT, { EXPIRE_TIME } from '../utils/signJWT';
+import User, { UserDocument } from '../models/user';
+import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
 export async function signUp(req: Request, res: Response) {
   try {
@@ -15,7 +15,7 @@ export async function signUp(req: Request, res: Response) {
     });
     console.log(userData);
 
-    const token = await signJWT('123');
+    const token = await signJWT(JSON.stringify(userData._id));
     res
       .cookie('jwtToken', token)
       .status(200)
@@ -44,6 +44,42 @@ export async function signUp(req: Request, res: Response) {
   }
 }
 
-export async function signIn() {
-  return 0;
+export async function signIn(req: Request, res: Response) {
+  try {
+    const { email, password } = req.body;
+    const userData: UserDocument = await User.findOne({ email }).select(
+      '+password',
+    );
+    console.log(userData);
+    if (
+      !userData ||
+      !(await userData.correctPassword(password, userData.password))
+    ) {
+      res.status(401).json({ error: 'Incorrect email or password' });
+      return;
+    }
+
+    const token = await signJWT(JSON.stringify(userData._id));
+    res
+      .cookie('jwtToken', token)
+      .status(200)
+      .json({
+        data: {
+          access_token: token,
+          access_expired: EXPIRE_TIME,
+          user: {
+            id: userData._id,
+            name: userData.name,
+            email,
+            picture: '',
+          },
+        },
+      });
+  } catch (err) {
+    if (err instanceof Error) {
+      res.status(400).json({ errors: err.message });
+      return;
+    }
+    res.status(500).json({ errors: 'sign in failed' });
+  }
 }

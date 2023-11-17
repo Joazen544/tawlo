@@ -25,6 +25,7 @@ module.exports = {
     'no-console': 'off',
     'object-curly-newline': 'off',
     'func-names': 'off',
+    'operator-linebreak': 'off',
   },
   //excluded: ['.eslintrc.js'],
 };
