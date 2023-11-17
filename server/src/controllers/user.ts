@@ -1,12 +1,21 @@
 import { Request, Response } from 'express';
-import * as userModel from '../models/user';
+import User from '../models/user';
 import signJWT, { EXPIRE_TIME } from '../utils/signJWT';
 
 export async function signUp(req: Request, res: Response) {
   try {
-    const { name, email, password } = req.body;
-    const userId = await userModel.createUser(name, email, password);
-    const token = await signJWT(userId);
+    console.log('signing up');
+
+    const { name, email, password, passwordConfirm } = req.body;
+    const userData = await User.create({
+      name,
+      email,
+      password,
+      password_confirm: passwordConfirm,
+    });
+    console.log(userData);
+
+    const token = await signJWT('123');
     res
       .cookie('jwtToken', token)
       .status(200)
@@ -15,7 +24,7 @@ export async function signUp(req: Request, res: Response) {
           access_token: token,
           access_expired: EXPIRE_TIME,
           user: {
-            id: userId,
+            id: userData._id,
             name,
             email,
             picture: '',
@@ -23,6 +32,10 @@ export async function signUp(req: Request, res: Response) {
         },
       });
   } catch (err) {
+    if (err instanceof Error && err.message.slice(0, 6) === 'E11000') {
+      res.status(400).json({ errors: 'This email already exist' });
+      return;
+    }
     if (err instanceof Error) {
       res.status(400).json({ errors: err.message });
       return;
@@ -31,4 +44,6 @@ export async function signUp(req: Request, res: Response) {
   }
 }
 
-export async function signIn() {}
+export async function signIn() {
+  return 0;
+}
