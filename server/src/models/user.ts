@@ -13,13 +13,13 @@ export interface UserDocument extends Document {
   friends: ObjectId[];
   follow: ObjectId[];
   block: ObjectId[];
-  read_board: ObjectId[];
-  preference_tags: { id: ObjectId; number: Number }[];
+  read_board: string[];
+  preference_tags: { name: string; number: Number }[];
   chats: ObjectId[];
   upvote: number;
   downvote: number;
-  honor_now: { name: string; id: ObjectId };
-  honors: { name: string; id: ObjectId }[];
+  honor_now: string;
+  honors: string[];
   correctPassword: (arg1: string, arg2: string) => Boolean;
 }
 
@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
     select: false,
   },
   password_confirm: {
-    type: String || undefined,
+    type: String,
     required: [true, 'Please confirm your password'],
     validate: {
       // This only works on SAVE!!!
@@ -59,12 +59,12 @@ const userSchema = new mongoose.Schema<UserDocument>({
   block: [ObjectId],
   // only record 5 board
   // or native board
-  read_board: [ObjectId],
+  read_board: [String],
   preference_tags: [
     // record 5 tags
     // index 0 is the favorite, index 4 is soso
     {
-      id: ObjectId,
+      name: String,
       number: Number,
     },
   ],
@@ -72,16 +72,8 @@ const userSchema = new mongoose.Schema<UserDocument>({
   chats: [ObjectId],
   upvote: Number,
   downvote: Number,
-  honor_now: {
-    name: String,
-    id: ObjectId,
-  },
-  honors: [
-    {
-      name: String,
-      id: ObjectId,
-    },
-  ],
+  honor_now: String,
+  honors: [String],
 });
 
 userSchema.pre('save', async function (next) {
@@ -100,7 +92,6 @@ userSchema.methods.correctPassword = async function (
   userPassword: string,
 ) {
   const result = await bcrypt.compare(candidatePassword, userPassword);
-  console.log(`result is: ${result}`);
 
   return result;
 };

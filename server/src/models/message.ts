@@ -6,7 +6,10 @@ const messageSchema = new mongoose.Schema({
   from: ObjectId,
   to: ObjectId,
   time: Timestamp,
-  is_removed: Boolean,
+  is_removed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export default mongoose.model('Message', messageSchema);

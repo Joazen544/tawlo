@@ -1,5 +1,6 @@
 import './dotenv';
 import './models/mongodb';
+
 import express from 'express';
 import userRouter from './routes/user';
 import postRouter from './routes/post';

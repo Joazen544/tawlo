@@ -10,11 +10,11 @@ interface PostDocument {
   author: ObjectId;
   content: string;
   edit: { date: Date; content: string }[];
-  board: { name: string; id: ObjectId };
+  board: ObjectId;
   mother_post: ObjectId;
   floor: number;
   reply_floor: number;
-  tags: { _id: ObjectId; name: string }[];
+  tags: string[];
   liked: { number: number; users: ObjectId[] };
   sum_likes: number;
   sum_comments: number;
@@ -50,10 +50,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
     enum: ['native', 'mother', 'reply'],
     required: true,
   },
-  title: {
-    type: String,
-    required: true,
-  },
+  title: String,
   publish_date: {
     type: Date,
     required: true,
@@ -73,21 +70,12 @@ const postSchema = new mongoose.Schema<PostDocument>({
       content: String,
     },
   ],
-  board: {
-    name: String,
-    id: ObjectId,
-  },
+  board: ObjectId,
   mother_post: ObjectId,
   floor: Number,
   reply_floor: Number,
-  tags:
-    // 3 tags the most
-    [
-      {
-        _id: ObjectId,
-        name: String,
-      },
-    ],
+  // 3 tags the most
+  tags: [String],
   liked: {
     number: Number,
     users: [ObjectId],
@@ -122,15 +110,6 @@ const postSchema = new mongoose.Schema<PostDocument>({
     ],
   },
   hot: Number,
-});
-
-postSchema.pre('save', async function (next) {
-  this.publish_date = new Date();
-  console.log('publish date!!!');
-
-  console.log(this.publish_date);
-
-  next();
 });
 
 export default mongoose.model('Post', postSchema);

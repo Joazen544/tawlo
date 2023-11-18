@@ -12,7 +12,6 @@ export async function createPost(req: Request, res: Response) {
       tags,
       board,
       motherPost,
-      floor,
       replyFloor,
     } = req.body;
 
@@ -24,19 +23,23 @@ export async function createPost(req: Request, res: Response) {
       postData = await Post.create({
         category,
         author: userId,
-        title,
         content,
         publish_date: publishDate,
+        update_date: publishDate,
         tags,
         floor: 1,
       });
     } else if (category === 'mother') {
+      if (title === undefined) {
+        throw new Error('A mother post should contain title');
+      }
       postData = await Post.create({
         category,
         author: userId,
         title,
         content,
         publish_date: publishDate,
+        update_date: publishDate,
         tags,
         board,
         floor: 1,
@@ -45,13 +48,12 @@ export async function createPost(req: Request, res: Response) {
       postData = await Post.create({
         category,
         author: userId,
-        title,
         content,
         publish_date: publishDate,
+        update_date: publishDate,
         tags,
         board,
         mother_post: motherPost,
-        floor,
         reply_floor: replyFloor,
       });
     } else {
