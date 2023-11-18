@@ -1,6 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { verifyJWT } from '../utils/JWT';
 
+interface JwtData {
+  userId: string;
+  iat: number;
+  exp: number;
+}
+
 export default async function (
   req: Request,
   _res: Response,
@@ -17,8 +23,10 @@ export default async function (
     next(new Error('No token!!'));
   } else {
     verifyJWT(token)
-      .then((user) => {
-        req.body.user = user;
+      .then((data) => {
+        const userInfo = data as JwtData;
+
+        req.body.user = userInfo.userId;
         next();
       })
       .catch((err) => {

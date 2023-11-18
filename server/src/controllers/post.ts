@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ObjectId } from 'mongodb';
 import Post from '../models/post';
 
 export async function createPost(req: Request, res: Response) {
@@ -15,22 +16,27 @@ export async function createPost(req: Request, res: Response) {
       replyFloor,
     } = req.body;
 
+    const userId = new ObjectId(user);
+    const publishDate = new Date();
+
     let postData;
     if (category === 'native') {
       postData = await Post.create({
         category,
-        author: user,
+        author: userId,
         title,
         content,
+        publish_date: publishDate,
         tags,
         floor: 1,
       });
     } else if (category === 'mother') {
       postData = await Post.create({
         category,
-        author: user,
+        author: userId,
         title,
         content,
+        publish_date: publishDate,
         tags,
         board,
         floor: 1,
@@ -38,9 +44,10 @@ export async function createPost(req: Request, res: Response) {
     } else if (category === 'reply') {
       postData = await Post.create({
         category,
-        author: user,
+        author: userId,
         title,
         content,
+        publish_date: publishDate,
         tags,
         board,
         mother_post: motherPost,
@@ -51,7 +58,9 @@ export async function createPost(req: Request, res: Response) {
       res.status(400).json({ error: 'The category of post is wrong' });
     }
 
-    console.log(postData);
+    res.json({
+      data: postData,
+    });
   } catch (err) {
     console.log(err);
     if (err instanceof Error) {

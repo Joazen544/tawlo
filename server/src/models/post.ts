@@ -14,7 +14,7 @@ interface PostDocument {
   mother_post: ObjectId;
   floor: number;
   reply_floor: number;
-  tags: { id: ObjectId; name: string }[];
+  tags: { _id: ObjectId; name: string }[];
   liked: { number: number; users: ObjectId[] };
   sum_likes: number;
   sum_comments: number;
@@ -84,7 +84,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
     // 3 tags the most
     [
       {
-        id: ObjectId,
+        _id: ObjectId,
         name: String,
       },
     ],
@@ -126,6 +126,10 @@ const postSchema = new mongoose.Schema<PostDocument>({
 
 postSchema.pre('save', async function (next) {
   this.publish_date = new Date();
+  console.log('publish date!!!');
+
+  console.log(this.publish_date);
+
   next();
 });
 

@@ -4,8 +4,6 @@ import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
 export async function signUp(req: Request, res: Response) {
   try {
-    // console.log('signing up');
-
     const { name, email, password, passwordConfirm } = req.body;
     const userData = await User.create({
       name,
@@ -13,7 +11,6 @@ export async function signUp(req: Request, res: Response) {
       password,
       password_confirm: passwordConfirm,
     });
-    // console.log(userData);
 
     const token = await signJWT(JSON.stringify(userData._id));
     res
@@ -51,7 +48,7 @@ export async function signIn(req: Request, res: Response) {
     const userData: UserDocument = await User.findOne({ email }).select(
       '+password',
     );
-    // console.log(userData);
+
     if (
       !userData ||
       !(await userData.correctPassword(password, userData.password))
@@ -60,7 +57,7 @@ export async function signIn(req: Request, res: Response) {
       return;
     }
 
-    const token = await signJWT(JSON.stringify(userData._id));
+    const token = await signJWT(userData._id.toString());
     res
       .cookie('jwtToken', token)
       .status(200)
