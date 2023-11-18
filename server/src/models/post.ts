@@ -13,6 +13,7 @@ interface PostDocument {
   board: { name: string; id: ObjectId };
   mother_post: ObjectId;
   floor: number;
+  reply_floor: number;
   tags: { id: ObjectId; name: string }[];
   liked: { number: number; users: ObjectId[] };
   sum_likes: number;
@@ -40,11 +41,13 @@ interface PostDocument {
 const postSchema = new mongoose.Schema<PostDocument>({
   is_delete: {
     type: Boolean,
+    default: false,
     required: true,
   },
   category: {
-    // native || board || reply
+    // native || mother || reply
     type: String,
+    enum: ['native', 'mother', 'reply'],
     required: true,
   },
   title: {
@@ -76,6 +79,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
   },
   mother_post: ObjectId,
   floor: Number,
+  reply_floor: Number,
   tags:
     // 3 tags the most
     [
@@ -118,6 +122,11 @@ const postSchema = new mongoose.Schema<PostDocument>({
     ],
   },
   hot: Number,
+});
+
+postSchema.pre('save', async function (next) {
+  this.publish_date = new Date();
+  next();
 });
 
 export default mongoose.model('Post', postSchema);
