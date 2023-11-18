@@ -1,7 +1,43 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
 
-const postSchema = new mongoose.Schema({
+interface PostDocument {
+  is_delete: boolean;
+  category: string;
+  title: string;
+  publish_date: Date;
+  update_date: Date;
+  author: ObjectId;
+  content: string;
+  edit: { date: Date; content: string }[];
+  board: { name: string; id: ObjectId };
+  mother_post: ObjectId;
+  floor: number;
+  tags: { id: ObjectId; name: string }[];
+  liked: { number: number; users: ObjectId[] };
+  sum_likes: number;
+  sum_comments: number;
+  // userId
+  last_reply: ObjectId;
+  upvote: { number: number; users: ObjectId[] };
+  downvote: { number: number; users: ObjectId[] };
+  useful: number;
+  comments: {
+    number: number;
+    data: {
+      user: ObjectId;
+      content: string;
+      time: Date;
+      like: {
+        number: number;
+        users: ObjectId[];
+      };
+    }[];
+  };
+  hot: number;
+}
+
+const postSchema = new mongoose.Schema<PostDocument>({
   is_delete: {
     type: Boolean,
     required: true,
@@ -21,7 +57,8 @@ const postSchema = new mongoose.Schema({
   },
   update_date: Date,
   author: {
-    _id: { type: ObjectId, required: true },
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
   },
   content: {
     type: String,
@@ -54,6 +91,7 @@ const postSchema = new mongoose.Schema({
   // only on mother post
   sum_likes: Number,
   sum_comments: Number,
+  // userId
   last_reply: ObjectId,
   //
   upvote: {
@@ -62,9 +100,7 @@ const postSchema = new mongoose.Schema({
   },
   downvote: {
     number: Number,
-    users: {
-      type: [ObjectId],
-    },
+    users: [ObjectId],
   },
   useful: Number,
   comments: {
