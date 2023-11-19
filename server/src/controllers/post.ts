@@ -33,6 +33,7 @@ export async function createPost(req: Request, res: Response) {
         update_date: publishDate,
         tags,
         floor: 1,
+        hot: 0,
       });
     } else if (category === 'mother') {
       if (title === undefined) {
@@ -53,6 +54,7 @@ export async function createPost(req: Request, res: Response) {
         tags,
         board,
         floor: 1,
+        hot: 0,
       });
     } else if (category === 'reply') {
       postData = await Post.create({
@@ -91,7 +93,7 @@ export async function createPost(req: Request, res: Response) {
 export async function commentPost(req: Request, res: Response) {
   try {
     const { postId } = req.params;
-    const { content, user } = req.body;
+    const { content, user, postCategory, motherPost } = req.body;
     const userId = new ObjectId(user);
 
     const publishDate = new Date();
@@ -99,55 +101,124 @@ export async function commentPost(req: Request, res: Response) {
     console.log(content);
     console.log(postId);
 
-    const result = await Post.updateOne({ _id: postId }, [
-      {
-        $set: {
-          'comments.data': {
-            $concatArrays: [
-              '$comments.data',
-              [
-                {
-                  user: userId,
-                  content,
-                  time: publishDate,
-                },
-              ],
-            ],
-          },
-        },
-      },
-      {
-        $set: {
-          'comments.number': { $add: ['$comments.number', 1] },
-        },
-      },
-      {
-        $set: {
-          hot: {
-            $divide: [
-              {
-                $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-              },
-              {
-                $add: [
-                  1,
+    let result;
+    if (postCategory !== 'reply') {
+      if (!motherPost) throw Error('reply comment must have mother post id');
+
+      result = await Post.updateOne({ _id: postId }, [
+        {
+          $set: {
+            'comments.data': {
+              $concatArrays: [
+                '$comments.data',
+                [
                   {
-                    $dateDiff: {
-                      startDate: '$publish_date',
-                      endDate: '$$NOW',
-                      unit: 'day',
-                    },
+                    user: userId,
+                    content,
+                    time: publishDate,
                   },
                 ],
-              },
-            ],
+              ],
+            },
           },
         },
-      },
-    ]);
+        {
+          $set: {
+            'comments.number': { $add: ['$comments.number', 1] },
+          },
+        },
+        {
+          $set: {
+            sum_comments: { $add: ['$sum_comments', 1] },
+          },
+        },
+        {
+          $set: {
+            hot: {
+              $divide: [
+                {
+                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                },
+                {
+                  $add: [
+                    1,
+                    {
+                      $dateDiff: {
+                        startDate: '$publish_date',
+                        endDate: '$$NOW',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ]);
 
-    if (result.acknowledged === false) {
-      throw new Error('Create comment fail');
+      if (result.modifiedCount === 0) {
+        throw new Error('Create comment fail');
+      }
+    } else {
+      result = await Post.updateOne({ _id: postId }, [
+        {
+          $set: {
+            'comments.data': {
+              $concatArrays: [
+                '$comments.data',
+                [
+                  {
+                    user: userId,
+                    content,
+                    time: publishDate,
+                  },
+                ],
+              ],
+            },
+          },
+        },
+        {
+          $set: {
+            'comments.number': { $add: ['$comments.number', 1] },
+          },
+        },
+      ]);
+
+      if (result.modifiedCount === 0) {
+        throw new Error('Create comment fail');
+      }
+
+      await Post.updateOne({ _id: motherPost }, [
+        {
+          $set: {
+            sum_comments: { $add: ['$sum_comments', 1] },
+          },
+        },
+        {
+          $set: {
+            hot: {
+              $divide: [
+                {
+                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                },
+                {
+                  $add: [
+                    1,
+                    {
+                      $dateDiff: {
+                        startDate: '$publish_date',
+                        endDate: '$$NOW',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ]);
     }
 
     return res.json({ message: 'Add comment success' });
