@@ -17,6 +17,7 @@ interface PostDocument {
   tags: string[];
   liked: { number: number; users: ObjectId[] };
   sum_likes: number;
+  sum_upvotes: number;
   sum_comments: number;
   // userId
   last_reply: ObjectId;
@@ -75,13 +76,17 @@ const postSchema = new mongoose.Schema<PostDocument>({
   floor: Number,
   reply_floor: Number,
   // 3 tags the most
-  tags: [String],
+  tags: {
+    type: [String],
+    required: [true, 'A post must contain a tag'],
+  },
   liked: {
     number: Number,
     users: [ObjectId],
   },
   // only on mother post
   sum_likes: Number,
+  sum_upvotes: Number,
   sum_comments: Number,
   // userId
   last_reply: ObjectId,

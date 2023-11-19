@@ -24,6 +24,11 @@ export async function createPost(req: Request, res: Response) {
         category,
         author: userId,
         content,
+        'liked.number': 0,
+        sum_likes: 0,
+        sum_upvotes: 0,
+        sum_comments: 0,
+        'comments.number': 0,
         publish_date: publishDate,
         update_date: publishDate,
         tags,
@@ -38,6 +43,11 @@ export async function createPost(req: Request, res: Response) {
         author: userId,
         title,
         content,
+        'liked.number': 0,
+        sum_likes: 0,
+        sum_upvotes: 0,
+        sum_comments: 0,
+        'comments.number': 0,
         publish_date: publishDate,
         update_date: publishDate,
         tags,
@@ -49,6 +59,11 @@ export async function createPost(req: Request, res: Response) {
         category,
         author: userId,
         content,
+        'liked.number': 0,
+        sum_likes: 0,
+        sum_upvotes: 0,
+        sum_comments: 0,
+        'comments.number': 0,
         publish_date: publishDate,
         update_date: publishDate,
         tags,
@@ -84,21 +99,52 @@ export async function commentPost(req: Request, res: Response) {
     console.log(content);
     console.log(postId);
 
-    const result = await Post.updateOne(
-      { _id: postId },
+    const result = await Post.updateOne({ _id: postId }, [
       {
-        $push: {
+        $set: {
           'comments.data': {
-            user: userId,
-            content,
-            time: publishDate,
+            $concatArrays: [
+              '$comments.data',
+              [
+                {
+                  user: userId,
+                  content,
+                  time: publishDate,
+                },
+              ],
+            ],
           },
         },
-        $inc: {
-          'comments.number': 1,
+      },
+      {
+        $set: {
+          'comments.number': { $add: ['$comments.number', 1] },
         },
       },
-    );
+      {
+        $set: {
+          hot: {
+            $divide: [
+              {
+                $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+              },
+              {
+                $add: [
+                  1,
+                  {
+                    $dateDiff: {
+                      startDate: '$publish_date',
+                      endDate: '$$NOW',
+                      unit: 'day',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    ]);
 
     if (result.acknowledged === false) {
       throw new Error('Create comment fail');

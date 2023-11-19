@@ -82,7 +82,6 @@ userSchema.pre('save', async function (next) {
 
   // Hash the password and delete the confirm
   this.password = await bcrypt.hash(this.password, 12);
-
   this.password_confirm = 'confirm';
   return next();
 });
