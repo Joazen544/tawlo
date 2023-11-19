@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_KEY = process.env.JWT_KEY || '';
 
-export const EXPIRE_TIME = 600 * 60;
+export const EXPIRE_TIME = 6000 * 6000;
 
 export function signJWT(userId: string) {
   return new Promise((resolve, reject) => {

@@ -73,4 +73,43 @@ export async function createPost(req: Request, res: Response) {
   }
 }
 
-export function abc() {}
+export async function commentPost(req: Request, res: Response) {
+  try {
+    const { postId } = req.params;
+    const { content, user } = req.body;
+    const userId = new ObjectId(user);
+
+    const publishDate = new Date();
+
+    console.log(content);
+    console.log(postId);
+
+    const result = await Post.updateOne(
+      { _id: postId },
+      {
+        $push: {
+          'comments.data': {
+            user: userId,
+            content,
+            time: publishDate,
+          },
+        },
+        $inc: {
+          'comments.number': 1,
+        },
+      },
+    );
+
+    if (result.acknowledged === false) {
+      throw new Error('Create comment fail');
+    }
+
+    return res.json({ message: 'Add comment success' });
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      return res.status(400).json({ error: err.message });
+    }
+    return res.status(500).json({ error: 'Create comment fail' });
+  }
+}
