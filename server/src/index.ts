@@ -4,6 +4,7 @@ import './models/mongodb';
 import express from 'express';
 import userRouter from './routes/user';
 import postRouter from './routes/post';
+import { errorHandler } from './utils/errorHandler';
 
 const app = express();
 app.use(express.json());
@@ -13,6 +14,8 @@ app.use('/api', [userRouter, postRouter]);
 app.get('/', (_req, res) => {
   res.send('app running');
 });
+
+app.use(errorHandler);
 
 app.listen(process.env.PORT, () => {
   console.log('port running on 3000');

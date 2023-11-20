@@ -2,7 +2,11 @@ import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import Post from '../models/post';
 
-async function calculateMotherPostHot(postId: string, increaseField: string) {
+async function calculateMotherPostHot(
+  postId: string,
+  increaseField: string,
+  increase: boolean,
+) {
   let field = '';
   if (increaseField === 'comment') {
     field = 'sum_comments';
@@ -14,10 +18,17 @@ async function calculateMotherPostHot(postId: string, increaseField: string) {
     throw Error('the increase field sent to calculate hot function is wrong');
   }
 
+  let num;
+  if (increase === true) {
+    num = 1;
+  } else {
+    num = -1;
+  }
+
   const calculateResult = await Post.updateOne({ _id: postId }, [
     {
       $set: {
-        [field]: { $add: [`$${field}`, 1] },
+        [field]: { $add: [`$${field}`, num] },
       },
     },
     {
@@ -228,9 +239,11 @@ export async function commentPost(req: Request, res: Response) {
         throw new Error('Create comment fail');
       }
 
+      // ??? the type of motherPost should be fixed
       const calculateResult = await calculateMotherPostHot(
         motherPost,
         'comment',
+        true,
       );
 
       if (calculateResult !== true) {
@@ -328,6 +341,168 @@ export async function likeComment(req: Request, res: Response) {
     res
       .status(500)
       .json({ error: 'something is wrong creating like to comment' });
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'Create comment fail' });
+  }
+}
+
+export async function likePost(req: Request, res: Response) {
+  // check if post exist
+  // check post category ??? which should be implement to some other api
+  // deal with like
+  // calculate hot
+  try {
+    const { postId } = req.params;
+    const { user, like } = req.body;
+    const userId = new ObjectId(user);
+
+    // check if the post and comment exist
+    const likeTarget = await Post.findOne(
+      {
+        _id: postId,
+      },
+      { _id: 1, liked: 1, category: 1, mother_post: 1 },
+    );
+
+    console.log(JSON.stringify(likeTarget, null, 4));
+
+    if (likeTarget === null) {
+      throw Error('like target post does not exist');
+    }
+
+    // check if user already like the comment
+    const ifAlreadyLike = likeTarget.liked.users.includes(userId);
+
+    console.log('userId: ');
+    console.log(userId);
+
+    // ??? how to check if comment exist
+
+    let increment;
+    let pushOrPull;
+    let udjustUserArray;
+    let message;
+    if (like === true) {
+      increment = 1;
+      pushOrPull = '$push';
+      udjustUserArray = {
+        'liked.users': {
+          $concatArrays: ['$liked.users', [userId]],
+        },
+      };
+      message = 'like';
+
+      if (ifAlreadyLike === true) {
+        throw Error('user already liked the post');
+      }
+    } else if (like === false) {
+      increment = -1;
+      pushOrPull = '$pull';
+      udjustUserArray = {
+        'liked.users': {
+          $filter: {
+            input: '$liked.users',
+            as: 'user',
+            cond: { $ne: ['$$user', userId] },
+          },
+        },
+      };
+      message = 'dislike';
+
+      if (ifAlreadyLike === false) {
+        throw Error('user did not like the post');
+      }
+    } else {
+      throw Error('req body must contain like, and it should be boolean');
+    }
+
+    console.log(udjustUserArray);
+
+    let result;
+    console.log('liking comment');
+
+    if (likeTarget.category === 'mother' || likeTarget.category === 'native') {
+      // update like and calculate hot
+      result = await Post.updateOne({ _id: postId }, [
+        {
+          $set: { 'liked.number': { $add: ['$liked.number', increment] } },
+        },
+        {
+          $set: udjustUserArray,
+        },
+        {
+          $set: {
+            sum_likes: { $add: ['$sum_likes', increment] },
+          },
+        },
+        {
+          $set: {
+            hot: {
+              $divide: [
+                {
+                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                },
+                {
+                  $add: [
+                    1,
+                    {
+                      $dateDiff: {
+                        startDate: '$publish_date',
+                        endDate: '$$NOW',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ]);
+
+      if (result.acknowledged === false) {
+        throw Error('like a post fail');
+      }
+
+      res.json({ message: `${message} post success` });
+      return;
+    }
+
+    if (likeTarget.category === 'reply') {
+      result = await Post.updateOne(
+        { _id: postId },
+        {
+          $inc: { 'liked.number': 1 },
+          [pushOrPull]: { 'liked.users': userId },
+        },
+      );
+
+      if (result.acknowledged === false) {
+        throw Error('like a post fail');
+      }
+
+      const motherPost = likeTarget.mother_post.toString();
+
+      const calculateResult = await calculateMotherPostHot(
+        motherPost,
+        'like',
+        like,
+      );
+
+      if (calculateResult !== true) {
+        throw Error('calculate hot fail');
+      }
+
+      res.json({ message: `${message} post success` });
+      return;
+    }
+
+    res.status(500).json({ error: 'something is wrong liking a post' });
   } catch (err) {
     console.log(err);
     if (err instanceof Error) {
