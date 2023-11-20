@@ -2,6 +2,57 @@ import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import Post from '../models/post';
 
+async function calculateMotherPostHot(postId: string, increaseField: string) {
+  let field = '';
+  if (increaseField === 'comment') {
+    field = 'sum_comments';
+  } else if (increaseField === 'like') {
+    field = 'sum_likes';
+  } else if (increaseField === 'upvote') {
+    field = 'sum_upvotes';
+  } else {
+    throw Error('the increase field sent to calculate hot function is wrong');
+  }
+
+  const calculateResult = await Post.updateOne({ _id: postId }, [
+    {
+      $set: {
+        [field]: { $add: [`$${field}`, 1] },
+      },
+    },
+    {
+      $set: {
+        hot: {
+          $divide: [
+            {
+              $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+            },
+            {
+              $add: [
+                1,
+                {
+                  $dateDiff: {
+                    startDate: '$publish_date',
+                    endDate: '$$NOW',
+                    unit: 'day',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  console.log(calculateResult);
+  if (calculateResult.modifiedCount === 0) {
+    throw Error('calculate hot fail');
+  }
+
+  return true;
+}
+
 export async function createPost(req: Request, res: Response) {
   try {
     const {
@@ -189,36 +240,14 @@ export async function commentPost(req: Request, res: Response) {
         throw new Error('Create comment fail');
       }
 
-      await Post.updateOne({ _id: motherPost }, [
-        {
-          $set: {
-            sum_comments: { $add: ['$sum_comments', 1] },
-          },
-        },
-        {
-          $set: {
-            hot: {
-              $divide: [
-                {
-                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-                {
-                  $add: [
-                    1,
-                    {
-                      $dateDiff: {
-                        startDate: '$publish_date',
-                        endDate: '$$NOW',
-                        unit: 'day',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-        },
-      ]);
+      const calculateResult = await calculateMotherPostHot(
+        motherPost,
+        'comment',
+      );
+
+      if (calculateResult !== true) {
+        throw Error('calculate hot fail');
+      }
     }
 
     return res.json({ message: 'Add comment success' });
@@ -230,3 +259,17 @@ export async function commentPost(req: Request, res: Response) {
     return res.status(500).json({ error: 'Create comment fail' });
   }
 }
+
+// export async function likeComment(req: Request, res: Response) {
+//   try {
+//     const { floor } = req.params || 0;
+//     const { user } = req.body;
+
+//   } catch (err) {
+//     console.log(err);
+//     if (err instanceof Error) {
+//       return res.status(400).json({ error: err.message });
+//     }
+//     return res.status(500).json({ error: 'Create comment fail' });
+//   }
+// }
