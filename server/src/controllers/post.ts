@@ -75,16 +75,10 @@ export async function createPost(req: Request, res: Response) {
         category,
         author: userId,
         content,
-        'liked.number': 0,
-        sum_likes: 0,
-        sum_upvotes: 0,
-        sum_comments: 0,
-        'comments.number': 0,
         publish_date: publishDate,
         update_date: publishDate,
         tags,
         floor: 1,
-        hot: 0,
       });
     } else if (category === 'mother') {
       if (title === undefined) {
@@ -95,28 +89,17 @@ export async function createPost(req: Request, res: Response) {
         author: userId,
         title,
         content,
-        'liked.number': 0,
-        sum_likes: 0,
-        sum_upvotes: 0,
-        sum_comments: 0,
-        'comments.number': 0,
         publish_date: publishDate,
         update_date: publishDate,
         tags,
         board,
         floor: 1,
-        hot: 0,
       });
     } else if (category === 'reply') {
       postData = await Post.create({
         category,
         author: userId,
         content,
-        'liked.number': 0,
-        sum_likes: 0,
-        sum_upvotes: 0,
-        sum_comments: 0,
-        'comments.number': 0,
         publish_date: publishDate,
         update_date: publishDate,
         tags,
@@ -147,15 +130,14 @@ export async function commentPost(req: Request, res: Response) {
     const { content, user, postCategory, motherPost } = req.body;
     const userId = new ObjectId(user);
 
+    // need to check post category in future
     const publishDate = new Date();
 
     console.log(content);
     console.log(postId);
 
     let result;
-    if (postCategory !== 'reply') {
-      if (!motherPost) throw Error('reply comment must have mother post id');
-
+    if (postCategory === 'mother' || postCategory === 'native') {
       result = await Post.updateOne({ _id: postId }, [
         {
           $set: {
@@ -167,6 +149,10 @@ export async function commentPost(req: Request, res: Response) {
                     user: userId,
                     content,
                     time: publishDate,
+                    like: {
+                      number: 0,
+                      users: [],
+                    },
                   },
                 ],
               ],
@@ -208,10 +194,12 @@ export async function commentPost(req: Request, res: Response) {
         },
       ]);
 
-      if (result.modifiedCount === 0) {
+      if (result.acknowledged === false) {
         throw new Error('Create comment fail');
       }
     } else {
+      if (!motherPost) throw Error('reply comment must have mother post id');
+
       result = await Post.updateOne({ _id: postId }, [
         {
           $set: {
@@ -236,7 +224,7 @@ export async function commentPost(req: Request, res: Response) {
         },
       ]);
 
-      if (result.modifiedCount === 0) {
+      if (result.acknowledged === false) {
         throw new Error('Create comment fail');
       }
 
@@ -260,16 +248,92 @@ export async function commentPost(req: Request, res: Response) {
   }
 }
 
-// export async function likeComment(req: Request, res: Response) {
-//   try {
-//     const { floor } = req.params || 0;
-//     const { user } = req.body;
+export async function likeComment(req: Request, res: Response) {
+  try {
+    let floor;
+    if (req.query.floor) floor = parseInt(req.query.floor as string, 10);
+    if (typeof floor !== 'number') {
+      throw Error('query floor should be a number');
+    }
 
-//   } catch (err) {
-//     console.log(err);
-//     if (err instanceof Error) {
-//       return res.status(400).json({ error: err.message });
-//     }
-//     return res.status(500).json({ error: 'Create comment fail' });
-//   }
-// }
+    const { postId } = req.params;
+    const { user, like } = req.body;
+    const userId = new ObjectId(user);
+
+    const commentTargetLike = `comments.data.${floor}.like.number`;
+    const commentTargetUser = `comments.data.${floor}.like.users`;
+
+    // check if the post and comment exist
+    const likeTargetComment = await Post.findOne(
+      {
+        _id: postId,
+        // [commentTargetUser]: { $in: [userId] },
+      },
+      { _id: 1, comments: 1 },
+    );
+
+    if (likeTargetComment === null || !likeTargetComment.comments.data[floor]) {
+      throw Error('like target post or comment floor does not exist');
+    }
+
+    // check if user already like the comment
+    const ifAlreadyLike =
+      likeTargetComment.comments.data[floor].like.users.includes(userId);
+    console.log('userId: ');
+    console.log(userId);
+
+    // ??? how to check if comment exist
+
+    let result;
+    if (like === true) {
+      if (ifAlreadyLike === true) {
+        throw Error('user already liked the comment');
+      }
+      console.log('liking comment');
+
+      result = await Post.updateOne(
+        { _id: postId },
+        {
+          $inc: { [commentTargetLike]: 1 },
+          $push: { 'comments.data.0.like.users': userId },
+        },
+      );
+
+      if (result.acknowledged === false) {
+        throw Error('like comment fail');
+      }
+      res.json({ message: 'like comment success' });
+      return;
+    }
+
+    if (like === false) {
+      if (ifAlreadyLike === false) {
+        throw Error('user did not like the comment');
+      }
+      result = await Post.updateOne(
+        { _id: postId },
+        {
+          $inc: { [commentTargetLike]: -1 },
+          $pull: { [commentTargetUser]: userId },
+        },
+      );
+
+      if (result.acknowledged === false) {
+        throw Error('like comment fail');
+      }
+      res.json({ message: 'dislike comment success' });
+      return;
+    }
+
+    res
+      .status(500)
+      .json({ error: 'something is wrong creating like to comment' });
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'Create comment fail' });
+  }
+}

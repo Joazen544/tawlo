@@ -81,13 +81,13 @@ const postSchema = new mongoose.Schema<PostDocument>({
     required: [true, 'A post must contain a tag'],
   },
   liked: {
-    number: Number,
-    users: [ObjectId],
+    number: { type: Number, default: 0 },
+    users: { type: [ObjectId], default: [] },
   },
   // only on mother post
-  sum_likes: Number,
-  sum_upvotes: Number,
-  sum_comments: Number,
+  sum_likes: { type: Number, default: 0 },
+  sum_upvotes: { type: Number, default: 0 },
+  sum_comments: { type: Number, default: 0 },
   // userId
   last_reply: ObjectId,
   //
@@ -101,7 +101,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
   },
   useful: Number,
   comments: {
-    number: Number,
+    number: { type: Number, default: 0 },
     data: [
       {
         user: ObjectId,
@@ -114,7 +114,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
       },
     ],
   },
-  hot: Number,
+  hot: { type: Number, default: 0 },
 });
 
 export default mongoose.model('Post', postSchema);
