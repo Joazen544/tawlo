@@ -14,6 +14,8 @@ async function calculateMotherPostHot(
     field = 'sum_likes';
   } else if (increaseField === 'upvote') {
     field = 'sum_upvotes';
+    console.log('field is: ');
+    console.log(field);
   } else {
     throw Error('the increase field sent to calculate hot function is wrong');
   }
@@ -24,6 +26,12 @@ async function calculateMotherPostHot(
   } else {
     num = -1;
   }
+  console.log('num is: ');
+  console.log(num);
+
+  console.log('post id is: ');
+
+  console.log(postId);
 
   const calculateResult = await Post.updateOne({ _id: postId }, [
     {
@@ -57,7 +65,7 @@ async function calculateMotherPostHot(
   ]);
 
   console.log(calculateResult);
-  if (calculateResult.modifiedCount === 0) {
+  if (calculateResult.modifiedCount !== 1) {
     throw Error('calculate hot fail');
   }
 
@@ -295,8 +303,6 @@ export async function likeComment(req: Request, res: Response) {
     console.log('userId: ');
     console.log(userId);
 
-    // ??? how to check if comment exist
-
     let result;
     if (like === true) {
       if (ifAlreadyLike === true) {
@@ -361,7 +367,7 @@ export async function likePost(req: Request, res: Response) {
     const { user, like } = req.body;
     const userId = new ObjectId(user);
 
-    // check if the post and comment exist
+    // check if the post exist
     const likeTarget = await Post.findOne(
       {
         _id: postId,
@@ -375,22 +381,20 @@ export async function likePost(req: Request, res: Response) {
       throw Error('like target post does not exist');
     }
 
-    // check if user already like the comment
+    // check if user already like the post
     const ifAlreadyLike = likeTarget.liked.users.includes(userId);
 
     console.log('userId: ');
     console.log(userId);
 
-    // ??? how to check if comment exist
-
     let increment;
     let pushOrPull;
-    let udjustUserArray;
+    let adjustUserArray;
     let message;
     if (like === true) {
       increment = 1;
       pushOrPull = '$push';
-      udjustUserArray = {
+      adjustUserArray = {
         'liked.users': {
           $concatArrays: ['$liked.users', [userId]],
         },
@@ -403,7 +407,7 @@ export async function likePost(req: Request, res: Response) {
     } else if (like === false) {
       increment = -1;
       pushOrPull = '$pull';
-      udjustUserArray = {
+      adjustUserArray = {
         'liked.users': {
           $filter: {
             input: '$liked.users',
@@ -421,7 +425,7 @@ export async function likePost(req: Request, res: Response) {
       throw Error('req body must contain like, and it should be boolean');
     }
 
-    console.log(udjustUserArray);
+    console.log(adjustUserArray);
 
     let result;
     console.log('liking comment');
@@ -433,7 +437,7 @@ export async function likePost(req: Request, res: Response) {
           $set: { 'liked.number': { $add: ['$liked.number', increment] } },
         },
         {
-          $set: udjustUserArray,
+          $set: adjustUserArray,
         },
         {
           $set: {
@@ -477,7 +481,7 @@ export async function likePost(req: Request, res: Response) {
       result = await Post.updateOne(
         { _id: postId },
         {
-          $inc: { 'liked.number': 1 },
+          $inc: { 'liked.number': increment },
           [pushOrPull]: { 'liked.users': userId },
         },
       );
@@ -510,5 +514,592 @@ export async function likePost(req: Request, res: Response) {
       return;
     }
     res.status(500).json({ error: 'Create comment fail' });
+  }
+}
+
+export async function upvotePost(req: Request, res: Response) {
+  // check if post exist
+  // check post category
+  // deal with upvote
+  // calculate hot
+  try {
+    const { postId } = req.params;
+    const { user, upvote } = req.body;
+    const userId = new ObjectId(user);
+
+    // check if the post exist
+    const upvoteTarget = await Post.findOne(
+      {
+        _id: postId,
+      },
+      { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1 },
+    );
+
+    console.log(JSON.stringify(upvoteTarget, null, 4));
+
+    if (upvoteTarget === null) {
+      throw Error('upvote target post does not exist');
+    }
+
+    // check if user already upvote the post
+    const ifAlreadyUpvote = upvoteTarget.upvote.users.includes(userId);
+    const ifAlreadyDownVote = upvoteTarget.downvote.users.includes(userId);
+
+    console.log('userId: ');
+    console.log(userId);
+
+    // ??? how to check if comment exist
+
+    let increment;
+    let pushOrPull;
+    let adjustUserArray;
+    let message;
+    if (upvote === true) {
+      increment = 1;
+      pushOrPull = '$push';
+      adjustUserArray = {
+        'upvote.users': {
+          $concatArrays: ['$upvote.users', [userId]],
+        },
+      };
+      message = 'upvote';
+
+      if (ifAlreadyUpvote === true) {
+        throw Error('user already upvoted the post');
+      }
+    } else if (upvote === false) {
+      increment = -1;
+      pushOrPull = '$pull';
+      adjustUserArray = {
+        'upvote.users': {
+          $filter: {
+            input: '$upvote.users',
+            as: 'user',
+            cond: { $ne: ['$$user', userId] },
+          },
+        },
+      };
+      message = 'disupvote';
+
+      if (ifAlreadyUpvote === false) {
+        throw Error('user did not upvote the post');
+      }
+    } else {
+      throw Error('req body must contain key upvote, and it should be boolean');
+    }
+
+    let result;
+    console.log('upvoting post');
+
+    if (
+      upvoteTarget.category === 'mother' ||
+      upvoteTarget.category === 'native'
+    ) {
+      // update upvote and calculate hot
+      result = await Post.updateOne({ _id: postId }, [
+        {
+          $set: { 'upvote.number': { $add: ['$upvote.number', increment] } },
+        },
+        {
+          $set: adjustUserArray,
+        },
+        {
+          $set: {
+            sum_upvotes: { $add: ['$sum_upvotes', increment] },
+          },
+        },
+        {
+          $set: {
+            hot: {
+              $divide: [
+                {
+                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                },
+                {
+                  $add: [
+                    1,
+                    {
+                      $dateDiff: {
+                        startDate: '$publish_date',
+                        endDate: '$$NOW',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ]);
+
+      if (result.acknowledged === false) {
+        throw Error(`${message} a post fail`);
+      }
+
+      let cancelDownVoteResult;
+      if (ifAlreadyDownVote && upvote) {
+        // cancel the down vote
+        cancelDownVoteResult = await Post.updateOne({ _id: postId }, [
+          {
+            $set: {
+              'downvote.number': { $add: ['$downvote.number', -1] },
+            },
+          },
+          {
+            $set: {
+              'downvote.users': {
+                $filter: {
+                  input: '$downvote.users',
+                  as: 'user',
+                  cond: {
+                    $ne: ['$$user', userId],
+                  },
+                },
+              },
+            },
+          },
+          {
+            $set: {
+              sum_upvotes: { $add: ['$sum_upvotes', 1] },
+            },
+          },
+          {
+            $set: {
+              hot: {
+                $divide: [
+                  {
+                    $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                  },
+                  {
+                    $add: [
+                      1,
+                      {
+                        $dateDiff: {
+                          startDate: '$publish_date',
+                          endDate: '$$NOW',
+                          unit: 'day',
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ]);
+
+        if (cancelDownVoteResult.acknowledged === false) {
+          throw new Error('cancel downvote fail');
+        }
+      }
+
+      res.json({ message: `${message} post success` });
+      return;
+    }
+
+    if (upvoteTarget.category === 'reply') {
+      result = await Post.updateOne(
+        { _id: postId },
+        {
+          $inc: { 'upvote.number': increment },
+          [pushOrPull]: { 'upvote.users': userId },
+        },
+      );
+
+      if (result.acknowledged === false) {
+        throw Error('upvote a post fail');
+      }
+
+      const motherPost = upvoteTarget.mother_post.toString();
+
+      const calculateResult = await calculateMotherPostHot(
+        motherPost,
+        'upvote',
+        upvote,
+      );
+
+      if (calculateResult !== true) {
+        throw Error('calculate hot fail');
+      }
+
+      // ////////////////////
+      if (ifAlreadyDownVote && upvote) {
+        // cancel the down vote
+        // and cancel it from mother post
+        const cancelDownVoteResult = await Post.updateOne({ _id: postId }, [
+          {
+            $set: {
+              'downvote.number': { $add: ['$downvote.number', -1] },
+            },
+          },
+          {
+            $set: {
+              'downvote.users': {
+                $filter: {
+                  input: '$downvote.users',
+                  as: 'user',
+                  cond: {
+                    $ne: ['$$user', userId],
+                  },
+                },
+              },
+            },
+          },
+        ]);
+
+        if (cancelDownVoteResult.acknowledged === false) {
+          throw new Error('cancel downvote fail');
+        }
+
+        const cancelDownVoteFromMotherResult = await Post.updateOne(
+          { _id: motherPost },
+          [
+            {
+              $set: {
+                sum_upvotes: { $add: ['$sum_upvotes', 1] },
+              },
+            },
+            {
+              $set: {
+                hot: {
+                  $divide: [
+                    {
+                      $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                    },
+                    {
+                      $add: [
+                        1,
+                        {
+                          $dateDiff: {
+                            startDate: '$publish_date',
+                            endDate: '$$NOW',
+                            unit: 'day',
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        );
+
+        if (cancelDownVoteFromMotherResult.acknowledged === false) {
+          throw new Error('cancel downvote from mother fail');
+        }
+      }
+
+      res.json({ message: `${message} post success` });
+      return;
+    }
+
+    res.status(500).json({ error: 'something is wrong upvoting a post' });
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'Upvote a post fail' });
+  }
+}
+
+export async function downvotePost(req: Request, res: Response) {
+  // check if post exist
+  // check post category
+  // deal with downvote
+  // calculate hot
+  try {
+    const { postId } = req.params;
+    const { user, downvote } = req.body;
+    const userId = new ObjectId(user);
+
+    // check if the post exist
+    const downvoteTarget = await Post.findOne(
+      {
+        _id: postId,
+      },
+      { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1 },
+    );
+
+    console.log(JSON.stringify(downvoteTarget, null, 4));
+
+    if (downvoteTarget === null) {
+      throw Error('downvote target post does not exist');
+    }
+
+    // check if user already upvote the post
+    const ifAlreadyUpvote = downvoteTarget.upvote.users.includes(userId);
+    const ifAlreadyDownVote = downvoteTarget.downvote.users.includes(userId);
+
+    console.log('userId: ');
+    console.log(userId);
+
+    let increment;
+    let pushOrPull;
+    let adjustUserArray;
+    let message;
+
+    if (downvote === true) {
+      increment = 1;
+      pushOrPull = '$push';
+      adjustUserArray = {
+        'downvote.users': {
+          $concatArrays: ['$downvote.users', [userId]],
+        },
+      };
+      message = 'downvote';
+
+      if (ifAlreadyDownVote === true) {
+        throw Error('user already downvoted the post');
+      }
+    } else if (downvote === false) {
+      increment = -1;
+      pushOrPull = '$pull';
+      adjustUserArray = {
+        'downvote.users': {
+          $filter: {
+            input: '$downvote.users',
+            as: 'user',
+            cond: { $ne: ['$$user', userId] },
+          },
+        },
+      };
+      message = 'disdownvote';
+
+      if (ifAlreadyDownVote === false) {
+        throw Error('user did not upvote the post');
+      }
+    } else {
+      throw Error(
+        'req body must contain key downvote, and it should be boolean',
+      );
+    }
+
+    let result;
+    console.log('downvoting post');
+
+    if (
+      downvoteTarget.category === 'mother' ||
+      downvoteTarget.category === 'native'
+    ) {
+      // update upvote and calculate hot
+      result = await Post.updateOne({ _id: postId }, [
+        {
+          $set: {
+            'downvote.number': { $add: ['$downvote.number', increment] },
+          },
+        },
+        {
+          $set: adjustUserArray,
+        },
+        {
+          $set: {
+            sum_downvotes: { $add: ['$sum_downvotes', increment] },
+          },
+        },
+        {
+          $set: {
+            hot: {
+              $divide: [
+                {
+                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                },
+                {
+                  $add: [
+                    1,
+                    {
+                      $dateDiff: {
+                        startDate: '$publish_date',
+                        endDate: '$$NOW',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ]);
+
+      if (result.acknowledged === false) {
+        throw Error(`${message} a post fail`);
+      }
+
+      let cancelUpvoteResult;
+      if (ifAlreadyUpvote && downvote) {
+        // cancel the down vote
+        cancelUpvoteResult = await Post.updateOne({ _id: postId }, [
+          {
+            $set: {
+              'upvote.number': { $add: ['$upvote.number', -1] },
+            },
+          },
+          {
+            $set: {
+              'upvote.users': {
+                $filter: {
+                  input: '$upvote.users',
+                  as: 'user',
+                  cond: {
+                    $ne: ['$$user', userId],
+                  },
+                },
+              },
+            },
+          },
+          {
+            $set: {
+              sum_upvotes: { $add: ['$sum_upvotes', -1] },
+            },
+          },
+          {
+            $set: {
+              hot: {
+                $divide: [
+                  {
+                    $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+                  },
+                  {
+                    $add: [
+                      1,
+                      {
+                        $dateDiff: {
+                          startDate: '$publish_date',
+                          endDate: '$$NOW',
+                          unit: 'day',
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ]);
+
+        if (cancelUpvoteResult.acknowledged === false) {
+          throw new Error('cancel upvote fail');
+        }
+      }
+
+      res.json({ message: `${message} post success` });
+      return;
+    }
+
+    if (downvoteTarget.category === 'reply') {
+      result = await Post.updateOne(
+        { _id: postId },
+        {
+          $inc: { 'downvote.number': increment },
+          [pushOrPull]: { 'downvote.users': userId },
+        },
+      );
+
+      if (result.acknowledged === false) {
+        throw Error('downvote a post fail');
+      }
+
+      const motherPost = downvoteTarget.mother_post.toString();
+
+      const calculateResult = await calculateMotherPostHot(
+        motherPost,
+        'upvote',
+        !downvote,
+      );
+
+      if (calculateResult !== true) {
+        throw Error('calculate hot fail');
+      }
+
+      let cancelUpvoteResult;
+      // ////////////////////
+      if (ifAlreadyUpvote && downvote) {
+        // cancel the down vote
+        cancelUpvoteResult = await Post.updateOne({ _id: postId }, [
+          {
+            $set: {
+              'upvote.number': { $add: ['$upvote.number', -1] },
+            },
+          },
+          {
+            $set: {
+              'upvote.users': {
+                $filter: {
+                  input: '$upvote.users',
+                  as: 'user',
+                  cond: {
+                    $ne: ['$$user', userId],
+                  },
+                },
+              },
+            },
+          },
+        ]);
+
+        if (cancelUpvoteResult.acknowledged === false) {
+          throw new Error('cancel downvote fail');
+        }
+
+        // const cancelUpvoteFromMotherResult = await Post.updateOne(
+        //   { _id: motherPost },
+        //   [
+        //     {
+        //       $set: {
+        //         sum_upvotes: { $add: ['$sum_upvotes', -1] },
+        //       },
+        //     },
+        //     {
+        //       $set: {
+        //         hot: {
+        //           $divide: [
+        //             {
+        //               $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+        //             },
+        //             {
+        //               $add: [
+        //                 1,
+        //                 {
+        //                   $dateDiff: {
+        //                     startDate: '$publish_date',
+        //                     endDate: '$$NOW',
+        //                     unit: 'day',
+        //                   },
+        //                 },
+        //               ],
+        //             },
+        //           ],
+        //         },
+        //       },
+        //     },
+        //   ],
+        // );
+
+        const cancelUpvoteFromMotherResult = await calculateMotherPostHot(
+          motherPost,
+          'upvote',
+          false,
+        );
+
+        if (cancelUpvoteFromMotherResult === false) {
+          throw new Error('cancel downvote from mother fail');
+        }
+      }
+
+      res.json({ message: `${message} post success` });
+      return;
+    }
+
+    res.status(500).json({ error: 'something is wrong downvoting a post' });
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'Down vote a post fail' });
   }
 }

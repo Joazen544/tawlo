@@ -92,12 +92,12 @@ const postSchema = new mongoose.Schema<PostDocument>({
   last_reply: ObjectId,
   //
   upvote: {
-    number: Number,
-    users: [ObjectId],
+    number: { type: Number, default: 0 },
+    users: { type: [ObjectId], default: [] },
   },
   downvote: {
-    number: Number,
-    users: [ObjectId],
+    number: { type: Number, default: 0 },
+    users: { type: [ObjectId], default: [] },
   },
   useful: Number,
   comments: {
