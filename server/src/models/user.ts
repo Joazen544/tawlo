@@ -147,17 +147,19 @@ export async function updateUserReadPosts(
   userId: ObjectId,
   readPosts: ObjectId[],
 ) {
-  console.log('~~~');
-
-  await User.updateOne({ _id: userId }, [
+  const result = await User.updateOne({ _id: userId }, [
     {
       $set: {
         read_posts: {
-          $concatArrays: ['$read_posts', readPosts],
+          $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -30],
         },
       },
     },
   ]);
+
+  if (result.acknowledged !== true) {
+    console.log('Something is wrong updating user read posts');
+  }
 }
 
 export async function getUserPreference(userId: ObjectId) {

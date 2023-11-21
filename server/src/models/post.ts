@@ -211,7 +211,20 @@ export async function getAutoRecommendedPosts(
                     unit: 'hour',
                   },
                 },
-                -50,
+                {
+                  $multiply: [
+                    -50,
+                    {
+                      $size: {
+                        $filter: {
+                          input: read_posts,
+                          as: 'post',
+                          cond: { $eq: ['$$post', '$_id'] },
+                        },
+                      },
+                    },
+                  ],
+                },
               ],
             },
             else: {

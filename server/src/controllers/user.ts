@@ -88,8 +88,7 @@ export async function updateUserRead(req: Request, res: Response) {
   try {
     const { user, posts } = req.body;
 
-    const postsArray = posts.split(',') as string[];
-    const postsId = postsArray.map((post) => new ObjectId(post));
+    const postsId = posts.map((post: string) => new ObjectId(post));
 
     const userId = new ObjectId(user);
 
