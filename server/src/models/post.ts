@@ -117,4 +117,144 @@ const postSchema = new mongoose.Schema<PostDocument>({
   hot: { type: Number, default: 0 },
 });
 
-export default mongoose.model('Post', postSchema);
+const Post = mongoose.model('Post', postSchema);
+
+export async function getAutoRecommendedPosts(
+  preferenceTags: string[],
+  boards: ObjectId[],
+  read_posts: ObjectId[],
+) {
+  const shouldArray = [];
+  let scoring = 10;
+
+  preferenceTags.forEach((tag) => {
+    shouldArray.push({
+      text: {
+        query: `"${tag}"`,
+        path: 'tags',
+        score: {
+          boost: {
+            value: scoring * 5,
+          },
+        },
+      },
+    });
+
+    scoring -= 2;
+  });
+
+  shouldArray.push({
+    in: {
+      value: boards,
+      path: 'board',
+      score: {
+        boost: {
+          value: 30,
+        },
+      },
+    },
+  });
+
+  console.log(JSON.stringify(shouldArray, null, 4));
+
+  const posts = await Post.aggregate([
+    {
+      $search: {
+        index: 'posts',
+        compound: {
+          must: [],
+          should: shouldArray,
+          filter: [
+            {
+              exists: {
+                path: 'category',
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      $match: {
+        is_delete: false,
+      },
+    },
+    {
+      $addFields: {
+        score: {
+          $meta: 'searchScore',
+        },
+        time: {
+          $dateDiff: {
+            startDate: '$$NOW',
+            endDate: '$publish_date',
+            unit: 'hour',
+          },
+        },
+      },
+    },
+    {
+      $set: {
+        score: {
+          $cond: {
+            if: {
+              $in: ['$_id', read_posts],
+            },
+            then: {
+              $add: [
+                '$score',
+                '$hot',
+                {
+                  $dateDiff: {
+                    startDate: '$$NOW',
+                    endDate: '$publish_date',
+                    unit: 'hour',
+                  },
+                },
+                -50,
+              ],
+            },
+            else: {
+              $add: [
+                '$score',
+                '$hot',
+                {
+                  $dateDiff: {
+                    startDate: '$$NOW',
+                    endDate: '$publish_date',
+                    unit: 'hour',
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $sort: {
+        score: -1,
+      },
+    },
+    {
+      $limit: 50,
+    },
+    {
+      $project: {
+        _id: 1,
+        category: 1,
+        score: 1,
+        time: 1,
+        title: 1,
+        author: 1,
+        publish_date: 1,
+        content: 1,
+      },
+    },
+  ]);
+
+  console.log(JSON.stringify(posts, null, 4));
+  return posts;
+}
+
+export default Post;

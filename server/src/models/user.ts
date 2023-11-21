@@ -15,6 +15,7 @@ export interface UserDocument extends Document {
   block: ObjectId[];
   read_board: ObjectId[];
   preference_tags: { name: string; number: Number }[];
+  recommend_mode: string;
   chats: ObjectId[];
   upvote: number;
   downvote: number;
@@ -41,17 +42,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
     minlength: [8, 'Password must contain at least 8 characters'],
     select: false,
   },
-  // password_confirm: {
-  //   type: String,
-  //   required: [true, 'Please confirm your password'],
-  //   validate: {
-  //     // This only works on SAVE!!!
-  //     validator(this: UserDocument, el: String) {
-  //       return el === this.password;
-  //     },
-  //     message: 'Password are not the same',
-  //   },
-  // },
+
   // Posts read 300 recorded
   read_posts: [ObjectId],
   friends: [ObjectId],
@@ -70,6 +61,11 @@ const userSchema = new mongoose.Schema<UserDocument>({
       },
     ],
     default: [],
+  },
+  recommend_mode: {
+    type: String,
+    default: 'auto',
+    enum: ['auto', 'customize', 'time', 'hot'],
   },
   // chat rooms
   chats: [ObjectId],
@@ -99,5 +95,66 @@ userSchema.methods.correctPassword = async function (
 };
 
 const User = mongoose.model('User', userSchema);
+
+export function updateUserAction(
+  userId: ObjectId,
+  tags: string[],
+  board: ObjectId,
+) {
+  try {
+    User.findOne({ _id: userId }).then((doc) => {
+      if (doc) {
+        const replaceTarget = doc.preference_tags.length - 1;
+        tags.forEach((tag) => {
+          let ifExist = 0;
+          const len = doc.preference_tags.length;
+
+          doc.preference_tags.forEach((preference) => {
+            if (preference.name === tag) {
+              preference.number = +preference.number + len;
+              ifExist += 1;
+            }
+          });
+
+          if (ifExist) {
+            doc.preference_tags.forEach((preference) => {
+              preference.number = +preference.number - ifExist;
+            });
+          } else if (len === 0) {
+            doc.preference_tags.push({ name: tag, number: 20 });
+          } else if (len < 6) {
+            doc.preference_tags.push({ name: tag, number: 0 });
+          } else {
+            doc.preference_tags[replaceTarget].name = tag;
+          }
+        });
+
+        doc.read_board.push(board);
+        doc.read_board = doc.read_board.slice(1, 5);
+
+        doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
+        doc.save();
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    throw Error('Something goes wrong updating user action');
+  }
+}
+
+export async function getUserPreference(userId: ObjectId) {
+  const userInfo = User.findOne(
+    { _id: userId },
+    {
+      _id: 1,
+      preference_tags: 1,
+      recommend_mode: 1,
+      read_board: 1,
+      read_posts: 1,
+    },
+  );
+
+  return userInfo;
+}
 
 export default User;

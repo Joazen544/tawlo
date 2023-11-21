@@ -1,53 +1,6 @@
 import { Request, Response } from 'express';
-import { ObjectId } from 'mongodb';
 import User, { UserDocument } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
-
-export function updateUserAction(
-  userId: ObjectId,
-  tags: string[],
-  board: ObjectId,
-) {
-  try {
-    User.findOne({ _id: userId }).then((doc) => {
-      if (doc) {
-        const replaceTarget = doc.preference_tags.length - 1;
-        tags.forEach((tag) => {
-          let ifExist = 0;
-          const len = doc.preference_tags.length;
-
-          doc.preference_tags.forEach((preference) => {
-            if (preference.name === tag) {
-              preference.number = +preference.number + len;
-              ifExist += 1;
-            }
-          });
-
-          if (ifExist) {
-            doc.preference_tags.forEach((preference) => {
-              preference.number = +preference.number - ifExist;
-            });
-          } else if (len === 0) {
-            doc.preference_tags.push({ name: tag, number: 20 });
-          } else if (len < 6) {
-            doc.preference_tags.push({ name: tag, number: 0 });
-          } else {
-            doc.preference_tags[replaceTarget].name = tag;
-          }
-        });
-
-        doc.read_board.push(board);
-        doc.read_board = doc.read_board.slice(1, 5);
-
-        doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
-        doc.save();
-      }
-    });
-  } catch (err) {
-    console.log(err);
-    throw Error('Something goes wrong updating user action');
-  }
-}
 
 export async function signUp(req: Request, res: Response) {
   try {

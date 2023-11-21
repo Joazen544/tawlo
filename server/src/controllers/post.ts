@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
-import Post from '../models/post';
-import { updateUserAction } from './user';
+import Post, { getAutoRecommendedPosts } from '../models/post';
+import { updateUserAction, getUserPreference } from '../models/user';
 
 async function calculateMotherPostHot(
   postId: string,
@@ -1072,40 +1072,6 @@ export async function downvotePost(req: Request, res: Response) {
           throw new Error('cancel downvote fail');
         }
 
-        // const cancelUpvoteFromMotherResult = await Post.updateOne(
-        //   { _id: motherPost },
-        //   [
-        //     {
-        //       $set: {
-        //         sum_upvotes: { $add: ['$sum_upvotes', -1] },
-        //       },
-        //     },
-        //     {
-        //       $set: {
-        //         hot: {
-        //           $divide: [
-        //             {
-        //               $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-        //             },
-        //             {
-        //               $add: [
-        //                 1,
-        //                 {
-        //                   $dateDiff: {
-        //                     startDate: '$publish_date',
-        //                     endDate: '$$NOW',
-        //                     unit: 'day',
-        //                   },
-        //                 },
-        //               ],
-        //             },
-        //           ],
-        //         },
-        //       },
-        //     },
-        //   ],
-        // );
-
         const cancelUpvoteFromMotherResult = await calculateMotherPostHot(
           motherPost,
           'upvote',
@@ -1132,8 +1098,46 @@ export async function downvotePost(req: Request, res: Response) {
   }
 }
 
-// export async function getPosts(req: Request, res: Response){
+export async function getPosts(req: Request, res: Response) {
+  // take user preference info, recommend mode
+  // take posts from post model using the info
 
-// }
+  try {
+    const { user } = req.body;
+    const userId = new ObjectId(user);
+    // const {tags,}
+    const userInfo = await getUserPreference(userId);
+
+    let preferenceTags;
+    let recommendMode;
+    if (userInfo) {
+      preferenceTags = userInfo.preference_tags.map(
+        (tag) => tag.name,
+      ) as string[];
+      recommendMode = userInfo.recommend_mode;
+    } else {
+      throw Error('No such user, something wrong getting posts');
+    }
+
+    console.log(JSON.stringify(preferenceTags, null, 4));
+    console.log(recommendMode);
+
+    // if(recommendMode === 'auto')
+    const posts = await getAutoRecommendedPosts(
+      preferenceTags,
+      userInfo.read_board,
+      userInfo.read_posts,
+    );
+
+    res.json(posts);
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'Get posts fail' });
+  }
+}
 
 // async function
