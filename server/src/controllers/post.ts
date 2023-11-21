@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import Post from '../models/post';
+import { updateUserAction } from './user';
 
 async function calculateMotherPostHot(
   postId: string,
@@ -151,6 +152,19 @@ export async function commentPost(req: Request, res: Response) {
 
     // need to check post category in future
     const publishDate = new Date();
+
+    const target = await Post.findOne(
+      {
+        _id: postId,
+      },
+      { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 },
+    );
+
+    if (target === null) {
+      throw Error('Comment post does not exist');
+    }
+
+    updateUserAction(userId, target.tags, target.board);
 
     console.log(content);
     console.log(postId);
@@ -372,7 +386,7 @@ export async function likePost(req: Request, res: Response) {
       {
         _id: postId,
       },
-      { _id: 1, liked: 1, category: 1, mother_post: 1 },
+      { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 },
     );
 
     console.log(JSON.stringify(likeTarget, null, 4));
@@ -424,6 +438,8 @@ export async function likePost(req: Request, res: Response) {
     } else {
       throw Error('req body must contain like, and it should be boolean');
     }
+
+    updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
     console.log(adjustUserArray);
 
@@ -532,7 +548,15 @@ export async function upvotePost(req: Request, res: Response) {
       {
         _id: postId,
       },
-      { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1 },
+      {
+        _id: 1,
+        upvote: 1,
+        category: 1,
+        mother_post: 1,
+        downvote: 1,
+        tags: 1,
+        board: 1,
+      },
     );
 
     console.log(JSON.stringify(upvoteTarget, null, 4));
@@ -587,6 +611,8 @@ export async function upvotePost(req: Request, res: Response) {
     } else {
       throw Error('req body must contain key upvote, and it should be boolean');
     }
+
+    updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
 
     let result;
     console.log('upvoting post');
@@ -878,6 +904,8 @@ export async function downvotePost(req: Request, res: Response) {
       );
     }
 
+    updateUserAction(userId, downvoteTarget.tags, downvoteTarget.board);
+
     let result;
     console.log('downvoting post');
 
@@ -1103,3 +1131,9 @@ export async function downvotePost(req: Request, res: Response) {
     res.status(500).json({ error: 'Down vote a post fail' });
   }
 }
+
+// export async function getPosts(req: Request, res: Response){
+
+// }
+
+// async function

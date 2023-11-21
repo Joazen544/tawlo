@@ -8,12 +8,12 @@ export interface UserDocument extends Document {
   name: string;
   email: string;
   password: string;
-  password_confirm: string;
+  // password_confirm: string;
   read_posts: ObjectId[];
   friends: ObjectId[];
   follow: ObjectId[];
   block: ObjectId[];
-  read_board: string[];
+  read_board: ObjectId[];
   preference_tags: { name: string; number: Number }[];
   chats: ObjectId[];
   upvote: number;
@@ -41,17 +41,17 @@ const userSchema = new mongoose.Schema<UserDocument>({
     minlength: [8, 'Password must contain at least 8 characters'],
     select: false,
   },
-  password_confirm: {
-    type: String,
-    required: [true, 'Please confirm your password'],
-    validate: {
-      // This only works on SAVE!!!
-      validator(this: UserDocument, el: String) {
-        return el === this.password;
-      },
-      message: 'Password are not the same',
-    },
-  },
+  // password_confirm: {
+  //   type: String,
+  //   required: [true, 'Please confirm your password'],
+  //   validate: {
+  //     // This only works on SAVE!!!
+  //     validator(this: UserDocument, el: String) {
+  //       return el === this.password;
+  //     },
+  //     message: 'Password are not the same',
+  //   },
+  // },
   // Posts read 300 recorded
   read_posts: [ObjectId],
   friends: [ObjectId],
@@ -59,15 +59,18 @@ const userSchema = new mongoose.Schema<UserDocument>({
   block: [ObjectId],
   // only record 5 board
   // or native board
-  read_board: [String],
-  preference_tags: [
-    // record 5 tags
-    // index 0 is the favorite, index 4 is soso
-    {
-      name: String,
-      number: Number,
-    },
-  ],
+  read_board: [ObjectId],
+  preference_tags: {
+    type: [
+      // record 5 tags
+      // index 0 is the favorite, index 4 is soso
+      {
+        name: String,
+        number: Number,
+      },
+    ],
+    default: [],
+  },
   // chat rooms
   chats: [ObjectId],
   upvote: Number,
@@ -82,7 +85,7 @@ userSchema.pre('save', async function (next) {
 
   // Hash the password and delete the confirm
   this.password = await bcrypt.hash(this.password, 12);
-  this.password_confirm = 'confirm';
+  // this.password_confirm = this.password;
   return next();
 });
 

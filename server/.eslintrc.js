@@ -1,3 +1,5 @@
+const { off } = require('process');
+
 module.exports = {
   env: {
     es2021: true,
@@ -26,6 +28,7 @@ module.exports = {
     'object-curly-newline': 'off',
     'func-names': 'off',
     'operator-linebreak': 'off',
+    'no-param-reassign': 'off',
   },
   //excluded: ['.eslintrc.js'],
 };
