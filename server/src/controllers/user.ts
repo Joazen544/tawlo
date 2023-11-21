@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import User, { UserDocument } from '../models/user';
+import { ObjectId } from 'mongodb';
+import User, { UserDocument, updateUserReadPosts } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
 export async function signUp(req: Request, res: Response) {
@@ -73,6 +74,28 @@ export async function signIn(req: Request, res: Response) {
           },
         },
       });
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ errors: err.message });
+      return;
+    }
+    res.status(500).json({ errors: 'sign in failed' });
+  }
+}
+
+export async function updateUserRead(req: Request, res: Response) {
+  try {
+    const { user, posts } = req.body;
+
+    const postsArray = posts.split(',') as string[];
+    const postsId = postsArray.map((post) => new ObjectId(post));
+
+    const userId = new ObjectId(user);
+
+    updateUserReadPosts(userId, postsId);
+
+    res.json({ message: 'Update success' });
   } catch (err) {
     console.log(err);
     if (err instanceof Error) {

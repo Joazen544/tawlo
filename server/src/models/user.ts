@@ -143,12 +143,17 @@ export function updateUserAction(
   }
 }
 
-export function updateUserReadPosts(userId: ObjectId, readPosts: ObjectId[]) {
-  User.updateOne({ _id: userId }, [
+export async function updateUserReadPosts(
+  userId: ObjectId,
+  readPosts: ObjectId[],
+) {
+  console.log('~~~');
+
+  await User.updateOne({ _id: userId }, [
     {
       $set: {
         read_posts: {
-          $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -20],
+          $concatArrays: ['$read_posts', readPosts],
         },
       },
     },

@@ -15,7 +15,7 @@ export function signJWT(userId: string) {
   });
 }
 
-export function verifyJWT(token: string) {
+export function verify(token: string) {
   return new Promise((resolve, reject) => {
     jwt.verify(token, JWT_KEY, (err, data) => {
       if (err) {

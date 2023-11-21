@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { verifyJWT } from '../utils/JWT';
+import { verify } from '../utils/JWT';
 
 interface JwtData {
   userId: string;
@@ -22,7 +22,7 @@ export default async function (
   if (token == null) {
     next(new Error('No token!!'));
   } else {
-    verifyJWT(token)
+    verify(token)
       .then((data) => {
         const userInfo = data as JwtData;
 
