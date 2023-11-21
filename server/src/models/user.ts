@@ -133,6 +133,7 @@ export function updateUserAction(
         doc.read_board = doc.read_board.slice(1, 5);
 
         doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
+
         doc.save();
       }
     });
@@ -140,6 +141,18 @@ export function updateUserAction(
     console.log(err);
     throw Error('Something goes wrong updating user action');
   }
+}
+
+export function updateUserReadPosts(userId: ObjectId, readPosts: ObjectId[]) {
+  User.updateOne({ _id: userId }, [
+    {
+      $set: {
+        read_posts: {
+          $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -20],
+        },
+      },
+    },
+  ]);
 }
 
 export async function getUserPreference(userId: ObjectId) {
