@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import Post, { getAutoRecommendedPosts } from '../models/post';
 import { updateUserAction, getUserPreference } from '../models/user';
+import { getIO } from './socket';
+
+const io = getIO();
+
+if (io) {
+  io.on('connection', () => {
+    console.log('a user connect!!!!');
+  });
+}
 
 async function calculateMotherPostHot(
   postId: string,

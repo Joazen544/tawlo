@@ -8,6 +8,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.2.0",
     "mongoose": "^8.0.1",
+    "socket.io": "^4.7.2",
     "validator": "^13.11.0"
   },
   "name": "practice_typescript",

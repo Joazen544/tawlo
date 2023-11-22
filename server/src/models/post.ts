@@ -256,6 +256,8 @@ export async function getAutoRecommendedPosts(
       $project: {
         _id: 1,
         category: 1,
+        board: 1,
+        hot: 1,
         score: 1,
         time: 1,
         title: 1,
