@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
 
-const POST_PER_PAGE = 20;
+const MOTHER_POST_PER_PAGE = 20;
+const REPLY_POST_PER_PAGE = 10;
 
 interface PostDocument {
   is_delete: boolean;
@@ -278,18 +279,43 @@ export async function getBoardPostsFromDB(boardId: string, paging: number) {
     category: 'mother',
     board,
   })
-    .skip(paging * POST_PER_PAGE)
-    .limit(POST_PER_PAGE + 1);
+    .sort({ update_date: -1 })
+    .skip(paging * MOTHER_POST_PER_PAGE)
+    .limit(MOTHER_POST_PER_PAGE + 1);
+
   let nextPage;
-  if (postsOnBoard.length > POST_PER_PAGE) {
+  if (postsOnBoard.length > MOTHER_POST_PER_PAGE) {
     nextPage = true;
   } else {
     nextPage = false;
   }
 
-  const returnPosts = postsOnBoard.slice(0, POST_PER_PAGE);
+  const posts = postsOnBoard.slice(0, MOTHER_POST_PER_PAGE);
 
-  return { posts: returnPosts, nextPage };
+  return { posts, nextPage };
+}
+
+export async function getMotherAndReplyPostsFromDB(
+  motherPostId: ObjectId,
+  paging: number,
+) {
+  const replyPosts = await Post.find({
+    $or: [{ _id: motherPostId }, { mother_post: motherPostId }],
+  })
+    .sort({ _id: 1 })
+    .skip(paging * REPLY_POST_PER_PAGE)
+    .limit(REPLY_POST_PER_PAGE + 1);
+
+  let nextPage;
+  if (replyPosts.length > REPLY_POST_PER_PAGE) {
+    nextPage = true;
+  } else {
+    nextPage = false;
+  }
+
+  const posts = replyPosts.slice(0, REPLY_POST_PER_PAGE);
+
+  return { posts, nextPage };
 }
 
 export default Post;

@@ -8,6 +8,7 @@ import {
   downvotePost,
   getRecommendPosts,
   getPostsOnBoard,
+  getMotherAndReplies,
 } from '../controllers/post';
 import verifyJWT from '../middleware/verifyJWT';
 
@@ -17,7 +18,7 @@ router.route('/post').post(verifyJWT, createPost);
 router.route('/posts/recommendation').get(verifyJWT, getRecommendPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(getPostsOnBoard);
-router.route('/board/:boardId/post/detail').get(verifyJWT);
+router.route('/board/post/detail').get(getMotherAndReplies);
 router.route('/post/:postId/comment').post(verifyJWT, commentPost);
 router.route('/post/:postId/comment/like').post(verifyJWT, likeComment);
 router.route('/post/:postId/like').post(verifyJWT, likePost);

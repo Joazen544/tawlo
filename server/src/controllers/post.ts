@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import Post, {
   getAutoRecommendedPosts,
   getBoardPostsFromDB,
+  getMotherAndReplyPostsFromDB,
 } from '../models/post';
 import { updateUserAction, getUserPreference } from '../models/user';
 import { getIO } from './socket';
@@ -1188,6 +1189,38 @@ export async function getPostsOnBoard(
     console.log(result);
 
     res.json({ posts: result.posts, nextPage: result.nextPage });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMotherAndReplies(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const motherPost = req.query.id;
+    if (!motherPost || typeof motherPost !== 'string') {
+      throw new ValidationError('There should be mother post id');
+    }
+
+    let paging;
+    if (req.query.paging && !Number.isNaN(req.query.paging)) {
+      paging = +req.query.paging as number;
+    } else if (Number.isNaN(req.query.paging)) {
+      throw new ValidationError('paging must be type number');
+    } else {
+      paging = 0;
+    }
+
+    const motherPostId = new ObjectId(motherPost);
+
+    const posts = await getMotherAndReplyPostsFromDB(motherPostId, paging);
+
+    res.json({
+      posts,
+    });
   } catch (err) {
     next(err);
   }
