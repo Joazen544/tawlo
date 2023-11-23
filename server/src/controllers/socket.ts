@@ -12,6 +12,13 @@ interface SocketConnected {
   };
 }
 
+interface MessageData {
+  from: string;
+  to: string;
+  group: string;
+  content: string;
+}
+
 const usersConnected: UserConnected = {};
 const socketsConnected: SocketConnected = {};
 let usersId: string[] = [];
@@ -32,49 +39,61 @@ export function initSocket(server: http.Server) {
       } else {
         usersConnected[data.userId] = [socket.id];
         usersId.push(data.userId);
+        socket.broadcast.emit('new-user', data.userId);
       }
 
       socketsConnected[socket.id] = { userId: data.userId, name: data.name };
-      socket.broadcast.emit(
-        'new-user',
-        `New user ${data.name} joined. Now connecting users: ${usersId}`,
-      );
+      socket.join(data.userId);
+      // give the new user the whole online list
+      socket.emit('all-users-online', usersId);
       console.log(`User connected now: ${usersId}`);
     });
 
-    socket.on('chat message', (msg) => {
-      socket.broadcast.emit('chat message', {
-        message: msg,
+    socket.on('chat message', (messageData: MessageData) => {
+      console.log('receiving message!!');
+      console.log(messageData.to);
+
+      socket.broadcast.to(messageData.to).emit('message', {
+        message: messageData.content,
+        from: messageData.from,
         name: socketsConnected[socket.id].name,
+        group: messageData.group,
+      });
+
+      socket.broadcast.to(messageData.from).emit('myself', {
+        message: messageData.content,
+        from: messageData.from,
+        name: socketsConnected[socket.id].name,
+        group: messageData.group,
       });
     });
 
     socket.on('disconnect', () => {
-      let userSocketIdsArray;
-      if (socketsConnected[socket.id]) {
-        userSocketIdsArray = usersConnected[socketsConnected[socket.id].userId];
-      }
-
-      if (userSocketIdsArray && userSocketIdsArray.length > 1) {
+      if (
+        usersConnected[socketsConnected[socket.id].userId] &&
+        usersConnected[socketsConnected[socket.id].userId].length > 1
+      ) {
         // more than 1 socket id recorded in this user
-        userSocketIdsArray = userSocketIdsArray.filter(
-          (socketId) => socketId !== socket.id,
-        );
+        console.log('peeee');
+
+        usersConnected[socketsConnected[socket.id].userId] = usersConnected[
+          socketsConnected[socket.id].userId
+        ].filter((socketId) => socketId !== socket.id);
       } else {
         delete usersConnected[socketsConnected[socket.id].userId];
+        usersId = usersId.filter(
+          (id) => id !== socketsConnected[socket.id].userId,
+        );
+        socket.broadcast.emit(
+          'user-disconnected',
+          socketsConnected[socket.id].userId,
+        );
+        console.log(
+          `someone disconnected, the users remain now: ${usersId || null}`,
+        );
       }
-      usersId = usersId.filter(
-        (id) => id !== socketsConnected[socket.id].userId,
-      );
-      console.log(socketsConnected[socket.id].userId);
 
-      socket.broadcast.emit(
-        'user-disconnected',
-        `someone disconnected, the users remain now: ${usersId || null}`,
-      );
-      console.log(
-        `someone disconnected, the users remain now: ${usersId || null}`,
-      );
+      // tell every other user who disconnected
 
       delete socketsConnected[socket.id];
     });
