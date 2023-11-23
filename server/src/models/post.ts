@@ -155,8 +155,6 @@ export async function getAutoRecommendedPosts(
     },
   });
 
-  console.log(JSON.stringify(shouldArray, null, 4));
-
   const posts = await Post.aggregate([
     {
       $search: {
@@ -268,7 +266,6 @@ export async function getAutoRecommendedPosts(
     },
   ]);
 
-  console.log(JSON.stringify(posts, null, 4));
   return posts;
 }
 

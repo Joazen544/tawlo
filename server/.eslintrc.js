@@ -29,6 +29,7 @@ module.exports = {
     'func-names': 'off',
     'operator-linebreak': 'off',
     'no-param-reassign': 'off',
+    'arrow-body-style': 'off',
   },
   //excluded: ['.eslintrc.js'],
 };

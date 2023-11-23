@@ -4,14 +4,6 @@ import Post, { getAutoRecommendedPosts } from '../models/post';
 import { updateUserAction, getUserPreference } from '../models/user';
 import { getIO } from './socket';
 
-const io = getIO();
-
-if (io) {
-  io.on('connection', () => {
-    console.log('a user connect!!!!');
-  });
-}
-
 async function calculateMotherPostHot(
   postId: string,
   increaseField: string,
@@ -1112,6 +1104,17 @@ export async function getPosts(req: Request, res: Response) {
   // take posts from post model using the info
 
   try {
+    const io = getIO();
+    if (io) {
+      io.sockets.on('chat message', (msg) => {
+        console.log(`message: ${msg}`);
+      });
+
+      io.sockets.emit('chat message', {
+        message: 'weeee from controller',
+        name: 'hello from server',
+      });
+    }
     const { user } = req.body;
     const userId = new ObjectId(user);
     // const {tags,}
@@ -1128,7 +1131,7 @@ export async function getPosts(req: Request, res: Response) {
       throw Error('No such user, something wrong getting posts');
     }
 
-    console.log(JSON.stringify(preferenceTags, null, 4));
+    // console.log(JSON.stringify(preferenceTags, null, 4));
     console.log(recommendMode);
 
     // if(recommendMode === 'auto')
