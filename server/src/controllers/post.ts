@@ -1,8 +1,12 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
-import Post, { getAutoRecommendedPosts } from '../models/post';
+import Post, {
+  getAutoRecommendedPosts,
+  getBoardPostsFromDB,
+} from '../models/post';
 import { updateUserAction, getUserPreference } from '../models/user';
 import { getIO } from './socket';
+import { ValidationError } from '../utils/errorHandler';
 
 async function calculateMotherPostHot(
   postId: string,
@@ -1152,4 +1156,27 @@ export async function getRecommendPosts(req: Request, res: Response) {
   }
 }
 
-// async function
+export async function getPostsOnBoard(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { boardId } = req.params;
+    let paging;
+    if (req.query.paging && !Number.isNaN(req.query.paging)) {
+      paging = +req.query.paging as number;
+    } else if (Number.isNaN(req.query.paging)) {
+      throw new ValidationError('paging must be type number');
+    } else {
+      paging = 0;
+    }
+
+    const posts = await getBoardPostsFromDB(boardId, paging);
+    console.log(posts);
+
+    res.json(posts);
+  } catch (err) {
+    next(err);
+  }
+}

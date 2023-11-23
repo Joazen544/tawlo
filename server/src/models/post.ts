@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
 
+const POST_PER_PAGE = 20;
+
 interface PostDocument {
   is_delete: boolean;
   category: string;
@@ -267,6 +269,19 @@ export async function getAutoRecommendedPosts(
   ]);
 
   return posts;
+}
+
+export async function getBoardPostsFromDB(boardId: string, paging: number) {
+  const board = new ObjectId(boardId);
+
+  const postsOnBoard = await Post.find({
+    category: 'mother',
+    board,
+  })
+    .skip(paging * POST_PER_PAGE)
+    .limit(POST_PER_PAGE);
+
+  return postsOnBoard;
 }
 
 export default Post;
