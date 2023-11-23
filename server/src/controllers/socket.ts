@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import http from 'http';
+import { createMessage } from './message';
 
 interface UserConnected {
   [userId: string]: string[];
@@ -12,7 +13,7 @@ interface SocketConnected {
   };
 }
 
-interface MessageData {
+export interface MessageData {
   from: string;
   to: string;
   group: string;
@@ -49,23 +50,35 @@ export function initSocket(server: http.Server) {
       console.log(`User connected now: ${usersId}`);
     });
 
-    socket.on('chat message', (messageData: MessageData) => {
+    socket.on('chat message', async (messageData: MessageData) => {
       console.log('receiving message!!');
       console.log(messageData.to);
 
-      socket.broadcast.to(messageData.to).emit('message', {
-        message: messageData.content,
-        from: messageData.from,
-        name: socketsConnected[socket.id].name,
-        group: messageData.group,
-      });
+      try {
+        socket.broadcast.to(messageData.from).emit('myself', {
+          message: messageData.content,
+          from: messageData.from,
+          name: socketsConnected[socket.id].name,
+          group: messageData.group,
+        });
 
-      socket.broadcast.to(messageData.from).emit('myself', {
-        message: messageData.content,
-        from: messageData.from,
-        name: socketsConnected[socket.id].name,
-        group: messageData.group,
-      });
+        await createMessage(
+          messageData.group,
+          messageData.from,
+          messageData.content,
+        );
+
+        socket.broadcast.to(messageData.to).emit('message', {
+          message: messageData.content,
+          from: messageData.from,
+          name: socketsConnected[socket.id].name,
+          group: messageData.group,
+        });
+      } catch (err) {
+        console.log('something wrong sending message');
+      }
+
+      // const result = await
     });
 
     socket.on('disconnect', () => {

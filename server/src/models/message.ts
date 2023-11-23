@@ -6,13 +6,14 @@ const MESSAGE_PER_PAGE = 20;
 interface MessageDocument {
   group: ObjectId;
   from: ObjectId;
-  to: ObjectId;
+  content: string;
   time: Date;
   is_removed: boolean;
   liked: {
     number: number;
     users: ObjectId[];
   };
+  read: ObjectId[];
 }
 
 const messageSchema = new mongoose.Schema<MessageDocument>({
@@ -24,6 +25,10 @@ const messageSchema = new mongoose.Schema<MessageDocument>({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
+  content: {
+    type: String,
+    required: true,
+  },
   time: {
     type: Date,
     required: true,
@@ -33,9 +38,10 @@ const messageSchema = new mongoose.Schema<MessageDocument>({
     default: false,
   },
   liked: {
-    number: Number,
-    users: [ObjectId],
+    number: { type: Number, default: 0 },
+    users: { type: [ObjectId], default: [] },
   },
+  read: [ObjectId],
 });
 
 const Message = mongoose.model('Message', messageSchema);
@@ -53,6 +59,35 @@ export async function getEarlierMessages(
     MESSAGE_PER_PAGE,
   );
   return messages;
+}
+
+export async function createMessageToDB(
+  group: ObjectId,
+  from: ObjectId,
+  content: string,
+  time: Date,
+) {
+  const result = await Message.create({
+    group,
+    from,
+    time,
+    content,
+  });
+
+  console.log('create message to DB result');
+  console.log(result);
+
+  return result;
+}
+
+export async function makeAllMessagesRead(
+  userId: ObjectId,
+  messageGroupId: ObjectId,
+) {
+  await Message.updateMany(
+    { group: messageGroupId, read: { $ne: userId } },
+    { $push: { read: userId } },
+  );
 }
 
 export default Message;

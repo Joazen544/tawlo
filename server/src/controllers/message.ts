@@ -2,9 +2,15 @@ import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import MessageGroup, {
   getNativeMessageGroupsFromDB,
+  updateLatestMessageToGroup,
 } from '../models/messageGroup';
 import { ValidationError } from '../utils/errorHandler';
-import { getEarlierMessages, getLatestMessages } from '../models/message';
+import {
+  getEarlierMessages,
+  getLatestMessages,
+  createMessageToDB,
+  makeAllMessagesRead,
+} from '../models/message';
 
 async function getMessagesFromDB(
   lastMessage: ObjectId | null,
@@ -20,7 +26,7 @@ async function getMessagesFromDB(
   return messages;
 }
 
-export async function getMessageGroup(
+export async function clickChatRoom(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -30,55 +36,80 @@ export async function getMessageGroup(
   // else create one for them
   try {
     const { user } = req.body;
-    const id = req.query.id as string;
+    const target = req.query.target as string;
+    const group = req.query.group as string;
 
     const userId = new ObjectId(user);
 
     let targetId;
-    if (id) {
-      targetId = new ObjectId(id);
-    } else {
-      next(new ValidationError('Target user id should be included in query'));
-    }
+    let messageGroup;
+    if (target) {
+      targetId = new ObjectId(target);
 
-    if (userId === targetId) {
-      next(new ValidationError('Target id can not be same with user'));
-    }
+      if (user === target) {
+        next(new ValidationError('Target id can not be same with user'));
+      }
 
-    const messageGroup = await MessageGroup.findOne({
-      users: { $all: [userId, targetId] },
-    });
+      messageGroup = await MessageGroup.findOne({
+        users: { $all: [userId, targetId] },
+      });
 
-    console.log(messageGroup);
-
-    if (messageGroup !== null) {
       console.log(messageGroup);
 
-      const messages = await getMessagesFromDB(null, messageGroup._id);
-      res.json({
-        groupId: messageGroup._id,
-        users: messageGroup.users,
-        category: messageGroup.category,
-        messages,
+      if (messageGroup === null) {
+        const messageGroupCreated = await MessageGroup.create({
+          users: [userId, targetId],
+          category: 'native',
+          start_time: new Date(),
+          update_time: new Date(),
+          last_message: 'No message yet',
+        });
+
+        console.log(messageGroupCreated);
+
+        res.json({
+          groupId: messageGroupCreated._id,
+          users: messageGroupCreated.users,
+          category: messageGroupCreated.category,
+          messages: [],
+        });
+      }
+    } else if (group) {
+      const groupId = new ObjectId(group);
+
+      messageGroup = await MessageGroup.findOne({
+        _id: groupId,
       });
-      return;
+    } else {
+      throw new ValidationError(
+        'There must be target user id or chat room id in the query',
+      );
+    }
+    console.log(messageGroup);
+
+    if (messageGroup === null) {
+      throw new ValidationError('This chat room does not exist');
     }
 
-    const messageGroupCreated = await MessageGroup.create({
-      users: [userId, targetId],
-      category: 'native',
-      start_time: new Date(),
-      update_time: new Date(),
-      last_message: 'No message yet',
+    try {
+      await makeAllMessagesRead(userId, messageGroup._id);
+    } catch (err) {
+      console.log('something is wrong making messages read');
+    }
+
+    const messages = await getMessagesFromDB(null, messageGroup._id);
+    const messagesNotRemoved = messages.map((message) => {
+      if (message.is_removed === false) {
+        return message;
+      }
+      message.content = 'This message was removed';
+      return message;
     });
-
-    console.log(messageGroupCreated);
-
     res.json({
-      groupId: messageGroupCreated._id,
-      users: messageGroupCreated.users,
-      category: messageGroupCreated.category,
-      messages: [],
+      groupId: messageGroup._id,
+      users: messageGroup.users,
+      category: messageGroup.category,
+      messages: messagesNotRemoved,
     });
   } catch (err) {
     next(err);
@@ -123,20 +154,24 @@ export async function getNativeMessageGroups(
   }
 }
 
-export async function getMessage(
+// to load more messages
+export async function getMoreMessages(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
     const group = req.query.group as string;
+    if (!group) {
+      throw new ValidationError('Last message read id should be in query');
+    }
     const lastMessage = req.query.lastMessage as string;
     const groupId = new ObjectId(group);
     let lastMessageId;
     if (lastMessage) {
       lastMessageId = new ObjectId(lastMessage);
     } else {
-      lastMessageId = null;
+      throw new ValidationError('Last message read id should be in query');
     }
 
     const messages = await getMessagesFromDB(lastMessageId, groupId);
@@ -144,5 +179,23 @@ export async function getMessage(
     res.json({ messages });
   } catch (err) {
     next(err);
+  }
+}
+
+export async function createMessage(
+  group: string,
+  from: string,
+  content: string,
+) {
+  try {
+    const time = new Date();
+    const groupId = new ObjectId(group);
+    const fromId = new ObjectId(from);
+
+    await createMessageToDB(groupId, fromId, content, time);
+    await updateLatestMessageToGroup(groupId, fromId, content, time);
+  } catch (err) {
+    console.log('something goes wrong creating message to DB');
+    console.log(err);
   }
 }

@@ -1099,7 +1099,7 @@ export async function downvotePost(req: Request, res: Response) {
   }
 }
 
-export async function getPosts(req: Request, res: Response) {
+export async function getRecommendPosts(req: Request, res: Response) {
   // take user preference info, recommend mode
   // take posts from post model using the info
 

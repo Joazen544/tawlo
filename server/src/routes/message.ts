@@ -1,15 +1,15 @@
 import { Router } from 'express';
 import {
-  getMessage,
-  getMessageGroup,
+  getMoreMessages,
+  clickChatRoom,
   getNativeMessageGroups,
 } from '../controllers/message';
 import verifyJWT from '../middleware/verifyJWT';
 
 const router = Router();
 
-router.route('/messageGroup').get(verifyJWT, getMessageGroup);
+router.route('/messageGroup').get(verifyJWT, clickChatRoom);
 router.route('/messageGroups').get(verifyJWT, getNativeMessageGroups);
-router.route('/messages').get(verifyJWT, getMessage);
+router.route('/messages').get(verifyJWT, getMoreMessages);
 
 export default router;

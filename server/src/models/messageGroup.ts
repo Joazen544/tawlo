@@ -60,4 +60,20 @@ export async function getNativeMessageGroupsFromDB(
   return groups;
 }
 
+export async function updateLatestMessageToGroup(
+  group: ObjectId,
+  lastUser: ObjectId,
+  lastMessage: string,
+  updateTime: Date,
+) {
+  await MessageGroup.updateOne(
+    { _id: group },
+    {
+      last_sender: lastUser,
+      update_time: updateTime,
+      last_message: lastMessage,
+    },
+  );
+}
+
 export default MessageGroup;

@@ -1,7 +1,12 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
 
-const boardSchema = new mongoose.Schema({
+interface BoardDocument {
+  name: string;
+  admin: ObjectId;
+}
+
+const boardSchema = new mongoose.Schema<BoardDocument>({
   name: {
     type: String,
     unique: true,
@@ -10,4 +15,11 @@ const boardSchema = new mongoose.Schema({
   admin: ObjectId,
 });
 
-export default mongoose.model('Board', boardSchema);
+const Board = mongoose.model('Board', boardSchema);
+
+export async function getAllBoardsFromDB() {
+  const allBoards = await Board.find();
+  return allBoards;
+}
+
+export default Board;
