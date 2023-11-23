@@ -121,6 +121,18 @@ export async function createPost(req: Request, res: Response) {
         floor: 1,
       });
     } else if (category === 'reply') {
+      const updateMotherResult = Post.updateOne(
+        { _id: motherPost },
+        {
+          $set: { update_date: publishDate, last_reply: userId },
+        },
+      );
+
+      if ((await updateMotherResult).acknowledged === false) {
+        throw new Error(
+          'mother post deoes not exist or something is wrong updating it',
+        );
+      }
       postData = await Post.create({
         category,
         author: userId,
@@ -1172,10 +1184,10 @@ export async function getPostsOnBoard(
       paging = 0;
     }
 
-    const posts = await getBoardPostsFromDB(boardId, paging);
-    console.log(posts);
+    const result = await getBoardPostsFromDB(boardId, paging);
+    console.log(result);
 
-    res.json(posts);
+    res.json({ posts: result.posts, nextPage: result.nextPage });
   } catch (err) {
     next(err);
   }

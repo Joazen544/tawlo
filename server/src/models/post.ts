@@ -279,9 +279,17 @@ export async function getBoardPostsFromDB(boardId: string, paging: number) {
     board,
   })
     .skip(paging * POST_PER_PAGE)
-    .limit(POST_PER_PAGE);
+    .limit(POST_PER_PAGE + 1);
+  let nextPage;
+  if (postsOnBoard.length > POST_PER_PAGE) {
+    nextPage = true;
+  } else {
+    nextPage = false;
+  }
 
-  return postsOnBoard;
+  const returnPosts = postsOnBoard.slice(0, POST_PER_PAGE);
+
+  return { posts: returnPosts, nextPage };
 }
 
 export default Post;
