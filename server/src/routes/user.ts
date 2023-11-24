@@ -7,5 +7,6 @@ const router = Router();
 router.route('/user/signup').post(signUp);
 router.route('/user/signin').post(signIn);
 router.route('/user/read').post(verifyJWT, updateUserRead);
+// router.route('/user/friendRequest').post(verifyJWT, sendFriendRequest);
 
 export default router;
