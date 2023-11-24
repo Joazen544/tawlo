@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import http from 'http';
 import { createMessage } from './message';
+import { verify } from '../utils/JWT';
 
 interface UserConnected {
   [userId: string]: string[];
@@ -30,7 +31,24 @@ export function initSocket(server: http.Server) {
   // this function now expects an endpoint as argument
   io = new Server(server);
 
-  io.on('connection', (socket) => {
+  io.use(async (socket, next) => {
+    if (socket.handshake.auth && socket.handshake.auth.token) {
+      const token = socket.handshake.auth.token.split(' ')[1];
+
+      verify(token)
+        .then(() => {
+          console.log('token sucess');
+          next();
+        })
+        .catch((err) => {
+          console.log('token fail');
+
+          next(err);
+        });
+    } else {
+      next(new Error('Authentication error'));
+    }
+  }).on('connection', (socket) => {
     console.log('a user connected');
     if (usersId) socket.emit('now-users', `These users are online: ${usersId}`);
 
@@ -82,33 +100,37 @@ export function initSocket(server: http.Server) {
     });
 
     socket.on('disconnect', () => {
-      if (
-        usersConnected[socketsConnected[socket.id].userId] &&
-        usersConnected[socketsConnected[socket.id].userId].length > 1
-      ) {
-        // more than 1 socket id recorded in this user
-        console.log('peeee');
+      try {
+        if (
+          usersConnected[socketsConnected[socket.id].userId] &&
+          usersConnected[socketsConnected[socket.id].userId].length > 1
+        ) {
+          // more than 1 socket id recorded in this user
+          console.log('peeee');
 
-        usersConnected[socketsConnected[socket.id].userId] = usersConnected[
-          socketsConnected[socket.id].userId
-        ].filter((socketId) => socketId !== socket.id);
-      } else {
-        delete usersConnected[socketsConnected[socket.id].userId];
-        usersId = usersId.filter(
-          (id) => id !== socketsConnected[socket.id].userId,
-        );
-        socket.broadcast.emit(
-          'user-disconnected',
-          socketsConnected[socket.id].userId,
-        );
-        console.log(
-          `someone disconnected, the users remain now: ${usersId || null}`,
-        );
+          usersConnected[socketsConnected[socket.id].userId] = usersConnected[
+            socketsConnected[socket.id].userId
+          ].filter((socketId) => socketId !== socket.id);
+        } else {
+          delete usersConnected[socketsConnected[socket.id].userId];
+          usersId = usersId.filter(
+            (id) => id !== socketsConnected[socket.id].userId,
+          );
+          socket.broadcast.emit(
+            'user-disconnected',
+            socketsConnected[socket.id].userId,
+          );
+          console.log(
+            `someone disconnected, the users remain now: ${usersId || null}`,
+          );
+        }
+
+        // tell every other user who disconnected
+
+        delete socketsConnected[socket.id];
+      } catch (err) {
+        console.log(err);
       }
-
-      // tell every other user who disconnected
-
-      delete socketsConnected[socket.id];
     });
   });
 }
