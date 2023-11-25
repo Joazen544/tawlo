@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { signUp, signIn, updateUserRead } from '../controllers/user';
+import {
+  signUp,
+  signIn,
+  updateUserRead,
+  getUserName,
+} from '../controllers/user';
 import verifyJWT from '../middleware/verifyJWT';
 
 const router = Router();
@@ -7,6 +12,6 @@ const router = Router();
 router.route('/user/signup').post(signUp);
 router.route('/user/signin').post(signIn);
 router.route('/user/read').post(verifyJWT, updateUserRead);
-// router.route('/user/friendRequest').post(verifyJWT, sendFriendRequest);
+router.route('/user/name').get(getUserName);
 
 export default router;

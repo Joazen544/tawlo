@@ -15,8 +15,6 @@ interface PostDocument {
   edit: { date: Date; content: string }[];
   board: ObjectId;
   mother_post: ObjectId;
-  floor: number;
-  reply_floor: number;
   tags: string[];
   liked: { number: number; users: ObjectId[] };
   sum_likes: number;
@@ -59,7 +57,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
     type: Date,
     required: true,
   },
-  update_date: Date,
+  update_date: { type: Date, required: true },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -76,8 +74,6 @@ const postSchema = new mongoose.Schema<PostDocument>({
   ],
   board: ObjectId,
   mother_post: ObjectId,
-  floor: Number,
-  reply_floor: Number,
   // 3 tags the most
   tags: {
     type: [String],
@@ -264,7 +260,17 @@ export async function getAutoRecommendedPosts(
         title: 1,
         author: 1,
         publish_date: 1,
+        update_date: 1,
         content: 1,
+        edit: 1,
+        liked: 1,
+        sum_likes: 1,
+        sum_upvotes: 1,
+        sum_comments: 1,
+        last_reply: 1,
+        upvote: 1,
+        downvote: 1,
+        comments: 1,
       },
     },
   ]);

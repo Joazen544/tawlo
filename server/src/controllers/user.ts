@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import User, { UserDocument, updateUserReadPosts } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
@@ -102,5 +102,29 @@ export async function updateUserRead(req: Request, res: Response) {
       return;
     }
     res.status(500).json({ errors: 'sign in failed' });
+  }
+}
+
+export async function getUserName(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    let user;
+    if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
+    const userId = new ObjectId(user);
+    console.log(userId);
+
+    const userInfo = await User.findOne({ _id: user }, { name: 1 });
+
+    console.log(userInfo);
+    if (userInfo && userInfo.name) {
+      res.json({ name: userInfo.name });
+    } else {
+      throw Error('can not find user name');
+    }
+  } catch (err) {
+    next(err);
   }
 }

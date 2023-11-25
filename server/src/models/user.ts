@@ -70,11 +70,11 @@ const userSchema = new mongoose.Schema<UserDocument>({
     enum: ['auto', 'customize', 'time', 'hot'],
   },
   // chat rooms
-  chats: [ObjectId],
-  upvote: Number,
-  downvote: Number,
-  honor_now: String,
-  honors: [String],
+  chats: { type: [ObjectId], default: [] },
+  upvote: { type: Number, default: 0 },
+  downvote: { type: Number, default: 0 },
+  honor_now: { type: String, default: '' },
+  honors: { type: [String], default: [] },
 });
 
 userSchema.pre('save', async function (next) {
