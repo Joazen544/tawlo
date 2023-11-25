@@ -256,6 +256,7 @@ export async function getAutoRecommendedPosts(
         board: 1,
         hot: 1,
         score: 1,
+        tags: 1,
         time: 1,
         title: 1,
         author: 1,

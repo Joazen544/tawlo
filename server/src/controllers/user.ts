@@ -113,12 +113,9 @@ export async function getUserName(
   try {
     let user;
     if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
-    const userId = new ObjectId(user);
-    console.log(userId);
 
     const userInfo = await User.findOne({ _id: user }, { name: 1 });
 
-    console.log(userInfo);
     if (userInfo && userInfo.name) {
       res.json({ name: userInfo.name });
     } else {
