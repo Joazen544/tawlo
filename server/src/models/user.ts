@@ -131,8 +131,10 @@ export function updateUserAction(
           }
         });
 
-        doc.read_board.push(board);
-        doc.read_board = doc.read_board.slice(1, 5);
+        if (board) doc.read_board.push(board);
+        if (doc.read_board.length > 4) {
+          doc.read_board = doc.read_board.slice(1, 5);
+        }
 
         doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
 
