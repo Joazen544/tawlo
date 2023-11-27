@@ -2,7 +2,6 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 
 interface Props {
-  title: string;
   _id: string;
   publishDate: Date;
   updateDate: Date;
@@ -42,7 +41,6 @@ interface Props {
 const Post = ({
   publishDate,
   author,
-  title,
   tags,
   content,
   hot,
@@ -85,9 +83,6 @@ const Post = ({
         style={{ width: '50rem' }}
         className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden"
       >
-        <div id="title" className="p-4 border-b border-gray-200">
-          <span className="text-2xl">{title}</span>
-        </div>
         <div id="authorInfo" className="p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">

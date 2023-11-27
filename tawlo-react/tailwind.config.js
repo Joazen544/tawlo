@@ -4,11 +4,11 @@ export default {
   theme: {
     extend: {},
     backgroundImage: {
-      'search-image': 'url(src/assets/search.png)',
-      'bell-image': 'url(src/assets/bell.png)',
-      'user-image': 'url(src/assets/user.png)',
-      'up-arrow': 'url(src/assets/up-arrow.png)',
-      'down-arrow': 'url(src/assets/down-arrow.png)',
+      'search-image': 'url(/src/assets/search.png)',
+      'bell-image': 'url(/src/assets/bell.png)',
+      'user-image': 'url(/src/assets/user.png)',
+      'up-arrow': 'url(/src/assets/up-arrow.png)',
+      'down-arrow': 'url(/src/assets/down-arrow.png)',
     },
   },
   plugins: [],

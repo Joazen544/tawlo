@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from './components/HeaderElements/Header';
-import Post from './components/PostElements/Post';
-import BoardPost from './components/PostElements/BoardPost';
-import CreateNativePost from './components/CreateNativePost';
+import MotherPost from './components/PostElements/MotherPost';
+import ReplyPost from './components/PostElements/ReplyPost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
@@ -54,57 +54,52 @@ export interface Post {
 
 interface PostArray extends Array<Post> {}
 
-const Home = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [postsRecommend, setPostsRecommend] = useState<PostArray>([]);
+const Discussion = () => {
+  const [searchParams] = useSearchParams({});
+  const id = searchParams.get('id')!;
+  console.log('id: ');
+  console.log(id);
+
   const [postsRender, setPostsRender] = useState<PostArray>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [nowViewPosts] = useState(0);
-  // const [authorsName, setAuthorsName] = useState<string[]>([]);
+  const [paging, setPaging] = useState(0);
+  const [isNextPage, setIsNextPage] = useState(true);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:3000/api/posts/recommendation`, {
-        headers: {
-          Authorization:
-            'Bearer ' +
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTU3NmYxZDY1ODg2Y2QyZTFjMGZhYmUiLCJpYXQiOjE3MDAzNjc2NjEsImV4cCI6MTczNjM2NzY2MX0.NwRllZjIivGtQMXIXmjPq6gRCnzw_OeERGCEB32aPWs',
-        },
-      })
-      .then((res) => {
-        setPostsRecommend(res.data);
+    if (isNextPage) {
+      axios
+        .get(
+          `http://localhost:3000/api/board/post/detail?id=${id}&paging=${paging}`,
+        )
+        .then((res) => {
+          const newArray = postsRender.concat(res.data.posts);
 
-        renderNewPosts(postsRender, res.data);
-      })
-      .catch((err) => console.log(err));
+          setPostsRender([...newArray]);
+          setIsNextPage(res.data.nextPage);
+          console.log(res.data);
+        })
+        .catch((err) => console.log(err));
+    }
     return;
   }, []);
 
-  function renderNewPosts(
-    postsNowRender: PostArray,
-    postsRecommend: PostArray,
-  ) {
-    const nextPosts = [];
-    const postsRemain = postsRecommend.length - postsNowRender.length;
-    let renderTo;
-    if (postsRemain > 6) {
-      renderTo = postsNowRender.length + 6;
-    } else {
-      renderTo = postsNowRender.length + postsRemain;
-    }
-    for (let i = postsNowRender.length; i < renderTo; i++) {
-      nextPosts.push(postsRecommend[i]);
-    }
+  function renderNewPosts() {
+    if (paging > 0) {
+      axios
+        .get(
+          `http://localhost:3000/api/board/post/detail?id=${id}&paging=${
+            paging + 1
+          }`,
+        )
+        .then((res) => {
+          const newArray = postsRender.concat(res.data.posts);
 
-    setPostsRender(postsNowRender.concat(nextPosts));
+          setPostsRender([...newArray]);
+          setIsNextPage(res.data.nextPage);
+          setPaging(paging + 1);
+        })
+        .catch((err) => console.log(err));
+    }
   }
-
-  useEffect(() => {
-    if (postsRecommend.length) {
-      renderNewPosts(postsRender, postsRecommend);
-      return;
-    }
-  }, [nowViewPosts]);
 
   return (
     <div>
@@ -113,26 +108,23 @@ const Home = () => {
         id="posts_container"
         className="w-full bg-slate-300 min-h-screen flex flex-col items-center pt-10"
       >
-        <CreateNativePost
-          onPostCreated={() => console.log(1)}
-        ></CreateNativePost>
         <InfiniteScroll
           dataLength={postsRender.length}
-          next={() => {
-            if (postsRender.length > 0) {
-              return renderNewPosts(postsRender, postsRecommend);
-            }
-          }}
-          hasMore={postsRender.length < postsRecommend.length}
+          next={() => renderNewPosts()}
+          hasMore={isNextPage}
           loader={<p>Loading...</p>}
           endMessage={<p>No more data to load</p>}
         >
           {postsRender.map((post) => {
-            if (post.category === 'native') {
+            console.log('posts render: ');
+
+            console.log(postsRender);
+            if (post.category === 'mother') {
               return (
-                <Post
+                <MotherPost
                   key={post._id}
                   _id={post._id}
+                  title={post.title}
                   tags={post.tags}
                   publishDate={post.publish_date}
                   updateDate={post.update_date}
@@ -148,22 +140,20 @@ const Home = () => {
               );
             } else {
               return (
-                <BoardPost
+                <ReplyPost
                   key={post._id}
                   _id={post._id}
                   tags={post.tags}
-                  board={post.board}
                   publishDate={post.publish_date}
                   updateDate={post.update_date}
                   author={post.author}
                   content={post.content}
                   hot={post.hot}
                   score={Math.round(post.score)}
-                  sumLikes={post.sum_likes}
-                  sumUpvotes={post.sum_upvotes}
-                  sumComments={post.sum_comments}
-                  sumReply={post.sum_reply}
-                  title={post.title}
+                  liked={post.liked}
+                  upvote={post.upvote}
+                  downvote={post.downvote}
+                  comments={post.comments}
                 />
               );
             }
@@ -174,4 +164,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Discussion;

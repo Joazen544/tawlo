@@ -38,7 +38,7 @@ interface Props {
   };
 }
 
-const NativePost = ({
+const Post = ({
   publishDate,
   author,
   tags,
@@ -89,15 +89,15 @@ const NativePost = ({
               {/* Add user avatar or profile image here */}
             </div>
             <div className="ml-3">
-              <div className="text-lg font-medium text-gray-900">
+              <button className="text-lg font-medium text-blue-400">
                 {authorName}
-              </div>
+              </button>
               <div className="text-gray-500">{publishTime.toDateString()}</div>
             </div>
-            <div id="tags" className="ml-10 text-gray-500">
+            <div id="tags" className="ml-10 text-gray-500 flex">
               {tags.map((tag, index) => (
                 <p
-                  className="border-solid border-2 rounded-md p-0.5"
+                  className="border-solid border-2 rounded-md p-0.5 mr-3"
                   key={index}
                 >
                   {tag}
@@ -158,7 +158,10 @@ const NativePost = ({
                 return (
                   <div className="flex justify-between" key={index}>
                     <div className="flex">
-                      <button id="commentName" className="w-20 text-left">
+                      <button
+                        id="commentName"
+                        className="w-20 text-left text-blue-400"
+                      >
                         {name}
                       </button>
                       <p>{comment.content}</p>
@@ -177,4 +180,4 @@ const NativePost = ({
   );
 };
 
-export default NativePost;
+export default Post;
