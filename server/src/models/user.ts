@@ -147,7 +147,6 @@ export function updateUserAction(
     });
   } catch (err) {
     console.log(err);
-    throw Error('Something goes wrong updating user action');
   }
 }
 
