@@ -99,13 +99,6 @@ const Home = () => {
     setPostsRender(postsNowRender.concat(nextPosts));
   }
 
-  useEffect(() => {
-    if (postsRecommend.length) {
-      renderNewPosts(postsRender, postsRecommend);
-      return;
-    }
-  }, [nowViewPosts]);
-
   return (
     <div>
       <Header />
