@@ -1148,7 +1148,6 @@ export async function getRecommendPosts(req: Request, res: Response) {
       throw Error('No such user, something wrong getting posts');
     }
 
-    // console.log(JSON.stringify(preferenceTags, null, 4));
     console.log(recommendMode);
 
     // if(recommendMode === 'auto')

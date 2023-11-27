@@ -114,6 +114,8 @@ export async function getUserName(
     let user;
     if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
 
+    // console.log(user);
+
     const userInfo = await User.findOne({ _id: user }, { name: 1 });
 
     if (userInfo && userInfo.name) {

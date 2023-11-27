@@ -22,4 +22,9 @@ export async function getAllBoardsFromDB() {
   return allBoards;
 }
 
+export async function getBoardNameFromDB(id: string) {
+  const name = await Board.findOne({ _id: id });
+  return name;
+}
+
 export default Board;
