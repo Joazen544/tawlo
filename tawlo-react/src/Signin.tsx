@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const Signin = () => {
   const [signupData, setSignupData] = useState({
@@ -57,6 +58,9 @@ const Signin = () => {
         { withCredentials: true },
       );
       console.log('Signup success:', response.data);
+      console.log(response.data);
+      Cookies.set('userId', response.data.user.id);
+
       setSignupData({ name: '', email: '', password: '' });
 
       // Handle success, e.g., redirect or show a success message
@@ -84,6 +88,7 @@ const Signin = () => {
         { withCredentials: true },
       );
       console.log('Signin success:', response.data);
+      Cookies.set('userId', response.data.user.id);
       setSigninData({ email: '', password: '' });
 
       // Handle success, e.g., redirect or show a success message

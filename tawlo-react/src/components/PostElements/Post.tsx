@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
 
 interface Props {
   _id: string;
@@ -39,6 +40,7 @@ interface Props {
 }
 
 const Post = ({
+  _id,
   publishDate,
   author,
   tags,
@@ -52,6 +54,11 @@ const Post = ({
 }: Props) => {
   const [authorName, setAuthorName] = useState('');
   const [commentNames, setCommentNames] = useState<string[]>([]);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isUpvoted, setIsUpvoted] = useState(false);
+  const [isDownvoted, setIsDownvoted] = useState(false);
+
+  const token = Cookies.get('jwtToken');
 
   useEffect(() => {
     axios
@@ -73,7 +80,97 @@ const Post = ({
           setCommentNames([...nameArray]);
         });
     });
-  }, []);
+  }, [comments]);
+
+  const handleLike = async () => {
+    const likeStatus = !isLiked;
+    setIsLiked(likeStatus);
+
+    try {
+      await axios.post(
+        `http://localhost:3000/api/post/${_id}/like`,
+        {
+          like: likeStatus,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
+
+  const handleUpvote = async () => {
+    const upvoteStatus = !isUpvoted;
+    setIsUpvoted(upvoteStatus);
+
+    try {
+      await axios.post(
+        `http://localhost:3000/api/post/${_id}/upvote`,
+        {
+          upvote: upvoteStatus,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
+    } catch (error) {
+      console.error('Error upvoting post:', error);
+    }
+  };
+
+  const handleDownvote = async () => {
+    const downvoteStatus = !isDownvoted;
+    setIsDownvoted(downvoteStatus);
+
+    try {
+      await axios.post(
+        `http://localhost:3000/api/post/${_id}/downvote`,
+        {
+          downvote: downvoteStatus,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
+    } catch (error) {
+      console.error('Error downvoting post:', error);
+    }
+  };
+
+  const handleComment = async () => {
+    const commentContent = prompt('Enter your comment:');
+
+    if (commentContent) {
+      try {
+        await axios.post(
+          `http://localhost:3000/api/post/${_id}/comment`,
+          {
+            content: commentContent,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        // You may want to fetch the updated post data after adding a comment
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      }
+    }
+  };
 
   const publishTime = new Date(publishDate);
 
@@ -113,14 +210,20 @@ const Post = ({
           >
             <button
               id="upvote"
-              className="w-10 h-5 bg-up-arrow bg-contain bg-no-repeat bg-center"
+              className={`w-10 h-5 bg-up-arrow bg-contain bg-no-repeat bg-center ${
+                isUpvoted ? 'text-blue-500' : 'text-gray-500'
+              }`}
+              onClick={handleUpvote}
             ></button>
             <span className="text-gray-900">
               {upvote.number - downvote.number}
             </span>
             <button
               id="downvote"
-              className="w-10 h-5 bg-down-arrow bg-contain bg-no-repeat bg-center"
+              className={`w-10 h-5 bg-down-arrow bg-contain bg-no-repeat bg-center ${
+                isDownvoted ? 'text-blue-500' : 'text-gray-500'
+              }`}
+              onClick={handleDownvote}
             ></button>
           </div>
           <div id="content" className="ml-10">
@@ -138,11 +241,23 @@ const Post = ({
               <span className="text-gray-900">{hot}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Like:</span>
+              <button
+                className={`text-gray-600 cursor-pointer ${
+                  isLiked ? 'text-blue-500' : ''
+                }`}
+                onClick={handleLike}
+              >
+                Like
+              </button>
               <span className="text-gray-900">{liked.number}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <button className="text-gray-600">Comments:</button>
+              <button
+                className="text-gray-600 cursor-pointer"
+                onClick={handleComment}
+              >
+                Comments:
+              </button>
               <span className="text-gray-900">{comments.number}</span>
             </div>
             {/* Add more details as needed */}
