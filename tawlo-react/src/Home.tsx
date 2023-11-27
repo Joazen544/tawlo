@@ -57,6 +57,7 @@ const Home = () => {
   const [postsRender, setPostsRender] = useState<PostArray>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [nowViewPosts] = useState(0);
+  // const [authorsName, setAuthorsName] = useState<string[]>([]);
 
   useEffect(() => {
     axios
@@ -71,6 +72,7 @@ const Home = () => {
         setPostsRecommend(res.data);
 
         renderNewPosts(postsRender, res.data);
+        //fetchAuthorsName(res.data);
       })
       .catch((err) => console.log(err));
     return;
@@ -94,6 +96,21 @@ const Home = () => {
 
     setPostsRender(postsNowRender.concat(nextPosts));
   }
+
+  // async function fetchAuthorsName(postsRender: PostArray) {
+  //   const idArray = postsRender.map((post) => post.author);
+  //   axios
+  //     .get(`http://localhost:3000/api/user/name`, {
+  //       params: {
+  //         id: idArray,
+  //       },
+  //     })
+  //     .then((res) => {
+  //       const authorInfo: AuthorInfo = res.data;
+  //       const namesArray = authorInfo.name.map((info) => info.name);
+  //       setAuthorsName(authorsName.concat(namesArray));
+  //     });
+  // }
 
   useEffect(() => {
     if (postsRecommend.length) {

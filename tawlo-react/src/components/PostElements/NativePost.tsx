@@ -51,6 +51,7 @@ const NativePost = ({
   comments,
 }: Props) => {
   const [authorName, setAuthorName] = useState('');
+  const [commentNames, setCommentNames] = useState<string[]>([]);
 
   useEffect(() => {
     axios
@@ -59,7 +60,21 @@ const NativePost = ({
         setAuthorName(res.data.name);
       })
       .catch((err) => console.log(err));
-  });
+  }, []);
+
+  useEffect(() => {
+    const nameArray: string[] = [];
+    comments.data.forEach((comment, index) => {
+      axios
+        .get(`http://localhost:3000/api/user/name?id=${comment.user}`)
+        .then((res) => {
+          const userName = res.data.name as string;
+          nameArray[index] = userName;
+          setCommentNames([...nameArray]);
+        });
+    });
+  }, []);
+
   const publishTime = new Date(publishDate);
 
   return (
@@ -138,12 +153,20 @@ const NativePost = ({
             {comments.data &&
               comments.data.map((comment, index) => {
                 const time = new Date(comment.time);
+                const name = commentNames[index];
+
                 return (
-                  <div className="flex" key={index}>
-                    <button id="commentName">{comment.user}</button>
-                    <p>{comment.content}</p>
-                    <p>{time.toLocaleTimeString()}</p>
-                    <p>{comment.like.number}</p>
+                  <div className="flex justify-between" key={index}>
+                    <div className="flex">
+                      <button id="commentName" className="w-20 text-left">
+                        {name}
+                      </button>
+                      <p>{comment.content}</p>
+                    </div>
+                    <div className="flex">
+                      <p className="mr-5">{time.toLocaleTimeString()}</p>
+                      <p>like:{comment.like.number}</p>
+                    </div>
                   </div>
                 );
               })}
