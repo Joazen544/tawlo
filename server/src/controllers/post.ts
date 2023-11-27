@@ -81,16 +81,8 @@ async function calculateMotherPostHot(
 
 export async function createPost(req: Request, res: Response) {
   try {
-    const {
-      category,
-      user,
-      title,
-      content,
-      tags,
-      board,
-      motherPost,
-      replyFloor,
-    } = req.body;
+    const { category, user, title, content, tags, board, motherPost } =
+      req.body;
 
     const userId = new ObjectId(user);
     const publishDate = new Date();
@@ -125,7 +117,11 @@ export async function createPost(req: Request, res: Response) {
       const updateMotherResult = Post.updateOne(
         { _id: motherPost },
         {
-          $set: { update_date: publishDate, last_reply: userId },
+          $set: {
+            update_date: publishDate,
+            last_reply: userId,
+          },
+          $inc: { sum_reply: 1 },
         },
       );
 
@@ -143,7 +139,6 @@ export async function createPost(req: Request, res: Response) {
         tags,
         board,
         mother_post: motherPost,
-        reply_floor: replyFloor,
       });
     } else {
       res.status(400).json({ error: 'The category of post is wrong' });

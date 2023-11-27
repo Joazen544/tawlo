@@ -20,6 +20,7 @@ interface PostDocument {
   sum_likes: number;
   sum_upvotes: number;
   sum_comments: number;
+  sum_reply: number;
   // userId
   last_reply: ObjectId;
   upvote: { number: number; users: ObjectId[] };
@@ -87,6 +88,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
   sum_likes: { type: Number, default: 0 },
   sum_upvotes: { type: Number, default: 0 },
   sum_comments: { type: Number, default: 0 },
+  sum_reply: { type: Number, default: 0 },
   // userId
   last_reply: ObjectId,
   //
@@ -163,8 +165,9 @@ export async function getAutoRecommendedPosts(
           should: shouldArray,
           filter: [
             {
-              exists: {
-                path: 'category',
+              queryString: {
+                defaultPath: 'category',
+                query: 'mother OR native',
               },
             },
           ],
@@ -268,6 +271,7 @@ export async function getAutoRecommendedPosts(
         sum_likes: 1,
         sum_upvotes: 1,
         sum_comments: 1,
+        sum_reply: 1,
         last_reply: 1,
         upvote: 1,
         downvote: 1,
