@@ -860,7 +860,7 @@ export async function downvotePost(req: Request, res: Response) {
       {
         _id: postId,
       },
-      { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1 },
+      { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1, tags: 1 },
     );
 
     console.log(JSON.stringify(downvoteTarget, null, 4));

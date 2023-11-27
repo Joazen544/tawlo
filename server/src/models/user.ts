@@ -107,6 +107,10 @@ export function updateUserAction(
     User.findOne({ _id: userId }).then((doc) => {
       if (doc) {
         const replaceTarget = doc.preference_tags.length - 1;
+        const tagsArray: string[] = [];
+        tagsArray.concat(tags);
+        console.log(tags);
+
         tags.forEach((tag) => {
           let ifExist = 0;
           const len = doc.preference_tags.length;
