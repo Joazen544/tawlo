@@ -57,8 +57,34 @@ const Post = ({
   const [isLiked, setIsLiked] = useState(false);
   const [isUpvoted, setIsUpvoted] = useState(false);
   const [isDownvoted, setIsDownvoted] = useState(false);
-
+  const [likeNumber, setLikeNumber] = useState(liked.number);
+  const [upvoteSum, setUpvoteSum] = useState(upvote.number - downvote.number);
   const token = Cookies.get('jwtToken');
+  const userId = Cookies.get('userId') as string;
+
+  useEffect(() => {
+    if (liked.number) {
+      if (liked.users.includes(userId)) {
+        setIsLiked(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (upvote.number) {
+      if (upvote.users.includes(userId)) {
+        setIsUpvoted(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (downvote.number) {
+      if (downvote.users.includes(userId)) {
+        setIsDownvoted(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     axios
@@ -84,6 +110,11 @@ const Post = ({
 
   const handleLike = async () => {
     const likeStatus = !isLiked;
+    if (isLiked) {
+      setLikeNumber(likeNumber - 1);
+    } else {
+      setLikeNumber(likeNumber + 1);
+    }
     setIsLiked(likeStatus);
 
     try {
@@ -106,6 +137,15 @@ const Post = ({
 
   const handleUpvote = async () => {
     const upvoteStatus = !isUpvoted;
+    if (isDownvoted) {
+      setIsDownvoted(false);
+      setUpvoteSum(upvoteSum + 2);
+    } else if (isUpvoted) {
+      setUpvoteSum(upvoteSum - 1);
+    } else {
+      setUpvoteSum(upvoteSum + 1);
+    }
+
     setIsUpvoted(upvoteStatus);
 
     try {
@@ -128,6 +168,14 @@ const Post = ({
 
   const handleDownvote = async () => {
     const downvoteStatus = !isDownvoted;
+    if (isUpvoted) {
+      setIsUpvoted(false);
+      setUpvoteSum(upvoteSum - 2);
+    } else if (isDownvoted) {
+      setUpvoteSum(upvoteSum + 1);
+    } else {
+      setUpvoteSum(upvoteSum - 1);
+    }
     setIsDownvoted(downvoteStatus);
 
     try {
@@ -206,22 +254,22 @@ const Post = ({
         <div id="postContent" className="p-4 flex">
           <div
             id="useful"
-            className="w-10 h-20 flex flex-col justify-center items-center"
+            className="w-10 h-25 flex flex-col justify-center items-center"
           >
             <button
               id="upvote"
-              className={`w-10 h-5 bg-up-arrow bg-contain bg-no-repeat bg-center ${
-                isUpvoted ? 'text-blue-500' : 'text-gray-500'
+              style={{ backgroundSize: '1rem' }}
+              className={`w-10 h-10 bg-up-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
+                isUpvoted ? 'bg-blue-200' : 'bg-white'
               }`}
               onClick={handleUpvote}
             ></button>
-            <span className="text-gray-900">
-              {upvote.number - downvote.number}
-            </span>
+            <span className="text-gray-900">{upvoteSum}</span>
             <button
               id="downvote"
-              className={`w-10 h-5 bg-down-arrow bg-contain bg-no-repeat bg-center ${
-                isDownvoted ? 'text-blue-500' : 'text-gray-500'
+              style={{ backgroundSize: '1rem' }}
+              className={`w-10 h-10 bg-down-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
+                isDownvoted ? 'bg-blue-200' : 'bg-white'
               }`}
               onClick={handleDownvote}
             ></button>
@@ -249,7 +297,7 @@ const Post = ({
               >
                 Like
               </button>
-              <span className="text-gray-900">{liked.number}</span>
+              <span className="text-gray-900">{likeNumber}</span>
             </div>
             <div className="flex items-center space-x-2">
               <button
