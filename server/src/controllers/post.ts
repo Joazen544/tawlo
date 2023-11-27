@@ -1212,9 +1212,7 @@ export async function getMotherAndReplies(
 
     const posts = await getMotherAndReplyPostsFromDB(motherPostId, paging);
 
-    res.json({
-      posts,
-    });
+    res.json(posts);
   } catch (err) {
     next(err);
   }

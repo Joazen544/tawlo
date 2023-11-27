@@ -18,15 +18,13 @@ export async function signUp(req: Request, res: Response) {
       .cookie('jwtToken', token)
       .status(200)
       .json({
-        data: {
-          access_token: token,
-          access_expired: EXPIRE_TIME,
-          user: {
-            id: userData._id,
-            name,
-            email,
-            picture: '',
-          },
+        access_token: token,
+        access_expired: EXPIRE_TIME,
+        user: {
+          id: userData._id,
+          name,
+          email,
+          picture: '',
         },
       });
   } catch (err) {
@@ -59,19 +57,18 @@ export async function signIn(req: Request, res: Response) {
     }
 
     const token = await signJWT(userData._id.toString());
+
     res
       .cookie('jwtToken', token)
       .status(200)
       .json({
-        data: {
-          access_token: token,
-          access_expired: EXPIRE_TIME,
-          user: {
-            id: userData._id,
-            name: userData.name,
-            email,
-            picture: '',
-          },
+        access_token: token,
+        access_expired: EXPIRE_TIME,
+        user: {
+          id: userData._id,
+          name: userData.name,
+          email,
+          picture: '',
         },
       });
   } catch (err) {

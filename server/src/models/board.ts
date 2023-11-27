@@ -24,6 +24,8 @@ export async function getAllBoardsFromDB() {
 
 export async function getBoardNameFromDB(id: string) {
   const name = await Board.findOne({ _id: id });
+  console.log(name);
+
   return name;
 }
 
