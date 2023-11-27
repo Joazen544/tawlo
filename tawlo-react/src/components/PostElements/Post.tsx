@@ -39,6 +39,16 @@ interface Props {
   };
 }
 
+interface CommentsData {
+  user: string;
+  content: string;
+  time: Date;
+  like: {
+    number: number;
+    users: string[];
+  };
+}
+
 const Post = ({
   _id,
   publishDate,
@@ -59,32 +69,34 @@ const Post = ({
   const [isDownvoted, setIsDownvoted] = useState(false);
   const [likeNumber, setLikeNumber] = useState(liked.number);
   const [upvoteSum, setUpvoteSum] = useState(upvote.number - downvote.number);
+  const [commentsData, setCommentsData] = useState<CommentsData[]>(
+    comments.data,
+  );
+  const [commentNumber, setCommentNumber] = useState(comments.number);
+  // const [token, setToken] = useState<string | undefined>('');
+  // const [userId, setUserId] = useState<string | undefined>('');
   const token = Cookies.get('jwtToken');
-  const userId = Cookies.get('userId') as string;
+  const userId = Cookies.get('userId');
 
   useEffect(() => {
-    if (liked.number) {
+    // setToken(Cookies.get('jwtToken'));
+    // setUserId(Cookies.get('userId'));
+    if (liked.number && userId) {
       if (liked.users.includes(userId)) {
         setIsLiked(true);
       }
     }
-  }, []);
-
-  useEffect(() => {
-    if (upvote.number) {
+    if (upvote.number && userId) {
       if (upvote.users.includes(userId)) {
         setIsUpvoted(true);
       }
     }
-  }, []);
-
-  useEffect(() => {
-    if (downvote.number) {
+    if (downvote.number && userId) {
       if (downvote.users.includes(userId)) {
         setIsDownvoted(true);
       }
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     axios
@@ -97,7 +109,7 @@ const Post = ({
 
   useEffect(() => {
     const nameArray: string[] = [];
-    comments.data.forEach((comment, index) => {
+    commentsData.forEach((comment, index) => {
       axios
         .get(`http://localhost:3000/api/user/name?id=${comment.user}`)
         .then((res) => {
@@ -106,7 +118,7 @@ const Post = ({
           setCommentNames([...nameArray]);
         });
     });
-  }, [comments]);
+  }, [commentsData]);
 
   const handleLike = async () => {
     const likeStatus = !isLiked;
@@ -201,18 +213,34 @@ const Post = ({
 
     if (commentContent) {
       try {
-        await axios.post(
-          `http://localhost:3000/api/post/${_id}/comment`,
-          {
-            content: commentContent,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              authorization: `Bearer ${token}`,
+        await axios
+          .post(
+            `http://localhost:3000/api/post/${_id}/comment`,
+            {
+              content: commentContent,
             },
-          },
-        );
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                authorization: `Bearer ${token}`,
+              },
+            },
+          )
+          .then(() => {
+            const array = commentsData.concat([
+              {
+                user: userId as string,
+                content: commentContent,
+                time: new Date(),
+                like: {
+                  number: 0,
+                  users: [],
+                },
+              },
+            ]);
+            setCommentsData(array);
+            setCommentNumber(commentNumber + 1);
+          });
         // You may want to fetch the updated post data after adding a comment
       } catch (error) {
         console.error('Error adding comment:', error);
@@ -306,15 +334,15 @@ const Post = ({
               >
                 Comments:
               </button>
-              <span className="text-gray-900">{comments.number}</span>
+              <span className="text-gray-900">{commentNumber}</span>
             </div>
             {/* Add more details as needed */}
           </div>
         </div>
-        {comments.number > 0 && (
+        {commentsData.length > 0 && (
           <div id="comments" className="p-4 border-t border-gray-200">
-            {comments.data &&
-              comments.data.map((comment, index) => {
+            {commentsData &&
+              commentsData.map((comment, index) => {
                 const time = new Date(comment.time);
                 const name = commentNames[index];
 
