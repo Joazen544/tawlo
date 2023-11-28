@@ -71,6 +71,13 @@ const MessageDropdown = () => {
     setMessageTargetId(targetId);
   };
 
+  const closeChatGroup = () => {
+    setIfChatBoxOpen(false);
+    setChatGroupId('');
+    setChatName('');
+    setMessageTargetId('');
+  };
+
   return (
     <>
       <div className="relative inline-block">
@@ -116,6 +123,7 @@ const MessageDropdown = () => {
           targetName={chatName}
           targetId={messageTargetId}
           groupId={chatGroupId}
+          closeBox={() => closeChatGroup()}
         />
       )}
     </>

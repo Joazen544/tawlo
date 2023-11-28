@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { socket } from '../../socket';
@@ -7,6 +7,7 @@ interface Props {
   targetName: string;
   targetId: string;
   groupId: string;
+  closeBox: () => void;
 }
 
 interface Message {
@@ -23,12 +24,13 @@ interface Message {
   read: string[];
 }
 
-const MessageBox = ({ targetName, targetId, groupId }: Props) => {
+const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
   const user = Cookies.get('userId');
   const token = Cookies.get('jwtToken');
 
   const [messageInput, setMessageInput] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [ifBoxShow, setIfBoxShow] = useState(true);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -91,6 +93,10 @@ const MessageBox = ({ targetName, targetId, groupId }: Props) => {
     });
   }, [messages]);
 
+  const handleBoxShow = () => {
+    setIfBoxShow(!ifBoxShow);
+  };
+
   const updateMessage = (newMessage: Message) => {
     const array = [...messages];
     setMessages(array.concat(newMessage));
@@ -100,6 +106,23 @@ const MessageBox = ({ targetName, targetId, groupId }: Props) => {
     event.preventDefault();
     setMessageInput(event.target.value);
   };
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    // 'keypress' event misbehaves on mobile so we track 'Enter' key via 'keydown' event
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      handleMessageSend();
+    }
+  };
+
+  const messagesAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
+  }, [messages, ifBoxShow]);
 
   const handleMessageSend = () => {
     try {
@@ -131,42 +154,73 @@ const MessageBox = ({ targetName, targetId, groupId }: Props) => {
 
   return (
     <div
-      style={{ width: '20rem', height: '25rem' }}
+      style={
+        ifBoxShow
+          ? { width: '20rem', height: '25rem' }
+          : { width: '20rem', height: '2.5rem' }
+      }
       className="fixed bottom-0 right-16 border-solid border-2 border-black bg-white"
     >
       <div
         id="infoBar"
-        className="w-full h-10 border-b-2 border-solid  border-gray-400 flex items-center"
+        className="w-full h-10 border-b-2 border-solid  border-gray-400 flex items-center justify-between cursor-pointer"
+        onClick={handleBoxShow}
       >
-        <p className="ml-3">{targetName}</p>
-      </div>
-      <div id="messagesArea" style={{ height: '19rem' }}>
-        {messages.length > 0 &&
-          messages.map((message) => {
-            if (message.from === user) {
-              return <p className="mr-0">{message.content}</p>;
-            } else {
-              return <p className="ml-0">{message.content}</p>;
-            }
-          })}
-      </div>
-      <div
-        id="inputArea"
-        className="h-15 box-content border-t-2 border-solid  border-gray-400 flex pt-1 justify-center items-center"
-      >
-        <input
-          onChange={handleMessageChange}
-          value={messageInput}
-          type="text"
-          className="ml-1 pl-2 w-full h-10 rounded-mdp-2 border border-gray-300 rounded-md"
-        />
-        <button
-          onClick={handleMessageSend}
-          className="h-8 px-4 py-2 mr-2 ml-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-xs"
-        >
-          send
+        <button className="ml-3 hover:text-blue-400 z-10">{targetName}</button>
+        <button className="mr-3 hover:text-blue-400" onClick={closeBox}>
+          X
         </button>
       </div>
+      {ifBoxShow && (
+        <>
+          <div
+            id="messagesArea"
+            style={{ height: '19rem', overflowY: 'auto' }}
+            className="p-2"
+            ref={messagesAreaRef}
+          >
+            {messages.length > 0 &&
+              messages.map((message) => {
+                const isCurrentUser = message.from === user;
+                if (isCurrentUser) {
+                  return (
+                    <div className="flex justify-end">
+                      <p className="px-4 py-1 mt-1 mb-1 border-solid border-2 border-gray-400 rounded-md">
+                        {message.content}
+                      </p>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="flex justify-start">
+                      <p className="px-4 py-1 mt-1 mb-1 bg-blue-300 rounded-md">
+                        {message.content}
+                      </p>
+                    </div>
+                  );
+                }
+              })}
+          </div>
+          <div
+            id="inputArea"
+            className="h-15 box-content border-t-2 border-solid  border-gray-400 flex pt-1 justify-center items-center"
+          >
+            <input
+              onChange={handleMessageChange}
+              value={messageInput}
+              type="text"
+              className="ml-1 pl-2 w-full h-10 rounded-mdp-2 border border-gray-300 rounded-md"
+              onKeyDown={onKeyDown}
+            />
+            <button
+              onClick={handleMessageSend}
+              className="h-8 px-4 py-2 mr-2 ml-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-xs"
+            >
+              send
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
