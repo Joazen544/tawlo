@@ -73,8 +73,8 @@ const Post = ({
     comments.data,
   );
   const [commentNumber, setCommentNumber] = useState(comments.number);
-  // const [token, setToken] = useState<string | undefined>('');
-  // const [userId, setUserId] = useState<string | undefined>('');
+  const [commentCreate, setCommentCreate] = useState('');
+
   const token = Cookies.get('jwtToken');
   const userId = Cookies.get('userId');
 
@@ -208,44 +208,49 @@ const Post = ({
     }
   };
 
-  const handleComment = async () => {
-    const commentContent = prompt('Enter your comment:');
+  const handleCreateComment = async () => {
+    try {
+      // Make a request to create a new post
+      await axios
+        .post(
+          `http://localhost:3000/api/post/${_id}/comment`,
+          {
+            content: commentCreate,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .then(() => {
+          const array = commentsData.concat([
+            {
+              user: userId as string,
+              content: commentCreate,
+              time: new Date(),
+              like: {
+                number: 0,
+                users: [],
+              },
+            },
+          ]);
+          setCommentsData(array);
+          setCommentNumber(commentNumber + 1);
+        });
 
-    if (commentContent) {
-      try {
-        await axios
-          .post(
-            `http://localhost:3000/api/post/${_id}/comment`,
-            {
-              content: commentContent,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                authorization: `Bearer ${token}`,
-              },
-            },
-          )
-          .then(() => {
-            const array = commentsData.concat([
-              {
-                user: userId as string,
-                content: commentContent,
-                time: new Date(),
-                like: {
-                  number: 0,
-                  users: [],
-                },
-              },
-            ]);
-            setCommentsData(array);
-            setCommentNumber(commentNumber + 1);
-          });
-        // You may want to fetch the updated post data after adding a comment
-      } catch (error) {
-        console.error('Error adding comment:', error);
-      }
+      setCommentCreate('');
+      // Clear input fields
+    } catch (error) {
+      console.error('Error creating post:', error);
     }
+  };
+
+  const handleCommentChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setCommentCreate(event.target.value);
   };
 
   const publishTime = new Date(publishDate);
@@ -328,12 +333,7 @@ const Post = ({
               <span className="text-gray-900">{likeNumber}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <button
-                className="text-gray-600 cursor-pointer"
-                onClick={handleComment}
-              >
-                Comments:
-              </button>
+              <div className="text-gray-600 cursor-pointer">Comments:</div>
               <span className="text-gray-900">{commentNumber}</span>
             </div>
             {/* Add more details as needed */}
@@ -366,6 +366,21 @@ const Post = ({
               })}
           </div>
         )}
+      </div>
+      <div id="commentCreate" className="flex">
+        <input
+          type="text"
+          value={commentCreate}
+          onChange={handleCommentChange}
+          className="w-full p-3 border border-gray-300 rounded-md"
+          placeholder="輸入留言"
+        />
+        <button
+          onClick={handleCreateComment}
+          className=" px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+        >
+          Create Comment
+        </button>
       </div>
     </>
   );
