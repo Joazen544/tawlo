@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import http from 'http';
-import { createMessage } from './message';
+// import { createMessage } from './message';
 import { verify } from '../utils/JWT';
 
 interface UserConnected {
@@ -29,7 +29,12 @@ let io: Server;
 
 export function initSocket(server: http.Server) {
   // this function now expects an endpoint as argument
-  io = new Server(server);
+  io = new Server(server, {
+    cors: {
+      origin: '*',
+    },
+  });
+  console.log('socket io connect');
 
   io.use(async (socket, next) => {
     if (socket.handshake.auth && socket.handshake.auth.token) {
@@ -80,11 +85,11 @@ export function initSocket(server: http.Server) {
           group: messageData.group,
         });
 
-        await createMessage(
-          messageData.group,
-          messageData.from,
-          messageData.content,
-        );
+        // await createMessage(
+        //   messageData.group,
+        //   messageData.from,
+        //   messageData.content,
+        // );
 
         socket.broadcast.to(messageData.to).emit('message', {
           message: messageData.content,
@@ -95,8 +100,6 @@ export function initSocket(server: http.Server) {
       } catch (err) {
         console.log('something wrong sending message');
       }
-
-      // const result = await
     });
 
     socket.on('disconnect', () => {

@@ -125,65 +125,31 @@ export async function getAutoRecommendedPosts(
   boards: ObjectId[],
   read_posts: ObjectId[],
 ) {
-  const shouldArray = [];
-  let scoring = 10;
+  console.log(boards);
+  console.log(read_posts);
 
-  preferenceTags.forEach((tag) => {
-    shouldArray.push({
-      text: {
-        query: `"${tag}"`,
-        path: 'tags',
-        score: {
-          boost: {
-            value: scoring * 5,
-          },
-        },
-      },
-    });
-
-    scoring -= 2;
-  });
-
-  shouldArray.push({
-    in: {
-      value: boards,
-      path: 'board',
-      score: {
-        boost: {
-          value: 30,
-        },
-      },
-    },
-  });
-
-  const posts = await Post.aggregate([
-    {
-      $search: {
-        index: 'posts',
-        compound: {
-          must: [],
-          should: shouldArray,
-          filter: [
-            {
-              queryString: {
-                defaultPath: 'category',
-                query: 'mother OR native',
-              },
-            },
-          ],
-        },
-      },
-    },
+  const aggregateArray = [];
+  aggregateArray.push(
     {
       $match: {
         is_delete: false,
       },
     },
     {
+      $match: {
+        $or: [
+          {
+            category: 'mother',
+          },
+          {
+            category: 'native',
+          },
+        ],
+      },
+    },
+    {
       $addFields: {
-        score: {
-          $meta: 'searchScore',
-        },
+        score: 0,
         time: {
           $dateDiff: {
             startDate: '$$NOW',
@@ -193,64 +159,46 @@ export async function getAutoRecommendedPosts(
         },
       },
     },
-    {
+  );
+
+  let scoring = 50;
+
+  preferenceTags.forEach((tag) => {
+    aggregateArray.push({
       $set: {
         score: {
-          $cond: {
-            if: {
-              $in: ['$_id', read_posts],
+          $cond: [
+            {
+              $in: [tag, '$tags'],
             },
-            then: {
-              $add: [
-                '$score',
-                '$hot',
-                {
-                  $dateDiff: {
-                    startDate: '$$NOW',
-                    endDate: '$publish_date',
-                    unit: 'hour',
-                  },
-                },
-                {
-                  $multiply: [
-                    -50,
-                    {
-                      $size: {
-                        $filter: {
-                          input: read_posts,
-                          as: 'post',
-                          cond: { $eq: ['$$post', '$_id'] },
-                        },
-                      },
-                    },
-                  ],
-                },
-              ],
+            {
+              $add: ['$score', scoring],
             },
-            else: {
-              $add: [
-                '$score',
-                '$hot',
-                {
-                  $dateDiff: {
-                    startDate: '$$NOW',
-                    endDate: '$publish_date',
-                    unit: 'hour',
-                  },
-                },
-              ],
+            {
+              $add: ['$score', 0],
             },
-          },
+          ],
         },
       },
+    });
+    console.log(tag);
+
+    console.log(scoring);
+
+    scoring -= 10;
+  });
+
+  console.log(JSON.stringify(aggregateArray, null, 4));
+  // const str = 'score';
+
+  aggregateArray.push(
+    {
+      $limit: 50,
     },
     {
       $sort: {
         score: -1,
       },
-    },
-    {
-      $limit: 50,
     },
     {
       $project: {
@@ -278,7 +226,10 @@ export async function getAutoRecommendedPosts(
         comments: 1,
       },
     },
-  ]);
+  );
+
+  // @ts-ignore
+  const posts = await Post.aggregate(aggregateArray);
 
   return posts;
 }

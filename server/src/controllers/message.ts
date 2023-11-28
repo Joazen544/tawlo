@@ -12,7 +12,7 @@ import {
   makeAllMessagesRead,
 } from '../models/message';
 
-// import { getIO } from './socket';
+import { getIO } from './socket';
 
 async function getMessagesFromDB(
   lastMessage: ObjectId | null,
@@ -75,6 +75,7 @@ export async function clickChatRoom(
           category: messageGroupCreated.category,
           messages: [],
         });
+        return;
       }
     } else if (group) {
       const groupId = new ObjectId(group);
@@ -148,6 +149,8 @@ export async function getNativeMessageGroups(
       }
     });
 
+    console.log('sending messages group');
+
     res.json({
       messageGroups,
     });
@@ -184,11 +187,7 @@ export async function getMoreMessages(
   }
 }
 
-export async function createMessage(
-  group: string,
-  from: string,
-  content: string,
-) {
+async function createMessage(group: string, from: string, content: string) {
   try {
     const time = new Date();
     const groupId = new ObjectId(group);
@@ -199,13 +198,40 @@ export async function createMessage(
   } catch (err) {
     console.log('something goes wrong creating message to DB');
     console.log(err);
+    throw new Error('something goes wrong creating message to DB');
   }
 }
 
-// export async function sendMessage(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) {
-//   const { user, messageTo, content } = req.body;
-// }
+export async function sendMessage(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user, messageTo, messageGroup, content } = req.body;
+
+    const io = getIO();
+
+    if (!io) {
+      res.status(500).json({ message: 'io connection fail' });
+      return;
+    }
+
+    io.to(user).emit('myself', {
+      message: content,
+      group: messageGroup,
+    });
+
+    await createMessage(messageGroup, user, content);
+
+    io.to(messageTo).emit('message', {
+      message: content,
+      from: user,
+      group: messageGroup,
+    });
+
+    res.json({ message: 'message sent' });
+  } catch (err) {
+    next(err);
+  }
+}
