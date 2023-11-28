@@ -1,12 +1,16 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
+import Comment from '../Comment';
 
 interface Props {
   _id: string;
   publishDate: Date;
   updateDate: Date;
   author: string;
+  title: string;
+  board: string;
+  category: string;
   content: string;
   hot: number;
   tags: string[];
@@ -37,6 +41,7 @@ interface Props {
       },
     ];
   };
+  clickReply: () => void;
 }
 
 interface CommentsData {
@@ -61,6 +66,9 @@ const Post = ({
   upvote,
   downvote,
   comments,
+  title,
+  category,
+  clickReply,
 }: Props) => {
   const [authorName, setAuthorName] = useState('');
   const [commentNames, setCommentNames] = useState<string[]>([]);
@@ -261,6 +269,21 @@ const Post = ({
         style={{ width: '50rem' }}
         className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden"
       >
+        {/* only mother post has title */}
+        {category === 'mother' && (
+          <div
+            id="title"
+            className="p-4 border-b border-gray-200 flex justify-between"
+          >
+            <span className="text-2xl">{title}</span>
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+              onClick={clickReply}
+            >
+              Reply post
+            </button>
+          </div>
+        )}
         <div id="authorInfo" className="p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -313,10 +336,12 @@ const Post = ({
         </div>
         <div id="postInfo" className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Score:</span>
-              <span className="text-gray-900">{score}</span>
-            </div>
+            {category === 'native' && (
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-600">Score:</span>
+                <span className="text-gray-900">{score}</span>
+              </div>
+            )}
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">Hot:</span>
               <span className="text-gray-900">{hot}</span>
@@ -347,40 +372,32 @@ const Post = ({
                 const name = commentNames[index];
 
                 return (
-                  <div className="flex justify-between" key={index}>
-                    <div className="flex">
-                      <button
-                        id="commentName"
-                        className="w-20 text-left text-blue-400"
-                      >
-                        {name}
-                      </button>
-                      <p>{comment.content}</p>
-                    </div>
-                    <div className="flex">
-                      <p className="mr-5">{time.toLocaleTimeString()}</p>
-                      <p>like:{comment.like.number}</p>
-                    </div>
-                  </div>
+                  <Comment
+                    key={index}
+                    index={index}
+                    name={name}
+                    comment={comment}
+                    time={time}
+                  ></Comment>
                 );
               })}
           </div>
         )}
-      </div>
-      <div id="commentCreate" className="flex">
-        <input
-          type="text"
-          value={commentCreate}
-          onChange={handleCommentChange}
-          className="w-full p-3 border border-gray-300 rounded-md"
-          placeholder="輸入留言"
-        />
-        <button
-          onClick={handleCreateComment}
-          className=" px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
-        >
-          Create Comment
-        </button>
+        <div id="commentCreate" className="flex">
+          <input
+            type="text"
+            value={commentCreate}
+            onChange={handleCommentChange}
+            className="w-full p-3 ml-2 mb-2 mr-2 border border-gray-300 rounded-md"
+            placeholder="輸入留言"
+          />
+          <button
+            onClick={handleCreateComment}
+            className=" px-4 py-2 mb-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+          >
+            Create Comment
+          </button>
+        </div>
       </div>
     </>
   );

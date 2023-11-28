@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Header from './components/HeaderElements/Header';
 import Post from './components/PostElements/Post';
 import BoardPost from './components/PostElements/BoardPost';
-import CreateNativePost from './components/CreateNativePost';
+import CreatePost from './components/CreatePost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
@@ -106,9 +106,11 @@ const Home = () => {
         id="posts_container"
         className="w-full bg-slate-300 min-h-screen flex flex-col items-center pt-10"
       >
-        <CreateNativePost
+        <CreatePost
           onPostCreated={() => console.log(1)}
-        ></CreateNativePost>
+          category="native"
+          motherPost=""
+        ></CreatePost>
         <InfiniteScroll
           dataLength={postsRender.length}
           next={() => {
@@ -127,6 +129,9 @@ const Home = () => {
                   key={post._id}
                   _id={post._id}
                   tags={post.tags}
+                  category="native"
+                  title=""
+                  board=""
                   publishDate={post.publish_date}
                   updateDate={post.update_date}
                   author={post.author}
@@ -137,6 +142,7 @@ const Home = () => {
                   upvote={post.upvote}
                   downvote={post.downvote}
                   comments={post.comments}
+                  clickReply={() => {}}
                 />
               );
             } else {

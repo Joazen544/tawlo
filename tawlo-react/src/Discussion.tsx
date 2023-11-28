@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from './components/HeaderElements/Header';
-import MotherPost from './components/PostElements/MotherPost';
-import ReplyPost from './components/PostElements/ReplyPost';
+import Post from './components/PostElements/Post';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
+import CreateNativePost from './components/CreatePost';
 
 export interface Post {
   _id: string;
@@ -57,12 +57,11 @@ interface PostArray extends Array<Post> {}
 const Discussion = () => {
   const [searchParams] = useSearchParams({});
   const id = searchParams.get('id')!;
-  console.log('id: ');
-  console.log(id);
 
   const [postsRender, setPostsRender] = useState<PostArray>([]);
   const [paging, setPaging] = useState(0);
   const [isNextPage, setIsNextPage] = useState(true);
+  const [ifAppendReplyArea, setIfAppendReplyArea] = useState(false);
 
   useEffect(() => {
     if (isNextPage) {
@@ -75,6 +74,7 @@ const Discussion = () => {
 
           setPostsRender([...newArray]);
           setIsNextPage(res.data.nextPage);
+          setPaging(paging + 1);
           console.log(res.data);
         })
         .catch((err) => console.log(err));
@@ -82,13 +82,11 @@ const Discussion = () => {
     return;
   }, []);
 
-  function renderNewPosts() {
+  const renderNewPosts = () => {
     if (paging > 0) {
       axios
         .get(
-          `http://localhost:3000/api/board/post/detail?id=${id}&paging=${
-            paging + 1
-          }`,
+          `http://localhost:3000/api/board/post/detail?id=${id}&paging=${paging}`,
         )
         .then((res) => {
           const newArray = postsRender.concat(res.data.posts);
@@ -99,7 +97,9 @@ const Discussion = () => {
         })
         .catch((err) => console.log(err));
     }
-  }
+  };
+
+  //const appendReplyArea = () => {};
 
   return (
     <div>
@@ -115,16 +115,43 @@ const Discussion = () => {
           loader={<p>Loading...</p>}
           endMessage={<p>No more data to load</p>}
         >
-          {postsRender.map((post) => {
-            console.log('posts render: ');
-
-            console.log(postsRender);
-            if (post.category === 'mother') {
+          {postsRender[0] && (
+            <Post
+              key={postsRender[0]._id}
+              _id={postsRender[0]._id}
+              title={postsRender[0].title}
+              tags={postsRender[0].tags}
+              category="mother"
+              board={postsRender[0].board}
+              publishDate={postsRender[0].publish_date}
+              updateDate={postsRender[0].update_date}
+              author={postsRender[0].author}
+              content={postsRender[0].content}
+              hot={postsRender[0].hot}
+              score={Math.round(postsRender[0].score)}
+              liked={postsRender[0].liked}
+              upvote={postsRender[0].upvote}
+              downvote={postsRender[0].downvote}
+              comments={postsRender[0].comments}
+              clickReply={() => setIfAppendReplyArea(!ifAppendReplyArea)}
+            />
+          )}
+          {ifAppendReplyArea && (
+            <CreateNativePost
+              onPostCreated={() => setIfAppendReplyArea(false)}
+              category="reply"
+              motherPost={id}
+            ></CreateNativePost>
+          )}
+          {postsRender.map((post, index) => {
+            if (index > 0) {
               return (
-                <MotherPost
+                <Post
                   key={post._id}
                   _id={post._id}
-                  title={post.title}
+                  title=""
+                  board=""
+                  category="reply"
                   tags={post.tags}
                   publishDate={post.publish_date}
                   updateDate={post.update_date}
@@ -136,24 +163,7 @@ const Discussion = () => {
                   upvote={post.upvote}
                   downvote={post.downvote}
                   comments={post.comments}
-                />
-              );
-            } else {
-              return (
-                <ReplyPost
-                  key={post._id}
-                  _id={post._id}
-                  tags={post.tags}
-                  publishDate={post.publish_date}
-                  updateDate={post.update_date}
-                  author={post.author}
-                  content={post.content}
-                  hot={post.hot}
-                  score={Math.round(post.score)}
-                  liked={post.liked}
-                  upvote={post.upvote}
-                  downvote={post.downvote}
-                  comments={post.comments}
+                  clickReply={() => {}}
                 />
               );
             }

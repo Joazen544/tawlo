@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-interface CreateNativePostProps {
+interface CreatePostProps {
   onPostCreated: () => void; // Callback function to execute after a post is created
+  category: string;
+  motherPost: string;
 }
 
-const CreateNativePost: React.FC<CreateNativePostProps> = ({
+const CreatePost: React.FC<CreatePostProps> = ({
   onPostCreated,
+  category,
+  motherPost,
 }) => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string>('');
@@ -27,8 +31,9 @@ const CreateNativePost: React.FC<CreateNativePostProps> = ({
       const post = await axios.post(
         'http://localhost:3000/api/post',
         {
-          category: 'native', // Assuming 'native' as the category for native posts
+          category: category,
           content,
+          motherPost,
           tags: tags.split(',').map((tag) => tag.trim()), // Split tags by comma and trim whitespace
         },
         {
@@ -64,13 +69,16 @@ const CreateNativePost: React.FC<CreateNativePostProps> = ({
           className="w-full h-32 p-2 border border-gray-300 rounded-md"
           placeholder="Write your post content..."
         />
-        <input
-          type="text"
-          value={tags}
-          onChange={handleTagsChange}
-          className="w-full mt-4 p-2 border border-gray-300 rounded-md"
-          placeholder="Enter up to three tags (comma-separated)"
-        />
+        {category === 'native' && (
+          <input
+            type="text"
+            value={tags}
+            onChange={handleTagsChange}
+            className="w-full mt-4 p-2 border border-gray-300 rounded-md"
+            placeholder="Enter up to three tags (comma-separated)"
+          />
+        )}
+
         <button
           onClick={handleCreatePost}
           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -82,4 +90,4 @@ const CreateNativePost: React.FC<CreateNativePostProps> = ({
   );
 };
 
-export default CreateNativePost;
+export default CreatePost;
