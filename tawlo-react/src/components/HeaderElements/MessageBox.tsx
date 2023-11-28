@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { socket } from '../../socket';
 
 interface Props {
   targetName: string;
@@ -31,13 +32,69 @@ const MessageBox = ({ targetName, targetId, groupId }: Props) => {
 
   useEffect(() => {
     if (messages.length === 0) {
-      axios(`http://localhost:3000/api/messageGroup?group=${groupId}`).then(
-        (res) => {
+      axios
+        .get(`http://localhost:3000/api/messageGroup?group=${groupId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
           setMessages(res.data.messages);
-        },
-      );
+        });
     }
   }, []);
+
+  useEffect(() => {
+    console.log('receiving message');
+
+    socket.on('myself', (data) => {
+      console.log(data);
+
+      if (data.group === groupId && user) {
+        const newMessage: Message = {
+          liked: {
+            number: 0,
+            users: [],
+          },
+          _id: '',
+          group: groupId,
+          from: user,
+          content: data.message,
+          time: new Date(),
+          is_removed: false,
+          read: [],
+        };
+        updateMessage(newMessage);
+      }
+    });
+
+    socket.on('message', (data) => {
+      console.log(data);
+
+      if (data.group === groupId && user) {
+        const newMessage: Message = {
+          liked: {
+            number: 0,
+            users: [],
+          },
+          _id: '',
+          group: groupId,
+          from: data.from,
+          content: data.message,
+          time: new Date(),
+          is_removed: false,
+          read: [],
+        };
+        updateMessage(newMessage);
+      }
+    });
+  }, [messages]);
+
+  const updateMessage = (newMessage: Message) => {
+    const array = [...messages];
+    setMessages(array.concat(newMessage));
+  };
 
   const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();

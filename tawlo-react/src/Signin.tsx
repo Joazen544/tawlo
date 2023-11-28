@@ -60,6 +60,7 @@ const Signin = () => {
       console.log('Signup success:', response.data);
       console.log(response.data);
       Cookies.set('userId', response.data.user.id);
+      Cookies.set('userName', response.data.user.name);
 
       setSignupData({ name: '', email: '', password: '' });
 
@@ -89,6 +90,8 @@ const Signin = () => {
       );
       console.log('Signin success:', response.data);
       Cookies.set('userId', response.data.user.id);
+      Cookies.set('userName', response.data.user.name);
+
       setSigninData({ email: '', password: '' });
 
       // Handle success, e.g., redirect or show a success message
