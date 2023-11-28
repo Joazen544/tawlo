@@ -128,9 +128,11 @@ export async function createPost(req: Request, res: Response) {
       const motherPostInfo = await Post.findOne({ _id: motherPost });
 
       let postTags;
+      let postBoard;
 
       if (motherPostInfo) {
         postTags = motherPostInfo.tags;
+        postBoard = motherPostInfo.board;
       }
 
       if ((await updateMotherResult).acknowledged === false) {
@@ -145,7 +147,7 @@ export async function createPost(req: Request, res: Response) {
         publish_date: publishDate,
         update_date: publishDate,
         tags: postTags,
-        board,
+        board: postBoard,
         mother_post: motherPost,
       });
     } else {
