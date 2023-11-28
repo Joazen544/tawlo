@@ -358,7 +358,7 @@ const Post = ({
               <span className="text-gray-900">{likeNumber}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="text-gray-600 cursor-pointer">Comments:</div>
+              <div className="text-gray-600">Comments:</div>
               <span className="text-gray-900">{commentNumber}</span>
             </div>
             {/* Add more details as needed */}

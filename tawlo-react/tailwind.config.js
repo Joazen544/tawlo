@@ -9,6 +9,7 @@ export default {
       'user-image': 'url(/src/assets/user.png)',
       'up-arrow': 'url(/src/assets/up-arrow.png)',
       'down-arrow': 'url(/src/assets/down-arrow.png)',
+      'message-image': 'url(/src/assets/message.png)',
     },
   },
   plugins: [],

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Notification from './Notification';
 import { Link } from 'react-router-dom';
+import MessageDropdown from './MessageDropDown';
 
 const Header = () => {
   const [notification] = useState(0);
@@ -33,8 +34,12 @@ const Header = () => {
           id="right_part_container"
           className="w-32 h-12 flex items-center justify-around"
         >
+          <MessageDropdown />
           <Notification notificationNumber={notification} />
-          <a href="#" className="w-8 h-8 bg-user-image bg-contain "></a>
+          <a
+            href="#"
+            className="w-8 h-8 bg-user-image bg-contain bg-no-repeat"
+          ></a>
         </div>
       </div>
     </>

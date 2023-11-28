@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 interface CreatePostProps {
   onPostCreated: () => void; // Callback function to execute after a post is created
@@ -25,6 +26,8 @@ const CreatePost: React.FC<CreatePostProps> = ({
     setTags(event.target.value);
   };
 
+  const token = Cookies.get('jwtToken');
+
   const handleCreatePost = async () => {
     try {
       // Make a request to create a new post
@@ -39,7 +42,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         {
           headers: {
             'Content-Type': 'application/json',
-            authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTU3NmYxZDY1ODg2Y2QyZTFjMGZhYmUiLCJpYXQiOjE3MDAzNjc2NjEsImV4cCI6MTczNjM2NzY2MX0.NwRllZjIivGtQMXIXmjPq6gRCnzw_OeERGCEB32aPWs`,
+            authorization: `Bearer ${token}`,
           },
         },
       );
