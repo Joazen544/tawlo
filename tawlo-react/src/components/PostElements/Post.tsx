@@ -374,6 +374,7 @@ const Post = ({
                 return (
                   <Comment
                     key={index}
+                    userId={comment.user}
                     index={index}
                     name={name}
                     comment={comment}

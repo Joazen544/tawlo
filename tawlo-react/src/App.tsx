@@ -1,7 +1,9 @@
 import Home from './Home';
 import Discussion from './Discussion';
 import Signin from './Signin';
+//import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import './socket';
 
 function App() {
   return (

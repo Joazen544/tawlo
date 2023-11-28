@@ -1,8 +1,10 @@
-// import { useState } from 'react';
+import Cookies from 'js-cookie';
+import axios from 'axios';
 
 interface Props {
   index: number;
   name: string;
+  userId: string;
   comment: {
     content: string;
     like: {
@@ -13,14 +15,25 @@ interface Props {
   time: Date;
 }
 
-const Comment = ({ index, name, comment, time }: Props) => {
-  //   const [likeNum, setLikeNum] = useState(comment.like.number);
-  //   const [ifLike,setIfLike]=useState()
+const Comment = ({ index, name, comment, time, userId }: Props) => {
+  const token = Cookies.get('jwtToken');
+
+  const openChatGroup = () => {
+    axios.get(`http://localhost:3000/api/messageGroup?target=${userId}`, {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+  };
 
   return (
     <div className="flex justify-between" key={index}>
       <div className="flex">
-        <button id="commentName" className="w-20 text-left text-blue-400">
+        <button
+          onClick={openChatGroup}
+          id="commentName"
+          className="w-20 text-left text-blue-400"
+        >
           {name}
         </button>
         <p>{comment.content}</p>
