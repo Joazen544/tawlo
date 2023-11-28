@@ -125,6 +125,14 @@ export async function createPost(req: Request, res: Response) {
         },
       );
 
+      const motherPostInfo = await Post.findOne({ _id: motherPost });
+
+      let postTags;
+
+      if (motherPostInfo) {
+        postTags = motherPostInfo.tags;
+      }
+
       if ((await updateMotherResult).acknowledged === false) {
         throw new Error(
           'mother post deoes not exist or something is wrong updating it',
@@ -136,7 +144,7 @@ export async function createPost(req: Request, res: Response) {
         content,
         publish_date: publishDate,
         update_date: publishDate,
-        tags,
+        tags: postTags,
         board,
         mother_post: motherPost,
       });
@@ -160,7 +168,7 @@ export async function createPost(req: Request, res: Response) {
 export async function commentPost(req: Request, res: Response) {
   try {
     const { postId } = req.params;
-    const { content, user, postCategory, motherPost } = req.body;
+    const { content, user } = req.body;
     const userId = new ObjectId(user);
 
     // need to check post category in future
@@ -175,6 +183,12 @@ export async function commentPost(req: Request, res: Response) {
 
     if (target === null) {
       throw Error('Comment post does not exist');
+    }
+
+    const postCategory = target.category;
+    let motherPost;
+    if (target.mother_post) {
+      motherPost = target.mother_post.toString();
     }
 
     updateUserAction(userId, target.tags, target.board);
