@@ -21,8 +21,8 @@ async function calculateMotherPostHot(
     field = 'sum_likes';
   } else if (increaseField === 'upvote') {
     field = 'sum_upvotes';
-    console.log('field is: ');
-    console.log(field);
+    // console.log('field is: ');
+    // console.log(field);
   } else {
     throw Error('the increase field sent to calculate hot function is wrong');
   }
@@ -33,12 +33,12 @@ async function calculateMotherPostHot(
   } else {
     num = -1;
   }
-  console.log('num is: ');
-  console.log(num);
+  // console.log('num is: ');
+  // console.log(num);
 
-  console.log('post id is: ');
+  // console.log('post id is: ');
 
-  console.log(postId);
+  // console.log(postId);
 
   const calculateResult = await Post.updateOne({ _id: postId }, [
     {
@@ -71,7 +71,7 @@ async function calculateMotherPostHot(
     },
   ]);
 
-  console.log(calculateResult);
+  // console.log(calculateResult);
   if (calculateResult.modifiedCount !== 1) {
     throw Error('calculate hot fail');
   }
@@ -195,8 +195,8 @@ export async function commentPost(req: Request, res: Response) {
 
     updateUserAction(userId, target.tags, target.board);
 
-    console.log(content);
-    console.log(postId);
+    // console.log(content);
+    // console.log(postId);
 
     let result;
     if (postCategory === 'mother' || postCategory === 'native') {
@@ -343,15 +343,15 @@ export async function likeComment(req: Request, res: Response) {
     // check if user already like the comment
     const ifAlreadyLike =
       likeTargetComment.comments.data[floor].like.users.includes(userId);
-    console.log('userId: ');
-    console.log(userId);
+    // console.log('userId: ');
+    // console.log(userId);
 
     let result;
     if (like === true) {
       if (ifAlreadyLike === true) {
         throw Error('user already liked the comment');
       }
-      console.log('liking comment');
+      // console.log('liking comment');
 
       result = await Post.updateOne(
         { _id: postId },
@@ -418,7 +418,7 @@ export async function likePost(req: Request, res: Response) {
       { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 },
     );
 
-    console.log(JSON.stringify(likeTarget, null, 4));
+    // console.log(JSON.stringify(likeTarget, null, 4));
 
     if (likeTarget === null) {
       throw Error('like target post does not exist');
@@ -427,8 +427,8 @@ export async function likePost(req: Request, res: Response) {
     // check if user already like the post
     const ifAlreadyLike = likeTarget.liked.users.includes(userId);
 
-    console.log('userId: ');
-    console.log(userId);
+    // console.log('userId: ');
+    // console.log(userId);
 
     let increment;
     let pushOrPull;
@@ -470,10 +470,10 @@ export async function likePost(req: Request, res: Response) {
 
     updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
-    console.log(adjustUserArray);
+    // console.log(adjustUserArray);
 
     let result;
-    console.log('liking comment');
+    // console.log('liking comment');
 
     if (likeTarget.category === 'mother' || likeTarget.category === 'native') {
       // update like and calculate hot
@@ -588,7 +588,7 @@ export async function upvotePost(req: Request, res: Response) {
       },
     );
 
-    console.log(JSON.stringify(upvoteTarget, null, 4));
+    // console.log(JSON.stringify(upvoteTarget, null, 4));
 
     if (upvoteTarget === null) {
       throw Error('upvote target post does not exist');
@@ -598,8 +598,8 @@ export async function upvotePost(req: Request, res: Response) {
     const ifAlreadyUpvote = upvoteTarget.upvote.users.includes(userId);
     const ifAlreadyDownVote = upvoteTarget.downvote.users.includes(userId);
 
-    console.log('userId: ');
-    console.log(userId);
+    // console.log('userId: ');
+    // console.log(userId);
 
     // ??? how to check if comment exist
 
@@ -644,7 +644,7 @@ export async function upvotePost(req: Request, res: Response) {
     updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
 
     let result;
-    console.log('upvoting post');
+    // console.log('upvoting post');
 
     if (
       upvoteTarget.category === 'mother' ||
@@ -879,7 +879,7 @@ export async function downvotePost(req: Request, res: Response) {
       { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1, tags: 1 },
     );
 
-    console.log(JSON.stringify(downvoteTarget, null, 4));
+    // console.log(JSON.stringify(downvoteTarget, null, 4));
 
     if (downvoteTarget === null) {
       throw Error('downvote target post does not exist');
@@ -889,8 +889,8 @@ export async function downvotePost(req: Request, res: Response) {
     const ifAlreadyUpvote = downvoteTarget.upvote.users.includes(userId);
     const ifAlreadyDownVote = downvoteTarget.downvote.users.includes(userId);
 
-    console.log('userId: ');
-    console.log(userId);
+    // console.log('userId: ');
+    // console.log(userId);
 
     let increment;
     let pushOrPull;
@@ -936,7 +936,7 @@ export async function downvotePost(req: Request, res: Response) {
     updateUserAction(userId, downvoteTarget.tags, downvoteTarget.board);
 
     let result;
-    console.log('downvoting post');
+    // console.log('downvoting post');
 
     if (
       downvoteTarget.category === 'mother' ||
@@ -1196,7 +1196,7 @@ export async function getPostsOnBoard(
     }
 
     const result = await getBoardPostsFromDB(boardId, paging);
-    console.log(result);
+    // console.log(result);
 
     res.json({ posts: result.posts, nextPage: result.nextPage });
   } catch (err) {

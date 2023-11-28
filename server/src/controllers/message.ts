@@ -12,6 +12,8 @@ import {
   makeAllMessagesRead,
 } from '../models/message';
 
+// import { getIO } from './socket';
+
 async function getMessagesFromDB(
   lastMessage: ObjectId | null,
   messageGroup: ObjectId,
@@ -199,3 +201,11 @@ export async function createMessage(
     console.log(err);
   }
 }
+
+// export async function sendMessage(
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ) {
+//   const { user, messageTo, content } = req.body;
+// }
