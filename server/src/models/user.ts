@@ -113,19 +113,25 @@ export function updateUserAction(
 
         tags.forEach((tag) => {
           let ifExist = 0;
+          let lessThan30;
           const len = doc.preference_tags.length;
 
           doc.preference_tags.forEach((preference) => {
-            if (preference.name === tag) {
+            if (preference.name === tag && +preference.number <= 30) {
               preference.number = +preference.number + len;
               ifExist += 1;
+              lessThan30 = true;
+            } else if (preference.name === tag) {
+              lessThan30 = false;
             }
           });
 
-          if (ifExist) {
+          if (ifExist && lessThan30) {
             doc.preference_tags.forEach((preference) => {
               preference.number = +preference.number - ifExist;
             });
+          } else if (ifExist) {
+            console.log('nothing');
           } else if (len === 0) {
             doc.preference_tags.push({ name: tag, number: 20 });
           } else if (len < 6) {

@@ -161,7 +161,7 @@ export async function getAutoRecommendedPosts(
     },
   );
 
-  let scoring = 50;
+  let scoring = 100;
 
   preferenceTags.forEach((tag) => {
     aggregateArray.push({
@@ -172,7 +172,7 @@ export async function getAutoRecommendedPosts(
               $in: [tag, '$tags'],
             },
             {
-              $add: ['$score', scoring],
+              $add: ['$score', scoring * 5],
             },
             {
               $add: ['$score', 0],
@@ -188,17 +188,66 @@ export async function getAutoRecommendedPosts(
     scoring -= 10;
   });
 
-  console.log(JSON.stringify(aggregateArray, null, 4));
-  // const str = 'score';
+  //
+  // read_posts.forEach(post=>{
+  //   aggregateArray.push({
+  //     $set: {
+  //       score: {
+  //         $cond: [
+  //           {
+  //             $in: [post, '$tags'],
+  //           },
+  //           {
+  //             $add: ['$score', -50],
+  //           },
+  //           {
+  //             $add: ['$score', 0],
+  //           },
+  //         ],
+  //       },
+  //     },
+  //   });
+  // })
 
   aggregateArray.push(
     {
-      $limit: 50,
+      $set: {
+        score: {
+          $cond: [
+            { $in: ['$_id', read_posts] },
+            {
+              $add: [
+                '$score',
+                {
+                  $multiply: [
+                    -200,
+                    {
+                      $size: {
+                        $filter: {
+                          input: read_posts,
+                          as: 'post',
+                          cond: { $eq: ['$$post', '$_id'] },
+                        },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              $add: ['$score', 0],
+            },
+          ],
+        },
+      },
     },
     {
       $sort: {
         score: -1,
       },
+    },
+    {
+      $limit: 50,
     },
     {
       $project: {

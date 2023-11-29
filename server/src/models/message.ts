@@ -47,18 +47,26 @@ const messageSchema = new mongoose.Schema<MessageDocument>({
 const Message = mongoose.model('Message', messageSchema);
 
 export async function getLatestMessages(group: ObjectId) {
-  const messages = Message.find({ group }).limit(MESSAGE_PER_PAGE);
-  return messages;
+  const messages = await Message.find({ group })
+    .sort({ _id: -1 })
+    .limit(MESSAGE_PER_PAGE);
+
+  const returnMessages = messages.reverse();
+
+  return returnMessages;
 }
 
 export async function getEarlierMessages(
   group: ObjectId,
   lastMessage: ObjectId,
 ) {
-  const messages = Message.find({ group, _id: { $lt: lastMessage } }).limit(
-    MESSAGE_PER_PAGE,
-  );
-  return messages;
+  const messages = await Message.find({ group, _id: { $lt: lastMessage } })
+    .sort({ _id: -1 })
+    .limit(MESSAGE_PER_PAGE);
+
+  const returnMessages = messages.reverse();
+
+  return returnMessages;
 }
 
 export async function createMessageToDB(
