@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Post } from './Home';
 import BoardPost from './components/PostElements/BoardPost';
+import CreatePost from './components/CreatePost';
 
 const Board = () => {
   const [searchParams] = useSearchParams({});
@@ -13,6 +14,7 @@ const Board = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [boardName, setBoardName] = useState('');
   const [ifNextPage, setIfNextPage] = useState(false);
+  const [ifAppendPostArea, setIfAppendPostArea] = useState(false);
 
   useEffect(() => {
     // Fetch board data based on the board ID from the URL
@@ -55,6 +57,20 @@ const Board = () => {
       <Header />
       <div className="flex flex-col items-center">
         <h2 className="text-2xl font-bold mb-4">Board: {boardName}</h2>
+        <button
+          className="px-4 w-20 h-12 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-lg"
+          onClick={() => setIfAppendPostArea(!ifAppendPostArea)}
+        >
+          Post
+        </button>
+        {ifAppendPostArea && (
+          <CreatePost
+            onPostCreated={() => setIfAppendPostArea(false)}
+            category="mother"
+            motherPost=""
+            board={id || ''}
+          ></CreatePost>
+        )}
         <ul>
           {postsData.map((post) => (
             <BoardPost

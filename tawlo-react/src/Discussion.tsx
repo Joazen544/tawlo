@@ -5,7 +5,7 @@ import Post from './components/PostElements/Post';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
-import CreateNativePost from './components/CreatePost';
+import CreatePost from './components/CreatePost';
 
 export interface Post {
   _id: string;
@@ -143,11 +143,12 @@ const Discussion = () => {
               />
             )}
             {ifAppendReplyArea && (
-              <CreateNativePost
+              <CreatePost
                 onPostCreated={() => setIfAppendReplyArea(false)}
                 category="reply"
                 motherPost={id}
-              ></CreateNativePost>
+                board=""
+              ></CreatePost>
             )}
             {postsRender.map((post, index) => {
               if (index > 0) {

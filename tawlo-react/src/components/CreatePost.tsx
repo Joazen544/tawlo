@@ -6,15 +6,19 @@ interface CreatePostProps {
   onPostCreated: () => void; // Callback function to execute after a post is created
   category: string;
   motherPost: string;
+  board: string;
 }
 
 const CreatePost: React.FC<CreatePostProps> = ({
   onPostCreated,
   category,
   motherPost,
+  board,
 }) => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string>('');
+  const [postError, setPostError] = useState('');
+  const [title, setTitle] = useState('');
 
   const handleContentChange = (
     event: React.ChangeEvent<HTMLTextAreaElement>,
@@ -26,37 +30,57 @@ const CreatePost: React.FC<CreatePostProps> = ({
     setTags(event.target.value);
   };
 
+  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(event.target.value);
+  };
+
   const token = Cookies.get('jwtToken');
 
   const handleCreatePost = async () => {
-    try {
-      // Make a request to create a new post
-      const post = await axios.post(
-        'http://localhost:3000/api/post',
-        {
-          category: category,
-          content,
-          motherPost,
-          tags: tags.split(',').map((tag) => tag.trim()), // Split tags by comma and trim whitespace
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
+    if (category === 'mother' && !title) {
+      setPostError('A mother post must have title');
+      return;
+    }
+
+    if (category !== 'reply' && !tags) {
+      setPostError('A post must have tags');
+      return;
+    }
+
+    if (content) {
+      try {
+        // Make a request to create a new post
+        const post = await axios.post(
+          'http://localhost:3000/api/post',
+          {
+            category: category,
+            content,
+            motherPost,
+            board,
+            title,
+            tags: tags.split(',').map((tag) => tag.trim()), // Split tags by comma and trim whitespace
           },
-        },
-      );
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${token}`,
+            },
+          },
+        );
 
-      console.log(post);
+        console.log(post);
 
-      // Clear input fields
-      setContent('');
-      setTags('');
+        // Clear input fields
+        setContent('');
+        setTags('');
 
-      // Trigger the callback function to notify parent component about the new post
-      onPostCreated();
-    } catch (error) {
-      console.error('Error creating post:', error);
+        // Trigger the callback function to notify parent component about the new post
+        onPostCreated();
+      } catch (error) {
+        console.error('Error creating post:', error);
+      }
+    } else {
+      setPostError('A post must have content and at least one tag');
     }
   };
 
@@ -66,13 +90,22 @@ const CreatePost: React.FC<CreatePostProps> = ({
       className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
     >
       <div id="createPostContent" className="p-4">
+        {category === 'mother' && (
+          <input
+            type="text"
+            value={title}
+            onChange={handleTitleChange}
+            className="w-full mt-4 p-2 border border-gray-300 rounded-md"
+            placeholder="What is this post about?"
+          />
+        )}
         <textarea
           value={content}
           onChange={handleContentChange}
           className="w-full h-32 p-2 border border-gray-300 rounded-md"
           placeholder="Write your post content..."
         />
-        {category === 'native' && (
+        {category !== 'reply' && (
           <input
             type="text"
             value={tags}
@@ -88,6 +121,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         >
           Create Post
         </button>
+        {postError && <p className="text-red-500">{postError}</p>}
       </div>
     </div>
   );

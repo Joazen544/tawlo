@@ -168,6 +168,7 @@ const Home = () => {
             onPostCreated={() => console.log(1)}
             category="native"
             motherPost=""
+            board=""
           ></CreatePost>
           <InfiniteScroll
             dataLength={postsRender.length}
