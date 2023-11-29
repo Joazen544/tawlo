@@ -105,11 +105,11 @@ const Discussion = () => {
     <div>
       <Header />
       <section
-        id="posts_background"
+        id="postsBackground"
         className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
       >
         <div
-          id="posts container"
+          id="postsContainer"
           style={{ width: '60rem' }}
           className="border-solid border-l-2 border-r-2 bg-white"
         >

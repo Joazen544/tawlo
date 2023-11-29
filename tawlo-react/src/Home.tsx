@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import Header from './components/HeaderElements/Header';
 import Post from './components/PostElements/Post';
-import BoardPost from './components/PostElements/BoardPost';
+import DiscussPost from './components/PostElements/DiscussPost';
 import CreatePost from './components/CreatePost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
 import Cookies from 'js-cookie';
+import { Link } from 'react-router-dom';
 
 export interface Post {
   _id: string;
@@ -55,15 +56,33 @@ export interface Post {
 
 interface PostArray extends Array<Post> {}
 
+interface Board {
+  _id: string;
+  name: string;
+}
+
 const Home = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [postsRecommend, setPostsRecommend] = useState<PostArray>([]);
   const [postsRender, setPostsRender] = useState<PostArray>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [nowViewPosts] = useState(0);
-  // const [authorsName, setAuthorsName] = useState<string[]>([]);
 
   const token = Cookies.get('jwtToken');
+
+  const [boards, setBoards] = useState<Board[]>([]);
+
+  useEffect(() => {
+    // Fetch all board IDs
+    const fetchBoardIds = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/boards');
+        setBoards(response.data.boards);
+      } catch (error) {
+        console.error('Error fetching board IDs:', error);
+      }
+    };
+
+    fetchBoardIds();
+  }, []);
 
   useEffect(() => {
     axios
@@ -120,70 +139,95 @@ const Home = () => {
       <Header />
       <section
         id="posts_container"
-        className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
+        className="w-full bg-gray-50 min-h-screen flex flex-row"
       >
-        <CreatePost
-          onPostCreated={() => console.log(1)}
-          category="native"
-          motherPost=""
-        ></CreatePost>
-        <InfiniteScroll
-          dataLength={postsRender.length}
-          next={() => {
-            if (postsRender.length > 0) {
-              return renderNewPosts(postsRender, postsRecommend);
-            }
-          }}
-          hasMore={postsRender.length < postsRecommend.length}
-          loader={<p>Loading...</p>}
-          endMessage={<p>No more data to load</p>}
+        <div
+          id="sideBar"
+          style={{ height: '20rem' }}
+          className="flex-shrink-0 fixed left-32 top-48 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
         >
-          {postsRender.map((post) => {
-            if (post.category === 'native') {
-              return (
-                <Post
-                  key={post._id}
-                  _id={post._id}
-                  tags={post.tags}
-                  category="native"
-                  title=""
-                  board=""
-                  publishDate={post.publish_date}
-                  updateDate={post.update_date}
-                  author={post.author}
-                  content={post.content}
-                  hot={post.hot}
-                  score={Math.round(post.score)}
-                  liked={post.liked}
-                  upvote={post.upvote}
-                  downvote={post.downvote}
-                  comments={post.comments}
-                  clickReply={() => {}}
-                />
-              );
-            } else {
-              return (
-                <BoardPost
-                  key={post._id}
-                  _id={post._id}
-                  tags={post.tags}
-                  board={post.board}
-                  publishDate={post.publish_date}
-                  updateDate={post.update_date}
-                  author={post.author}
-                  content={post.content}
-                  hot={post.hot}
-                  score={Math.round(post.score)}
-                  sumLikes={post.sum_likes}
-                  sumUpvotes={post.sum_upvotes}
-                  sumComments={post.sum_comments}
-                  sumReply={post.sum_reply}
-                  title={post.title}
-                />
-              );
-            }
-          })}
-        </InfiniteScroll>
+          <div className="mb-4 font-bold text-xl">Boards</div>
+          <ul>
+            {boards.map((board) => (
+              <li key={board._id} className="mb-2">
+                <Link
+                  to={`/board?id=${board._id}`}
+                  className="text-blue-400 hover:underline"
+                >
+                  {board.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div
+          id="postsContainer"
+          className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
+        >
+          <CreatePost
+            onPostCreated={() => console.log(1)}
+            category="native"
+            motherPost=""
+          ></CreatePost>
+          <InfiniteScroll
+            dataLength={postsRender.length}
+            next={() => {
+              if (postsRender.length > 0) {
+                return renderNewPosts(postsRender, postsRecommend);
+              }
+            }}
+            hasMore={postsRender.length < postsRecommend.length}
+            loader={<p>Loading...</p>}
+            endMessage={<p>No more data to load</p>}
+          >
+            {postsRender.map((post, index) => {
+              if (post.category === 'native') {
+                return (
+                  <Post
+                    floor={index}
+                    key={post._id}
+                    _id={post._id}
+                    tags={post.tags}
+                    category="native"
+                    title=""
+                    board=""
+                    publishDate={post.publish_date}
+                    updateDate={post.update_date}
+                    author={post.author}
+                    content={post.content}
+                    hot={post.hot}
+                    score={Math.round(post.score)}
+                    liked={post.liked}
+                    upvote={post.upvote}
+                    downvote={post.downvote}
+                    comments={post.comments}
+                    clickReply={() => {}}
+                  />
+                );
+              } else {
+                return (
+                  <DiscussPost
+                    key={post._id}
+                    _id={post._id}
+                    tags={post.tags}
+                    board={post.board}
+                    publishDate={post.publish_date}
+                    updateDate={post.update_date}
+                    author={post.author}
+                    content={post.content}
+                    hot={post.hot}
+                    score={Math.round(post.score)}
+                    sumLikes={post.sum_likes}
+                    sumUpvotes={post.sum_upvotes}
+                    sumComments={post.sum_comments}
+                    sumReply={post.sum_reply}
+                    title={post.title}
+                  />
+                );
+              }
+            })}
+          </InfiniteScroll>
+        </div>
       </section>
     </div>
   );
