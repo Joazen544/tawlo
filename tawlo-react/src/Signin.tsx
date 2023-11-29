@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Header from './components/HeaderElements/Header';
+import { Navigate } from 'react-router-dom';
+//import { Navigate } from 'react-router-dom';
 
 const Signin = () => {
+  const [ifSignIn, setIfSignIn] = useState(false);
+
   const [signupData, setSignupData] = useState({
     name: '',
     email: '',
@@ -17,6 +21,15 @@ const Signin = () => {
 
   const [signupError, setSignupError] = useState('');
   const [signinError, setSigninError] = useState('');
+
+  useEffect(() => {
+    const userId = Cookies.get('userId');
+    if (userId) {
+      setIfSignIn(true);
+    } else {
+      setIfSignIn(false);
+    }
+  }, []);
 
   const handleSignupChange = (e: React.FormEvent<HTMLInputElement>) => {
     setSignupData({
@@ -62,6 +75,7 @@ const Signin = () => {
       console.log(response.data);
       Cookies.set('userId', response.data.user.id);
       Cookies.set('userName', response.data.user.name);
+      setIfSignIn(!ifSignIn);
 
       setSignupData({ name: '', email: '', password: '' });
 
@@ -92,9 +106,9 @@ const Signin = () => {
       console.log('Signin success:', response.data);
       Cookies.set('userId', response.data.user.id);
       Cookies.set('userName', response.data.user.name);
+      setIfSignIn(!ifSignIn);
 
       setSigninData({ email: '', password: '' });
-
       // Handle success, e.g., redirect or show a success message
     } catch (error) {
       console.log(error);
@@ -110,6 +124,7 @@ const Signin = () => {
 
   return (
     <>
+      {ifSignIn && <Navigate to="/" replace={true}></Navigate>}
       <Header />
       <div className="max-w-3xl mx-auto mt-8">
         <h2 className="text-2xl font-bold mb-4">Sign Up</h2>

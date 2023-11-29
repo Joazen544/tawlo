@@ -267,7 +267,7 @@ const Post = ({
     <>
       <div
         style={{ width: '50rem' }}
-        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden"
+        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
       >
         {/* only mother post has title */}
         {category === 'mother' && (
@@ -344,7 +344,7 @@ const Post = ({
             )}
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">Hot:</span>
-              <span className="text-gray-900">{hot}</span>
+              <span className="text-gray-900">{Math.round(hot)}</span>
             </div>
             <div className="flex items-center space-x-2">
               <button

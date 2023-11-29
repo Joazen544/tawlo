@@ -62,7 +62,7 @@ const BoardPost = ({
     <>
       <div
         style={{ width: '50rem' }}
-        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden"
+        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
       >
         <div id="postContent" className="p-4 flex">
           <div
@@ -76,7 +76,7 @@ const BoardPost = ({
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">Hot:</span>
-              <span className="text-gray-900">{hot}</span>
+              <span className="text-gray-900">{Math.round(hot)}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">Sum Likes:</span>
@@ -92,7 +92,7 @@ const BoardPost = ({
             className="ml-10 flex flex-col justify-between w-full"
           >
             <div>
-              <div className="text-2xl text-blue-500">
+              <div className="text-2xl text-gray-500">
                 <Link to={`/board/discussion?id=${_id}`}>{title}</Link>
               </div>
               <p className="text-gray-500 text-sm mt-3">{content}</p>

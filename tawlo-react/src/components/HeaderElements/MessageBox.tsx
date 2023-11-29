@@ -31,6 +31,8 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
   const [messageInput, setMessageInput] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [ifBoxShow, setIfBoxShow] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [ifNewMessage, setIfNewMessage] = useState(false);
 
   useEffect(() => {
     axios
@@ -42,6 +44,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
       })
       .then((res) => {
         setMessages(res.data.messages);
+        setIfNewMessage(true);
       });
   }, [targetName, targetId, groupId]);
 
@@ -120,33 +123,94 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
     if (messagesAreaRef.current) {
       messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
     }
-  }, [messages, ifBoxShow]);
+  }, [ifBoxShow]);
+
+  useEffect(() => {
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
+  }, [ifNewMessage]);
+
+  //   useEffect(() => {
+  //     if (messagesAreaRef.current && messagesAreaRef.current.scrollTop !== 0) {
+  //       messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+  //     }
+  //   }, [messages]);
 
   const handleMessageSend = () => {
-    try {
-      axios
-        .post(
-          `http://localhost:3000/api/message`,
-          {
-            messageTo: targetId,
-            messageGroup: groupId,
-            content: messageInput,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              authorization: `Bearer ${token}`,
+    if (messageInput) {
+      try {
+        axios
+          .post(
+            `http://localhost:3000/api/message`,
+            {
+              messageTo: targetId,
+              messageGroup: groupId,
+              content: messageInput,
             },
-          },
-        )
-        .finally(() => {
-          console.log('sending message');
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                authorization: `Bearer ${token}`,
+              },
+            },
+          )
+          .finally(() => {
+            console.log('sending message');
 
-          setMessageInput('');
+            setMessageInput('');
+          });
+      } catch (err) {
+        console.log(err);
+        alert('something is wrong' + err);
+      }
+    }
+  };
+
+  const handleScroll = () => {
+    if (messagesAreaRef.current) {
+      const { scrollTop } = messagesAreaRef.current;
+      // , scrollHeight, clientHeight
+      if (scrollTop === 0 && !isLoading) {
+        console.log('scroll position is at the top');
+
+        // Scroll position is at the top, load more messages
+        setIsLoading(true);
+
+        // Perform your request to load previous messages here
+        // For example, call a function like loadMoreMessages()
+        loadMoreMessages().finally(() => {
+          setIsLoading(false);
         });
-    } catch (err) {
-      console.log(err);
-      alert('something is wrong' + err);
+      }
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    try {
+      // Make your request to load previous messages
+      // For example, using axios and updating the state with setMessages
+      console.log('loading more messages');
+
+      const response = await axios.get(
+        `http://localhost:3000/api/messages?group=${groupId}&lastMessage=${messages[0]._id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      const newMessages = response.data.messages;
+      console.log(newMessages);
+
+      // Update the state with the new messages
+      if (response) {
+        setMessages([...newMessages, ...messages]);
+        setIfNewMessage(true);
+      }
+    } catch (error) {
+      console.error('Error loading more messages:', error);
     }
   };
 
@@ -163,6 +227,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
         id="infoBar"
         className="w-full h-10 border-b-2 border-solid  border-gray-400 flex items-center justify-between cursor-pointer"
         onClick={handleBoxShow}
+        onScroll={handleScroll}
       >
         <button className="ml-3 hover:text-blue-400 z-10">{targetName}</button>
         <button className="mr-3 hover:text-blue-400" onClick={closeBox}>
@@ -176,6 +241,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
             style={{ height: '19rem', overflowY: 'auto' }}
             className="p-2"
             ref={messagesAreaRef}
+            onScroll={handleScroll}
           >
             {messages.length > 0 &&
               messages.map((message) => {

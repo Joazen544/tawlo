@@ -10,7 +10,7 @@ const Header = () => {
     <>
       <div
         id="container"
-        className="w-full h-12 bg-slate-200 flex justify-between"
+        className="w-full h-12 bg-gray-200 flex justify-between"
       >
         <div id="left_part_header" className="w-96 h-12 flex">
           <div id="logo" className="flex items-center ml-2">
@@ -37,7 +37,7 @@ const Header = () => {
           <MessageDropdown />
           <Notification notificationNumber={notification} />
           <Link
-            to={'/user/signin'}
+            to={'/user/profile'}
             className="w-8 h-8 bg-user-image bg-contain bg-no-repeat"
           ></Link>
         </div>

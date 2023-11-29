@@ -86,6 +86,7 @@ const Home = () => {
     postsRecommend: PostArray,
   ) {
     const nextPosts = [];
+    const nextPostsId = [];
     const postsRemain = postsRecommend.length - postsNowRender.length;
     let renderTo;
     if (postsRemain > 6) {
@@ -95,7 +96,21 @@ const Home = () => {
     }
     for (let i = postsNowRender.length; i < renderTo; i++) {
       nextPosts.push(postsRecommend[i]);
+      nextPostsId.push(postsRecommend[i]._id);
     }
+    console.log(nextPosts);
+    console.log(nextPostsId);
+    axios.post(
+      'http://localhost:3000/api/user/read',
+      {
+        posts: nextPostsId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
     setPostsRender(postsNowRender.concat(nextPosts));
   }
@@ -105,7 +120,7 @@ const Home = () => {
       <Header />
       <section
         id="posts_container"
-        className="w-full bg-slate-300 min-h-screen flex flex-col items-center pt-10"
+        className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
       >
         <CreatePost
           onPostCreated={() => console.log(1)}
