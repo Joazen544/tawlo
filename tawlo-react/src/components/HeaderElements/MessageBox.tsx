@@ -33,19 +33,17 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
   const [ifBoxShow, setIfBoxShow] = useState(true);
 
   useEffect(() => {
-    if (messages.length === 0) {
-      axios
-        .get(`http://localhost:3000/api/messageGroup?group=${groupId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
-          },
-        })
-        .then((res) => {
-          setMessages(res.data.messages);
-        });
-    }
-  }, []);
+    axios
+      .get(`http://localhost:3000/api/messageGroup?group=${groupId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        setMessages(res.data.messages);
+      });
+  }, [targetName, targetId, groupId]);
 
   useEffect(() => {
     console.log('receiving message');

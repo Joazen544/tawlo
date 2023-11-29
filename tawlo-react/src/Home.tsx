@@ -6,6 +6,7 @@ import CreatePost from './components/CreatePost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
+import Cookies from 'js-cookie';
 
 export interface Post {
   _id: string;
@@ -62,13 +63,13 @@ const Home = () => {
   const [nowViewPosts] = useState(0);
   // const [authorsName, setAuthorsName] = useState<string[]>([]);
 
+  const token = Cookies.get('jwtToken');
+
   useEffect(() => {
     axios
       .get(`http://localhost:3000/api/posts/recommendation`, {
         headers: {
-          Authorization:
-            'Bearer ' +
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTU3NmYxZDY1ODg2Y2QyZTFjMGZhYmUiLCJpYXQiOjE3MDAzNjc2NjEsImV4cCI6MTczNjM2NzY2MX0.NwRllZjIivGtQMXIXmjPq6gRCnzw_OeERGCEB32aPWs',
+          Authorization: `Bearer ${token}`,
         },
       })
       .then((res) => {

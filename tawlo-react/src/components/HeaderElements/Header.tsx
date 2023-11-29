@@ -36,10 +36,10 @@ const Header = () => {
         >
           <MessageDropdown />
           <Notification notificationNumber={notification} />
-          <a
-            href="#"
+          <Link
+            to={'/user/signin'}
             className="w-8 h-8 bg-user-image bg-contain bg-no-repeat"
-          ></a>
+          ></Link>
         </div>
       </div>
     </>

@@ -65,6 +65,11 @@ const MessageDropdown = () => {
   }, [messagesGroup]);
 
   const openChatGroup = (id: string, name: string, targetId: string) => {
+    if (ifChatBoxOpen) {
+      closeChatGroup();
+      console.log('123');
+    }
+
     setIfChatBoxOpen(true);
     setChatGroupId(id);
     setChatName(name);
