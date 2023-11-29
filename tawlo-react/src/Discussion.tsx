@@ -105,70 +105,78 @@ const Discussion = () => {
     <div>
       <Header />
       <section
-        id="posts_container"
-        className="w-full bg-slate-300 min-h-screen flex flex-col items-center pt-10"
+        id="posts_background"
+        className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
       >
-        <InfiniteScroll
-          dataLength={postsRender.length}
-          next={() => renderNewPosts()}
-          hasMore={isNextPage}
-          loader={<p>Loading...</p>}
-          endMessage={<p>No more data to load</p>}
+        <div
+          id="posts container"
+          style={{ width: '60rem' }}
+          className="border-solid border-l-2 border-r-2 bg-white"
         >
-          {postsRender[0] && (
-            <Post
-              key={postsRender[0]._id}
-              _id={postsRender[0]._id}
-              title={postsRender[0].title}
-              tags={postsRender[0].tags}
-              category="mother"
-              board={postsRender[0].board}
-              publishDate={postsRender[0].publish_date}
-              updateDate={postsRender[0].update_date}
-              author={postsRender[0].author}
-              content={postsRender[0].content}
-              hot={postsRender[0].hot}
-              score={Math.round(postsRender[0].score)}
-              liked={postsRender[0].liked}
-              upvote={postsRender[0].upvote}
-              downvote={postsRender[0].downvote}
-              comments={postsRender[0].comments}
-              clickReply={() => setIfAppendReplyArea(!ifAppendReplyArea)}
-            />
-          )}
-          {ifAppendReplyArea && (
-            <CreateNativePost
-              onPostCreated={() => setIfAppendReplyArea(false)}
-              category="reply"
-              motherPost={id}
-            ></CreateNativePost>
-          )}
-          {postsRender.map((post, index) => {
-            if (index > 0) {
-              return (
-                <Post
-                  key={post._id}
-                  _id={post._id}
-                  title=""
-                  board=""
-                  category="reply"
-                  tags={post.tags}
-                  publishDate={post.publish_date}
-                  updateDate={post.update_date}
-                  author={post.author}
-                  content={post.content}
-                  hot={post.hot}
-                  score={Math.round(post.score)}
-                  liked={post.liked}
-                  upvote={post.upvote}
-                  downvote={post.downvote}
-                  comments={post.comments}
-                  clickReply={() => {}}
-                />
-              );
-            }
-          })}
-        </InfiniteScroll>
+          <InfiniteScroll
+            dataLength={postsRender.length}
+            next={() => renderNewPosts()}
+            hasMore={isNextPage}
+            loader={<p>Loading...</p>}
+            endMessage={<p>No more data to load</p>}
+          >
+            {postsRender[0] && (
+              <Post
+                key={postsRender[0]._id}
+                _id={postsRender[0]._id}
+                floor={0}
+                title={postsRender[0].title}
+                tags={postsRender[0].tags}
+                category="mother"
+                board={postsRender[0].board}
+                publishDate={postsRender[0].publish_date}
+                updateDate={postsRender[0].update_date}
+                author={postsRender[0].author}
+                content={postsRender[0].content}
+                hot={postsRender[0].hot}
+                score={Math.round(postsRender[0].score)}
+                liked={postsRender[0].liked}
+                upvote={postsRender[0].upvote}
+                downvote={postsRender[0].downvote}
+                comments={postsRender[0].comments}
+                clickReply={() => setIfAppendReplyArea(!ifAppendReplyArea)}
+              />
+            )}
+            {ifAppendReplyArea && (
+              <CreateNativePost
+                onPostCreated={() => setIfAppendReplyArea(false)}
+                category="reply"
+                motherPost={id}
+              ></CreateNativePost>
+            )}
+            {postsRender.map((post, index) => {
+              if (index > 0) {
+                return (
+                  <Post
+                    key={post._id}
+                    _id={post._id}
+                    title={postsRender[0].title}
+                    board=""
+                    floor={index}
+                    category="reply"
+                    tags={post.tags}
+                    publishDate={post.publish_date}
+                    updateDate={post.update_date}
+                    author={post.author}
+                    content={post.content}
+                    hot={post.hot}
+                    score={Math.round(post.score)}
+                    liked={post.liked}
+                    upvote={post.upvote}
+                    downvote={post.downvote}
+                    comments={post.comments}
+                    clickReply={() => {}}
+                  />
+                );
+              }
+            })}
+          </InfiniteScroll>
+        </div>
       </section>
     </div>
   );

@@ -13,6 +13,7 @@ interface Props {
   category: string;
   content: string;
   hot: number;
+  floor: number;
   tags: string[];
   score: number;
   liked: {
@@ -58,6 +59,7 @@ const Post = ({
   _id,
   publishDate,
   author,
+  floor,
   tags,
   content,
   hot,
@@ -262,52 +264,97 @@ const Post = ({
   };
 
   const publishTime = new Date(publishDate);
+  let postContainer;
+  if (category === 'native') {
+    postContainer =
+      'max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg  overflow-hidden border-solid border-2 border-gray-400';
+  } else {
+    postContainer =
+      'w-full mx-auto mt-2 pb-6  bg-white overflow-hidden border-solid border-b-2 border-gray-400';
+  }
 
   return (
     <>
-      <div
-        style={{ width: '50rem' }}
-        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
-      >
+      <div style={{ width: '50rem' }} className={postContainer}>
         {/* only mother post has title */}
         {category === 'mother' && (
           <div
             id="title"
-            className="p-4 border-b border-gray-200 flex justify-between"
+            className="p-4 border-b border-gray-200 flex justify-between items-center"
           >
-            <span className="text-2xl">{title}</span>
+            <span className="text-2xl">#問題：{title}</span>
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+              className="px-4 w-20 h-16 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
               onClick={clickReply}
             >
-              Reply post
+              Reply
             </button>
           </div>
         )}
-        <div id="authorInfo" className="p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              {/* Add user avatar or profile image here */}
-            </div>
-            <div className="ml-3">
-              <button className="text-lg font-medium text-blue-400">
-                {authorName}
-              </button>
-              <div className="text-gray-500">{publishTime.toDateString()}</div>
-            </div>
-            <div id="tags" className="ml-10 text-gray-500 flex">
-              {tags.map((tag, index) => (
-                <p
-                  className="border-solid border-2 rounded-md p-0.5 mr-3"
-                  key={index}
-                >
-                  {tag}
-                </p>
-              ))}
+        {category === 'reply' && (
+          <div
+            id="title"
+            className="pr-4 border-gray-200 flex justify-between items-center"
+          >
+            <span className="text-2xl">#{floor} 回答</span>
+            <div id="authorInfo" className="r-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  {/* Add user avatar or profile image here */}
+                </div>
+                <div className="ml-3">
+                  <button className="text-lg font-medium text-blue-400">
+                    {authorName}
+                  </button>
+                  <div className="text-gray-500">
+                    {publishTime.toDateString()}
+                  </div>
+                </div>
+                <div id="tags" className="ml-10 text-gray-500 flex">
+                  {category !== 'reply' &&
+                    tags.map((tag, index) => (
+                      <p
+                        className="border-solid border-2 rounded-md p-0.5 mr-3"
+                        key={index}
+                      >
+                        {tag}
+                      </p>
+                    ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div id="postContent" className="p-4 flex">
+        )}
+        {category !== 'reply' && (
+          <div id="authorInfo" className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                {/* Add user avatar or profile image here */}
+              </div>
+              <div className="ml-3">
+                <button className="text-lg font-medium text-blue-400">
+                  {authorName}
+                </button>
+                <div className="text-gray-500">
+                  {publishTime.toDateString()}
+                </div>
+              </div>
+              <div id="tags" className="ml-10 text-gray-500 flex">
+                {category !== 'reply' &&
+                  tags.map((tag, index) => (
+                    <p
+                      className="border-solid border-2 rounded-md p-0.5 mr-3"
+                      key={index}
+                    >
+                      {tag}
+                    </p>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div id="postContent" className="p-4 flex mt-3 mb-3">
           <div
             id="useful"
             className="w-10 h-25 flex flex-col justify-center items-center"
@@ -334,36 +381,37 @@ const Post = ({
             <p className="text-gray-800">{content}</p>
           </div>
         </div>
-        <div id="postInfo" className="p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-4">
-            {category === 'native' && (
+        {category === 'native' && (
+          <div id="postInfo" className="p-4 border-t border-gray-200">
+            <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span className="text-gray-600">Score:</span>
                 <span className="text-gray-900">{score}</span>
               </div>
-            )}
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Hot:</span>
-              <span className="text-gray-900">{Math.round(hot)}</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-600">Hot:</span>
+                <span className="text-gray-900">{Math.round(hot)}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  className={`text-gray-600 cursor-pointer ${
+                    isLiked ? 'text-blue-500' : ''
+                  }`}
+                  onClick={handleLike}
+                >
+                  Like
+                </button>
+                <span className="text-gray-900">{likeNumber}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="text-gray-600">Comments:</div>
+                <span className="text-gray-900">{commentNumber}</span>
+              </div>
+              {/* Add more details as needed */}
             </div>
-            <div className="flex items-center space-x-2">
-              <button
-                className={`text-gray-600 cursor-pointer ${
-                  isLiked ? 'text-blue-500' : ''
-                }`}
-                onClick={handleLike}
-              >
-                Like
-              </button>
-              <span className="text-gray-900">{likeNumber}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="text-gray-600">Comments:</div>
-              <span className="text-gray-900">{commentNumber}</span>
-            </div>
-            {/* Add more details as needed */}
           </div>
-        </div>
+        )}
+
         {commentsData.length > 0 && (
           <div id="comments" className="p-4 border-t border-gray-200">
             {commentsData &&
@@ -384,19 +432,19 @@ const Post = ({
               })}
           </div>
         )}
-        <div id="commentCreate" className="flex">
+        <div id="commentCreate" className="flex items-center">
           <input
             type="text"
             value={commentCreate}
             onChange={handleCommentChange}
-            className="w-full p-3 ml-2 mb-2 mr-2 border border-gray-300 rounded-md"
+            className="w-full h-10 p-3 ml-2 mb-2 mr-2 border border-gray-300 rounded-md"
             placeholder="輸入留言"
           />
           <button
             onClick={handleCreateComment}
-            className=" px-4 py-2 mb-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+            className=" h-10 px-4 mb-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
           >
-            Create Comment
+            Comment
           </button>
         </div>
       </div>
