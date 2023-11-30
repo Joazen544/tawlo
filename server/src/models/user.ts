@@ -11,7 +11,6 @@ export interface UserDocument extends Document {
   // password_confirm: string;
   read_posts: ObjectId[];
   friends: ObjectId[];
-  friend_requests: { send: ObjectId; to: ObjectId }[];
   follow: ObjectId[];
   block: ObjectId[];
   read_board: ObjectId[];
@@ -47,7 +46,6 @@ const userSchema = new mongoose.Schema<UserDocument>({
   // Posts read 300 recorded
   read_posts: [ObjectId],
   friends: [ObjectId],
-  friend_requests: [{ send: ObjectId, to: ObjectId }],
   follow: [ObjectId],
   block: [ObjectId],
   // only record 5 board
