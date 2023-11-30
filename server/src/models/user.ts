@@ -207,25 +207,62 @@ export async function getUserPreference(userId: ObjectId) {
 }
 
 export async function getUserRelationFromDB(user: string, targetId: string) {
+  // try {
+  const userInfo = await User.findOne(
+    {
+      _id: user,
+      'friends.user': targetId,
+    },
+    {
+      friends: { $elemMatch: { user: targetId } },
+    },
+  );
+  console.log(userInfo);
+  if (userInfo === null) {
+    return null;
+  }
+  return userInfo.friends[0].status;
+}
+
+export async function createRelation(user: string, target: string) {
+  const session = await User.startSession();
+  let result;
   try {
-    const userInfo = await User.findOne(
-      {
-        _id: user,
-        'friends.user': targetId,
-      },
-      {
-        friends: { $elemMatch: { user: targetId } },
-      },
-    );
-    console.log(userInfo);
-    if (userInfo === null) {
-      return null;
+    session.startTransaction();
+    const relation = await getUserRelationFromDB(user, target);
+    if (relation === null) {
+      await User.updateOne(
+        { _id: user },
+        { $push: { friends: { user: target, status: 'requested' } } },
+        { session },
+      );
+      await User.updateOne(
+        { _id: target },
+        { $push: { friends: { user, status: 'received' } } },
+        { session },
+      );
+    } else if (relation === 'received') {
+      await User.updateOne(
+        { _id: user, 'friends.user': target },
+        { $set: { 'friends.$.status': 'friends' } },
+        { session },
+      );
+      await User.updateOne(
+        { _id: target, 'friends.user': user },
+        { $set: { 'friends.$.status': 'friends' } },
+        { session },
+      );
     }
-    return userInfo.friends[0].status;
+    await session.commitTransaction();
+    result = true;
   } catch (err) {
     console.log(err);
-    return err;
+    await session.abortTransaction();
+    result = false;
+  } finally {
+    await session.endSession();
   }
+  return result;
 }
 
 export default User;

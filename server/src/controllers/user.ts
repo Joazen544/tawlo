@@ -4,6 +4,7 @@ import User, {
   UserDocument,
   updateUserReadPosts,
   getUserRelationFromDB,
+  createRelation,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
@@ -146,6 +147,31 @@ export async function getUserRelation(
     const relation = await getUserRelationFromDB(user, id);
 
     res.json({ relation });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function sendRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const id = req.query.id as string;
+
+    if (!id) {
+      res.status(500).json({ error: 'target id is missing' });
+      return;
+    }
+
+    const result = await createRelation(user, id);
+    if (result) {
+      res.json({ status: 'success' });
+      return;
+    }
+    res.status(500).json({ error: 'create friend relation fail' });
   } catch (err) {
     next(err);
   }
