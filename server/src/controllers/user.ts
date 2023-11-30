@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
-import User, { UserDocument, updateUserReadPosts } from '../models/user';
+import User, {
+  UserDocument,
+  updateUserReadPosts,
+  getUserRelationFromDB,
+} from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
 export async function signUp(req: Request, res: Response) {
@@ -120,6 +124,28 @@ export async function getUserName(
     } else {
       throw Error('can not find user name');
     }
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getUserRelation(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const id = req.query.id as string;
+
+    if (!id) {
+      res.status(500).json({ error: 'target id is missing' });
+      return;
+    }
+
+    const relation = await getUserRelationFromDB(user, id);
+
+    res.json({ relation });
   } catch (err) {
     next(err);
   }

@@ -10,7 +10,11 @@ export interface UserDocument extends Document {
   password: string;
   // password_confirm: string;
   read_posts: ObjectId[];
-  friends: ObjectId[];
+  friends: {
+    user: ObjectId;
+    status: string;
+    update_time: Date;
+  }[];
   follow: ObjectId[];
   block: ObjectId[];
   read_board: ObjectId[];
@@ -45,7 +49,16 @@ const userSchema = new mongoose.Schema<UserDocument>({
 
   // Posts read 300 recorded
   read_posts: [ObjectId],
-  friends: [ObjectId],
+  friends: [
+    {
+      user: ObjectId,
+      status: {
+        type: String,
+        enum: ['friends', 'requested', 'received', 'block', 'blocked'],
+      },
+      update_time: Date,
+    },
+  ],
   follow: [ObjectId],
   block: [ObjectId],
   // only record 5 board
@@ -174,18 +187,45 @@ export async function updateUserReadPosts(
 }
 
 export async function getUserPreference(userId: ObjectId) {
-  const userInfo = User.findOne(
-    { _id: userId },
-    {
-      _id: 1,
-      preference_tags: 1,
-      recommend_mode: 1,
-      read_board: 1,
-      read_posts: 1,
-    },
-  );
+  try {
+    const userInfo = await User.findOne(
+      { _id: userId },
+      {
+        _id: 1,
+        preference_tags: 1,
+        recommend_mode: 1,
+        read_board: 1,
+        read_posts: 1,
+      },
+    );
 
-  return userInfo;
+    return userInfo;
+  } catch (err) {
+    console.log(err);
+    return err;
+  }
+}
+
+export async function getUserRelationFromDB(user: string, targetId: string) {
+  try {
+    const userInfo = await User.findOne(
+      {
+        _id: user,
+        'friends.user': targetId,
+      },
+      {
+        friends: { $elemMatch: { user: targetId } },
+      },
+    );
+    console.log(userInfo);
+    if (userInfo === null) {
+      return null;
+    }
+    return userInfo.friends[0].status;
+  } catch (err) {
+    console.log(err);
+    return err;
+  }
 }
 
 export default User;

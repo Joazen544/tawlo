@@ -5,7 +5,11 @@ import Post, {
   getBoardPostsFromDB,
   getMotherAndReplyPostsFromDB,
 } from '../models/post';
-import { updateUserAction, getUserPreference } from '../models/user';
+import {
+  updateUserAction,
+  getUserPreference,
+  UserDocument,
+} from '../models/user';
 import { getIO } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
@@ -1146,7 +1150,7 @@ export async function getRecommendPosts(req: Request, res: Response) {
     const { user } = req.body;
     const userId = new ObjectId(user);
     // const {tags,}
-    const userInfo = await getUserPreference(userId);
+    const userInfo = (await getUserPreference(userId)) as UserDocument;
 
     let preferenceTags;
     let recommendMode;
