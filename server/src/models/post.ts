@@ -125,8 +125,7 @@ export async function getAutoRecommendedPosts(
   boards: ObjectId[],
   read_posts: ObjectId[],
 ) {
-  console.log(boards);
-  console.log(read_posts);
+  if (!boards) console.log(boards);
 
   const aggregateArray = [];
   aggregateArray.push(
@@ -181,9 +180,6 @@ export async function getAutoRecommendedPosts(
         },
       },
     });
-    console.log(tag);
-
-    console.log(scoring);
 
     scoring -= 10;
   });

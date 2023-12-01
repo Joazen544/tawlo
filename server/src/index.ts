@@ -9,6 +9,7 @@ import userRouter from './routes/user';
 import postRouter from './routes/post';
 import messageRouter from './routes/message';
 import boardRouter from './routes/board';
+import meetingRouter from './routes/meeting';
 import { errorHandler } from './utils/errorHandler';
 import { initSocket } from './controllers/socket';
 
@@ -22,7 +23,13 @@ initSocket(server);
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 
-app.use('/api', [userRouter, postRouter, messageRouter, boardRouter]);
+app.use('/api', [
+  userRouter,
+  postRouter,
+  messageRouter,
+  boardRouter,
+  meetingRouter,
+]);
 
 app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));

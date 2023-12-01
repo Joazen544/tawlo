@@ -56,7 +56,7 @@ export async function clickChatRoom(
         users: { $all: [userId, targetId] },
       });
 
-      console.log(messageGroup);
+      // console.log(messageGroup);
 
       if (messageGroup === null) {
         const messageGroupCreated = await MessageGroup.create({
@@ -67,7 +67,7 @@ export async function clickChatRoom(
           last_message: 'No message yet',
         });
 
-        console.log(messageGroupCreated);
+        // console.log(messageGroupCreated);
 
         res.json({
           groupId: messageGroupCreated._id,
@@ -88,7 +88,7 @@ export async function clickChatRoom(
         'There must be target user id or chat room id in the query',
       );
     }
-    console.log(messageGroup);
+    // console.log(messageGroup);
 
     if (messageGroup === null) {
       throw new ValidationError('This chat room does not exist');
@@ -148,8 +148,6 @@ export async function getNativeMessageGroups(
         group.users.push(userId);
       }
     });
-
-    console.log('sending messages group');
 
     res.json({
       messageGroups,

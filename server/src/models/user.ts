@@ -8,6 +8,7 @@ export interface UserDocument extends Document {
   name: string;
   email: string;
   password: string;
+  introduction: string;
   // password_confirm: string;
   read_posts: ObjectId[];
   friends: {
@@ -15,12 +16,12 @@ export interface UserDocument extends Document {
     status: string;
     update_time: Date;
   }[];
+  meeting: ObjectId;
   follow: ObjectId[];
   block: ObjectId[];
   read_board: ObjectId[];
   preference_tags: { name: string; number: Number }[];
   recommend_mode: string;
-  chats: ObjectId[];
   upvote: number;
   downvote: number;
   honor_now: string;
@@ -46,6 +47,11 @@ const userSchema = new mongoose.Schema<UserDocument>({
     minlength: [8, 'Password must contain at least 8 characters'],
     select: false,
   },
+  introduction: {
+    type: String,
+    default: '',
+  },
+  meeting: ObjectId,
 
   // Posts read 300 recorded
   read_posts: [ObjectId],
@@ -84,7 +90,6 @@ const userSchema = new mongoose.Schema<UserDocument>({
     enum: ['auto', 'customize', 'time', 'hot'],
   },
   // chat rooms
-  chats: { type: [ObjectId], default: [] },
   upvote: { type: Number, default: 0 },
   downvote: { type: Number, default: 0 },
   honor_now: { type: String, default: '' },
@@ -123,7 +128,6 @@ export function updateUserAction(
         const replaceTarget = doc.preference_tags.length - 1;
         const tagsArray: string[] = [];
         tagsArray.concat(tags);
-        console.log(tags);
 
         tags.forEach((tag) => {
           let ifExist = 0;
@@ -220,7 +224,7 @@ export async function getUserRelationFromDB(user: string, targetId: string) {
       friends: { $elemMatch: { user: targetId } },
     },
   );
-  console.log(userInfo);
+  // console.log(userInfo);
   if (userInfo === null) {
     return null;
   }

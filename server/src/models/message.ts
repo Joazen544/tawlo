@@ -82,9 +82,6 @@ export async function createMessageToDB(
     content,
   });
 
-  console.log('create message to DB result');
-  console.log(result);
-
   return result;
 }
 
