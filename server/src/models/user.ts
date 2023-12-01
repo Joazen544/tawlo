@@ -56,7 +56,10 @@ const userSchema = new mongoose.Schema<UserDocument>({
         type: String,
         enum: ['friends', 'requested', 'received', 'block', 'blocked'],
       },
-      update_time: Date,
+      update_time: {
+        type: Date,
+        default: Date.now,
+      },
     },
   ],
   follow: [ObjectId],
@@ -253,6 +256,42 @@ export async function createRelation(user: string, target: string) {
         { session },
       );
     }
+    await session.commitTransaction();
+    result = true;
+  } catch (err) {
+    console.log(err);
+    await session.abortTransaction();
+    result = false;
+  } finally {
+    await session.endSession();
+  }
+  return result;
+}
+
+export async function cancelRequestFromDB(user: string, target: string) {
+  const session = await User.startSession();
+  let result;
+  try {
+    session.startTransaction();
+    const relation = await getUserRelationFromDB(user, target);
+    if (relation === null) {
+      throw Error('the relation does not exist');
+    } else if (relation === 'friends') {
+      throw Error('friends relation is not request');
+    }
+
+    await User.updateOne(
+      { _id: user },
+      { $pull: { friends: { user: target } } },
+      { session },
+    );
+
+    await User.updateOne(
+      { _id: target },
+      { $pull: { friends: { user } } },
+      { session },
+    );
+
     await session.commitTransaction();
     result = true;
   } catch (err) {

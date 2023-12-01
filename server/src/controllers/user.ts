@@ -5,6 +5,7 @@ import User, {
   updateUserReadPosts,
   getUserRelationFromDB,
   createRelation,
+  cancelRequestFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
@@ -168,10 +169,35 @@ export async function sendRequest(
 
     const result = await createRelation(user, id);
     if (result) {
-      res.json({ status: 'success' });
+      res.json({ status: 'send or accept request success' });
       return;
     }
     res.status(500).json({ error: 'create friend relation fail' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function cancelRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const id = req.query.id as string;
+
+    if (!id) {
+      res.status(500).json({ error: 'target id is missing' });
+      return;
+    }
+
+    const result = await cancelRequestFromDB(user, id);
+    if (result) {
+      res.json({ status: 'cancel request success' });
+      return;
+    }
+    res.status(500).json({ error: 'cancel request fail' });
   } catch (err) {
     next(err);
   }
