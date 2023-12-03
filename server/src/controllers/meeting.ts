@@ -279,12 +279,12 @@ export async function replyMeeting(
 
       await Meeting.updateOne(
         { _id: meetingId },
-        { $push: { accept: user }, $set: { status: 'meeting' } },
+        { $push: { accept: user }, $set: { status: 'end' } },
       );
 
       await User.updateMany(
         { _id: meeting.users },
-        { $set: { meeting_status: 'meeting' } },
+        { $set: { meeting_status: 'end' } },
       );
 
       // notificate them

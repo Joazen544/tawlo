@@ -30,7 +30,7 @@ interface MustNotObj {
 const meetingSchema = new mongoose.Schema<MeetingDocument>({
   status: {
     type: String,
-    enum: ['pending', 'checking', 'meeting', 'end', 'fail'],
+    enum: ['pending', 'checking', 'end', 'fail'],
     default: 'pending',
     required: true,
   },
