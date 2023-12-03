@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
 
-interface MeetingDocument {
+export interface MeetingDocument {
   _id: ObjectId;
   status: string;
   users: ObjectId[];
-  ratings: number[][];
+  ratings: number[];
   role: string[];
   user_intro: string[];
   to_share: string[][];
@@ -30,7 +30,7 @@ interface MustNotObj {
 const meetingSchema = new mongoose.Schema<MeetingDocument>({
   status: {
     type: String,
-    enum: ['pending', 'checking', 'meeting', 'end'],
+    enum: ['pending', 'checking', 'meeting', 'end', 'fail'],
     default: 'pending',
     required: true,
   },
@@ -198,7 +198,7 @@ export async function joinMeeting(
       $push: {
         users: userId,
         role,
-        rating,
+        ratings: rating,
         user_intro: userIntro,
         to_share: toShare,
         to_ask: toAsk,

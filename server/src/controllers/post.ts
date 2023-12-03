@@ -1148,6 +1148,8 @@ export async function getRecommendPosts(req: Request, res: Response) {
       });
     }
     const { user } = req.body;
+    console.log(user);
+
     const userId = new ObjectId(user);
     // const {tags,}
     const userInfo = (await getUserPreference(userId)) as UserDocument;

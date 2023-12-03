@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
   meeting_status: {
     type: String,
     default: 'none',
-    enum: ['none', 'pending', 'checking', 'waiting'],
+    enum: ['none', 'pending', 'checking', 'waiting', 'meeting'],
   },
   meeting_comments: [String],
   rating: {
