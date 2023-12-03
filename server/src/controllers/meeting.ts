@@ -31,6 +31,13 @@ export async function accessMeeting(
     );
     console.log('22222');
 
+    if (metUsersResult && metUsersResult.meeting_status === 'end') {
+      res
+        .status(500)
+        .json({ error: 'user should give last meeting a score first' });
+      return;
+    }
+
     if (metUsersResult && metUsersResult.meeting_status !== 'none') {
       res.status(500).json({ error: 'user already has a meeting' });
       return;
