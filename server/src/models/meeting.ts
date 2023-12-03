@@ -83,7 +83,7 @@ export async function createMeeting(
   const result = await Meeting.create({
     users: [user],
     role: [role],
-    rating: [rating],
+    ratings: [rating],
     user_intro: [userIntro],
     to_share: [toShare],
     to_ask: [toAsk],
@@ -181,7 +181,9 @@ export async function joinMeeting(
     },
   ]);
 
-  if (!result) {
+  console.log(result);
+
+  if (!result[0]) {
     // create a new one
     return false;
   }
