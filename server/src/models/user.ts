@@ -17,6 +17,10 @@ export interface UserDocument extends Document {
     update_time: Date;
   }[];
   meeting: ObjectId;
+  meeting_status: string;
+  meeting_comments: string[];
+  met_users: ObjectId[];
+  rating: number;
   follow: ObjectId[];
   block: ObjectId[];
   read_board: ObjectId[];
@@ -34,6 +38,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
     type: String,
     required: [true, 'Please tell us your name'],
   },
+  met_users: [ObjectId],
   email: {
     type: String,
     unique: true,
@@ -52,6 +57,16 @@ const userSchema = new mongoose.Schema<UserDocument>({
     default: '',
   },
   meeting: ObjectId,
+  meeting_status: {
+    type: String,
+    default: 'none',
+    enum: ['none', 'pending', 'checking', 'waiting'],
+  },
+  meeting_comments: [String],
+  rating: {
+    type: Number,
+    default: 3,
+  },
 
   // Posts read 300 recorded
   read_posts: [ObjectId],

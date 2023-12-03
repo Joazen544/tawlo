@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { createMeeting } from '../controllers/meeting';
+import { accessMeeting } from '../controllers/meeting';
 import verifyJWT from '../middleware/verifyJWT';
 
 const router = Router();
 
-router.route('/meeting').post(verifyJWT, createMeeting);
+router.route('/meeting').post(verifyJWT, accessMeeting);
 
 export default router;
