@@ -339,7 +339,7 @@ const Meeting = () => {
       {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header />
       <div className="w-full flex justify-center">
-        <div className="bg-gray-200 w-1/2 mt-20">
+        <div className="bg-gray-200 w-1/2 mt-20 rounded-3xl">
           {meetingStatus === 'none' && (
             <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
               <h1 className="text-2xl">請填寫配對資訊</h1>

@@ -52,7 +52,8 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
     console.log('receiving message');
 
     socket.on('myself', (data) => {
-      console.log(data);
+      //console.log(data);
+      console.log('1');
 
       if (data.group === groupId && user) {
         const newMessage: Message = {
@@ -73,7 +74,8 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
     });
 
     socket.on('message', (data) => {
-      console.log(data);
+      //console.log(data);
+      console.log('2');
 
       if (data.group === groupId && user) {
         const newMessage: Message = {
@@ -89,7 +91,25 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
           is_removed: false,
           read: [],
         };
-        updateMessage(newMessage);
+        axios
+          .post(
+            `http://localhost:3000/api/messageGroup/read`,
+            {
+              messageGroupId: groupId,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                authorization: `Bearer ${token}`,
+              },
+            },
+          )
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => {
+            updateMessage(newMessage);
+          });
       }
     });
   }, [messages]);
@@ -100,7 +120,10 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
 
   const updateMessage = (newMessage: Message) => {
     const array = [...messages];
+    setIfNewMessage(ifNewMessage + 1);
+
     setMessages(array.concat(newMessage));
+    console.log('updating messages');
   };
 
   const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {

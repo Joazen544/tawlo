@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import MessageBox from './MessageBox';
+import { socket } from '../../socket';
 
 export interface MessageGroup {
   _id: string;
@@ -10,6 +11,8 @@ export interface MessageGroup {
   start_time: Date;
   update_time: Date;
   last_message: string;
+  last_sender: string;
+  unread: number;
 }
 
 interface Props {
@@ -30,7 +33,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   };
 
   const token = Cookies.get('jwtToken');
-  // const user = Cookies.get('userId');
+  const user = Cookies.get('userId');
 
   useEffect(() => {
     if (messagesGroup.length === 0) {
@@ -44,12 +47,54 @@ const MessageDropdown = ({ messageTarget }: Props) => {
         .then((res) => {
           setMessagesGroup(res.data.messageGroups);
           console.log('weeee');
-          console.log(res.data.messageGroups);
+          //console.log(res.data.messageGroups);
         })
         .catch((err) => {
           console.log(err);
         });
     }
+  }, []);
+
+  useEffect(() => {
+    socket.on('message', (data) => {
+      console.log('a');
+      console.log(data);
+
+      axios
+        .get('http://localhost:3000/api/messageGroups', {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          setMessagesGroup(res.data.messageGroups);
+          //console.log(res.data.messageGroups);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    });
+
+    socket.on('myself', (data) => {
+      console.log('b');
+      console.log(data);
+
+      axios
+        .get('http://localhost:3000/api/messageGroups', {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          setMessagesGroup(res.data.messageGroups);
+          //console.log(res.data.messageGroups);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    });
   }, []);
 
   useEffect(() => {
@@ -119,11 +164,20 @@ const MessageDropdown = ({ messageTarget }: Props) => {
                     )
                   }
                 >
-                  <div className="flex items-center space-x-2 justify-left">
-                    <span className="font-bold">{messagesName[index]}</span>
-                    <span className="text-gray-500 text-sm">
+                  <div className="flex items-center w-full justify-left">
+                    <span className="font-bold mr-2">
+                      {messagesName[index]}
+                    </span>
+                    <span className="text-gray-500 text-sm mr-2">
                       {new Date(message.update_time).toLocaleTimeString()}
                     </span>
+                    {message.last_sender !== user ? (
+                      message.unread > 0 && (
+                        <span className="ml-3">{message.unread}</span>
+                      )
+                    ) : (
+                      <></>
+                    )}
                   </div>
                   <p>{message.last_message}</p>
                 </li>
