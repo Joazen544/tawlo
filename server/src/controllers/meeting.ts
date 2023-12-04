@@ -5,7 +5,7 @@ import Meeting, {
   joinMeeting,
   MeetingDocument,
 } from '../models/meeting';
-import User from '../models/user';
+import User, { UserDocument } from '../models/user';
 
 export async function accessMeeting(
   req: Request,
@@ -45,7 +45,14 @@ export async function accessMeeting(
 
     console.log(metUsersResult);
     const metUsers = metUsersResult?.met_users || [];
-    const rating = metUsersResult?.rating || 3;
+    let rating;
+    if (metUsersResult) {
+      rating = metUsersResult.rating;
+    }
+    if (!rating) {
+      res.status(400).json({ error: 'user does not have rating property' });
+      return;
+    }
 
     const joinResult = await joinMeeting(
       metUsers,
@@ -372,6 +379,74 @@ export async function replyMeeting(
       }
     });
     res.json({ message: 'create or join new meeting for users' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function scoreMeeting(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user, score, targetUser } = req.body;
+    const { meetingId } = req.params;
+    console.log(user);
+    console.log(meetingId);
+
+    const meeting = await Meeting.findOne({ _id: meetingId });
+
+    if (!meeting) {
+      res.status(400).json({ error: 'meeting does not exist' });
+      return;
+    }
+
+    if (!meeting.users.includes(user)) {
+      res.status(400).json({ error: 'meeting does not include this user' });
+      return;
+    }
+
+    if (!meeting.users.includes(targetUser)) {
+      res.status(400).json({ error: 'meeting does not include target user' });
+      return;
+    }
+
+    if (!score) {
+      res.status(400).json({ error: 'score is miss' });
+      return;
+    }
+
+    if (typeof score !== 'number') {
+      res.status(400).json({ error: 'score is not number' });
+      return;
+    }
+    console.log(score);
+
+    const userInfo = await User.findOne<UserDocument>({ _id: targetUser });
+    if (!userInfo) {
+      res.status(400).json({ error: 'user does not exist' });
+      return;
+    }
+    const { rating } = userInfo;
+    const ratingNumber = userInfo.rating_number;
+    const newRatingNumber = ratingNumber + 1;
+    const newRating = (rating * ratingNumber + score) / newRatingNumber;
+    console.log(newRating);
+
+    await User.updateOne(
+      { _id: targetUser },
+      {
+        $set: {
+          rating: newRating,
+          rating_number: newRatingNumber,
+        },
+      },
+    );
+
+    await User.updateOne({ _id: user }, { $set: { meeting_status: 'none' } });
+
+    res.json({ message: 'scored last meeting, can now create new meeting' });
   } catch (err) {
     next(err);
   }

@@ -3,7 +3,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import MessageBox from './MessageBox';
 
-interface MessageGroup {
+export interface MessageGroup {
   _id: string;
   users: string[];
   category: string;
@@ -12,7 +12,11 @@ interface MessageGroup {
   last_message: string;
 }
 
-const MessageDropdown = () => {
+interface Props {
+  messageTarget?: { id: string; name: string; targetId: string } | null;
+}
+
+const MessageDropdown = ({ messageTarget }: Props) => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [messagesGroup, setMessagesGroup] = useState<MessageGroup[]>([]);
   const [messagesName, setMessagesName] = useState<string[]>([]);
@@ -47,6 +51,16 @@ const MessageDropdown = () => {
         });
     }
   }, []);
+
+  useEffect(() => {
+    if (messageTarget) {
+      openChatGroup(
+        messageTarget.id,
+        messageTarget.name,
+        messageTarget.targetId,
+      );
+    }
+  }, [messageTarget]);
 
   useEffect(() => {
     const nameArray: string[] = [];

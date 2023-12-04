@@ -1,5 +1,4 @@
-import Cookies from 'js-cookie';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 interface Props {
   index: number;
@@ -16,26 +15,16 @@ interface Props {
 }
 
 const Comment = ({ index, name, comment, time, userId }: Props) => {
-  const token = Cookies.get('jwtToken');
-
-  const openChatGroup = () => {
-    axios.get(`http://localhost:3000/api/messageGroup?target=${userId}`, {
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
-    });
-  };
-
   return (
     <div className="flex justify-between" key={index}>
       <div className="flex">
-        <button
-          onClick={openChatGroup}
+        <Link
+          to={`/user/profile/${userId}`}
           id="commentName"
           className="w-20 text-left text-blue-400"
         >
           {name}
-        </button>
+        </Link>
         <p>{comment.content}</p>
       </div>
       <div className="flex">

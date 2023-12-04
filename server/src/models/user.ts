@@ -21,6 +21,7 @@ export interface UserDocument extends Document {
   meeting_comments: string[];
   met_users: ObjectId[];
   rating: number;
+  rating_number: number;
   follow: ObjectId[];
   block: ObjectId[];
   read_board: ObjectId[];
@@ -66,6 +67,10 @@ const userSchema = new mongoose.Schema<UserDocument>({
   rating: {
     type: Number,
     default: 3,
+  },
+  rating_number: {
+    type: Number,
+    default: 1,
   },
 
   // Posts read 300 recorded

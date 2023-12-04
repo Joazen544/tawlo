@@ -3,6 +3,7 @@ import {
   accessMeeting,
   getMeeting,
   replyMeeting,
+  scoreMeeting,
 } from '../controllers/meeting';
 import { clickChatRoom } from '../controllers/message';
 import verifyJWT from '../middleware/verifyJWT';
@@ -14,5 +15,7 @@ router.route('/meeting').get(verifyJWT, getMeeting);
 router
   .route('/meeting/:meetingId')
   .post(verifyJWT, replyMeeting, clickChatRoom);
+
+router.route('/meeting/:meetingId/score').post(verifyJWT, scoreMeeting);
 
 export default router;

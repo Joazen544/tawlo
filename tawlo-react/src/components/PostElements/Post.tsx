@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import Comment from '../Comment';
+import { Link } from 'react-router-dom';
 
 interface Props {
   _id: string;
@@ -303,9 +304,13 @@ const Post = ({
                   {/* Add user avatar or profile image here */}
                 </div>
                 <div className="ml-3">
-                  <button className="text-lg font-medium text-blue-400">
+                  <Link
+                    to={`/user/profile/${author}`}
+                    id="commentName"
+                    className="w-20 text-left text-blue-400"
+                  >
                     {authorName}
-                  </button>
+                  </Link>
                   <div className="text-gray-500">
                     {publishTime.toDateString()}
                   </div>
@@ -332,9 +337,13 @@ const Post = ({
                 {/* Add user avatar or profile image here */}
               </div>
               <div className="ml-3">
-                <button className="text-lg font-medium text-blue-400">
+                <Link
+                  to={`/user/profile/${author}`}
+                  id="commentName"
+                  className="w-20 text-left text-blue-400"
+                >
                   {authorName}
-                </button>
+                </Link>
                 <div className="text-gray-500">
                   {publishTime.toDateString()}
                 </div>

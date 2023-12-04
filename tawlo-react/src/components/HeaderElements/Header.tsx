@@ -2,8 +2,13 @@ import { useState } from 'react';
 import Notification from './Notification';
 import { Link } from 'react-router-dom';
 import MessageDropdown from './MessageDropDown';
+import Cookies from 'js-cookie';
 
-const Header = () => {
+interface Props {
+  target?: { id: string; name: string; targetId: string } | null;
+}
+
+const Header = ({ target }: Props) => {
   const [notification] = useState(0);
 
   return (
@@ -34,10 +39,10 @@ const Header = () => {
           id="right_part_container"
           className="w-32 h-12 flex items-center justify-around"
         >
-          <MessageDropdown />
+          <MessageDropdown messageTarget={target} />
           <Notification notificationNumber={notification} />
           <Link
-            to={'/user/profile'}
+            to={`/user/profile/${Cookies.get('userId') || 'not-log-in'}`}
             className="w-8 h-8 bg-user-image bg-contain bg-no-repeat"
           ></Link>
         </div>

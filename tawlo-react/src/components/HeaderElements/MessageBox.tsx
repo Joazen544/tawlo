@@ -32,7 +32,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [ifBoxShow, setIfBoxShow] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [ifNewMessage, setIfNewMessage] = useState(false);
+  const [ifNewMessage, setIfNewMessage] = useState(0);
 
   useEffect(() => {
     axios
@@ -44,7 +44,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
       })
       .then((res) => {
         setMessages(res.data.messages);
-        setIfNewMessage(true);
+        setIfNewMessage(ifNewMessage + 1);
       });
   }, [targetName, targetId, groupId]);
 
@@ -157,7 +157,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
           )
           .finally(() => {
             console.log('sending message');
-
+            setIfNewMessage(ifNewMessage + 1);
             setMessageInput('');
           });
       } catch (err) {
@@ -207,7 +207,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
       // Update the state with the new messages
       if (response) {
         setMessages([...newMessages, ...messages]);
-        setIfNewMessage(true);
+        setIfNewMessage(ifNewMessage + 1);
       }
     } catch (error) {
       console.error('Error loading more messages:', error);
