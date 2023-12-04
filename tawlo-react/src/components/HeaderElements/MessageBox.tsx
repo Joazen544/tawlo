@@ -91,25 +91,7 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
           is_removed: false,
           read: [],
         };
-        axios
-          .post(
-            `http://localhost:3000/api/messageGroup/read`,
-            {
-              messageGroupId: groupId,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                authorization: `Bearer ${token}`,
-              },
-            },
-          )
-          .catch((err) => {
-            console.log(err);
-          })
-          .finally(() => {
-            updateMessage(newMessage);
-          });
+        updateMessage(newMessage);
       }
     });
   }, [messages]);
@@ -124,6 +106,23 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
 
     setMessages(array.concat(newMessage));
     console.log('updating messages');
+
+    axios
+      .post(
+        `http://localhost:3000/api/messageGroup/read`,
+        {
+          messageGroupId: groupId,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {

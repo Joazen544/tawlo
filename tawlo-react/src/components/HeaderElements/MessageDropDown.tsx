@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import MessageBox from './MessageBox';
@@ -30,10 +30,47 @@ const MessageDropdown = ({ messageTarget }: Props) => {
 
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
+    axios
+      .get('http://localhost:3000/api/messageGroups', {
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        setMessagesGroup(res.data.messageGroups);
+        console.log('weeee');
+        //console.log(res.data.messageGroups);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   const token = Cookies.get('jwtToken');
   const user = Cookies.get('userId');
+
+  const dropdownRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      event.target instanceof Node &&
+      !dropdownRef.current.contains(event.target)
+    ) {
+      // 點擊的位置在 dropdown 之外
+      setDropdownOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    // 添加全域點擊事件監聽器
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      // 移除全域點擊事件監聽器
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []); // 空的依賴陣列表示只在 component 被建立時設定一次
 
   useEffect(() => {
     if (messagesGroup.length === 0) {
@@ -146,6 +183,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
     <>
       <div className="relative inline-block">
         <button
+          ref={dropdownRef}
           onClick={toggleDropdown}
           className="w-8 h-8 bg-message-image bg-contain cursor-pointer"
         ></button>
