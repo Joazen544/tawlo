@@ -17,7 +17,7 @@ const Header = ({ target }: Props) => {
         id="container"
         className="w-full h-12 bg-gray-200 flex justify-between"
       >
-        <div id="left_part_header" className="w-96 h-12 flex">
+        <div id="left_part_header" className="w-96 h-12 flex items-center">
           <div id="logo" className="flex items-center ml-2">
             <Link to="/" className="text-2xl h-8">
               TAWLO
@@ -33,6 +33,14 @@ const Header = ({ target }: Props) => {
               }}
               className="w-52 h-9 border-solid border-slate-300 border-2 rounded-2xl bg-search-image bg-no-repeat bg-right bg-contain pl-3"
             />
+          </div>
+          <div
+            id="meet"
+            className="h-8 p-2 rounded-lg flex items-center ml-10 border-solid border-2 border-gray-500 hover:bg-gray-500 hover:text-white"
+          >
+            <Link to="/meeting" className="text-xl h-8">
+              Meet
+            </Link>
           </div>
         </div>
         <div

@@ -173,7 +173,7 @@ const Meeting = () => {
     setSelfIntro(e.target.value);
   };
 
-  const handleSubmit = () => {
+  const handleMeetingSubmit = () => {
     if (!jobTitle) {
       setPostError('請提供現在的職稱！或是專長');
       return;
@@ -210,6 +210,12 @@ const Meeting = () => {
         },
       )
       .then((res) => {
+        setJobTitle('');
+        setSelfIntro('');
+        setToShareItems([]);
+        setToAskItems([]);
+        setToShareInputText('');
+        setToAskInputText('');
         if (res.data.joinResult) {
           setMeetingStatus('checking');
         } else {
@@ -354,7 +360,7 @@ const Meeting = () => {
                     {toAskItems.map((item) => (
                       <div
                         key={item.id}
-                        className="border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
+                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
                       >
                         <span>{item.text}</span>
                         <button
@@ -386,7 +392,7 @@ const Meeting = () => {
                     {toShareItems.map((item) => (
                       <div
                         key={item.id}
-                        className="border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
+                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
                       >
                         <span>{item.text}</span>
                         <button
@@ -424,7 +430,7 @@ const Meeting = () => {
                 <div className="mt-8">
                   <button
                     className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    onClick={handleSubmit}
+                    onClick={handleMeetingSubmit}
                   >
                     開始配對
                   </button>
