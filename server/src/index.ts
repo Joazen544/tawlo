@@ -31,6 +31,8 @@ app.use('/api', [
   meetingRouter,
 ]);
 
+app.use(express.static(path.join(__dirname, '../dist')));
+
 app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
