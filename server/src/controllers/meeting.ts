@@ -157,6 +157,11 @@ export async function getMeeting(
     let userIndex: number = -1;
     console.log(result[0]);
 
+    if (!result[0].meeting[0]) {
+      res.status(400).json({ error: 'the meeting does not exist' });
+      return;
+    }
+
     result[0].meeting[0].users.forEach((userInfo: ObjectId, index: number) => {
       if (userInfo.toString() === user) {
         console.log('weee');
@@ -172,7 +177,7 @@ export async function getMeeting(
     if (result[0].meeting_status === 'pending') {
       res.json({
         _id: result[0]._id,
-        meeting_status: result[0].meeting_status,
+        status: result[0].meeting_status,
         meeting: {
           _id: result[0].meeting[0]._id,
           status: result[0].meeting[0].status,
@@ -180,7 +185,7 @@ export async function getMeeting(
             userId: result[0].meeting[0].users[0],
             role: result[0].meeting[0].role[0],
             user_intro: result[0].meeting[0].user_intro[0],
-            rating: result[0].meeting[0].ratings[0],
+            rating: Math.round(result[0].meeting[0].ratings[0] * 10) / 10,
             to_share: result[0].meeting[0].to_share[0],
             to_ask: result[0].meeting[0].to_ask[0],
           },
@@ -194,29 +199,27 @@ export async function getMeeting(
     if (userIndex >= 0 && targetIndex >= 0) {
       res.json({
         _id: result[0]._id,
-        meeting_status: result[0].meeting_status,
+        status: result[0].meeting_status,
         meeting: {
-          _id: result[0]._id,
-          meeting_status: result[0].meeting_status,
-          meeting: {
-            _id: result[0].meeting[0]._id,
-            status: result[0].meeting[0].status,
-            user: {
-              userId: result[0].meeting[0].users[userIndex],
-              role: result[0].meeting[0].role[userIndex],
-              user_intro: result[0].meeting[0].user_intro[userIndex],
-              rating: result[0].meeting[0].ratings[userIndex],
-              to_share: result[0].meeting[0].to_share[userIndex],
-              to_ask: result[0].meeting[0].to_ask[userIndex],
-            },
-            target: {
-              userId: result[0].meeting[0].users[targetIndex],
-              role: result[0].meeting[0].role[targetIndex],
-              user_intro: result[0].meeting[0].user_intro[targetIndex],
-              rating: result[0].meeting[0].ratings[targetIndex],
-              to_share: result[0].meeting[0].to_share[targetIndex],
-              to_ask: result[0].meeting[0].to_ask[targetIndex],
-            },
+          _id: result[0].meeting[0]._id,
+          status: result[0].meeting[0].status,
+          user: {
+            userId: result[0].meeting[0].users[userIndex],
+            role: result[0].meeting[0].role[userIndex],
+            user_intro: result[0].meeting[0].user_intro[userIndex],
+            rating:
+              Math.round(result[0].meeting[0].ratings[userIndex] * 10) / 10,
+            to_share: result[0].meeting[0].to_share[userIndex],
+            to_ask: result[0].meeting[0].to_ask[userIndex],
+          },
+          target: {
+            userId: result[0].meeting[0].users[targetIndex],
+            role: result[0].meeting[0].role[targetIndex],
+            user_intro: result[0].meeting[0].user_intro[targetIndex],
+            rating:
+              Math.round(result[0].meeting[0].ratings[targetIndex] * 10) / 10,
+            to_share: result[0].meeting[0].to_share[targetIndex],
+            to_ask: result[0].meeting[0].to_ask[targetIndex],
           },
         },
       });
@@ -285,6 +288,7 @@ export async function replyMeeting(
           { $set: { meeting_status: 'waiting' } },
         );
         res.json({
+          situation: 'first',
           message: 'accept success, waiting for another user to accept',
         });
         return;
@@ -390,9 +394,22 @@ export async function scoreMeeting(
   next: NextFunction,
 ) {
   try {
-    const { user, score, targetUser } = req.body;
+    const { user, score, targetUser, comment } = req.body;
     const { meetingId } = req.params;
     console.log(user);
+    if (!comment) {
+      res.status(400).json({ error: 'comment is missing' });
+      return;
+    }
+    if (!score) {
+      res.status(400).json({ error: 'score is missing' });
+      return;
+    }
+
+    if (typeof score !== 'number') {
+      res.status(400).json({ error: 'score is not number' });
+      return;
+    }
     console.log(meetingId);
 
     const meeting = await Meeting.findOne({ _id: meetingId });
@@ -412,15 +429,6 @@ export async function scoreMeeting(
       return;
     }
 
-    if (!score) {
-      res.status(400).json({ error: 'score is miss' });
-      return;
-    }
-
-    if (typeof score !== 'number') {
-      res.status(400).json({ error: 'score is not number' });
-      return;
-    }
     console.log(score);
 
     const userInfo = await User.findOne<UserDocument>({ _id: targetUser });
@@ -441,12 +449,48 @@ export async function scoreMeeting(
           rating: newRating,
           rating_number: newRatingNumber,
         },
+        $push: { meeting_comments: comment },
       },
     );
 
     await User.updateOne({ _id: user }, { $set: { meeting_status: 'none' } });
 
     res.json({ message: 'scored last meeting, can now create new meeting' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function cancelMeeting(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const userMeetingInfo = await User.findOne(
+      { _id: user },
+      { meeting_status: 1, meeting: 1 },
+    );
+
+    if (!userMeetingInfo) {
+      res.status(400).json({ error: 'user does not exist' });
+      return;
+    }
+
+    if (userMeetingInfo.meeting_status !== 'pending') {
+      res.status(400).json({ error: 'user can only cancel pending meeting' });
+      return;
+    }
+
+    await Meeting.updateOne(
+      { _id: userMeetingInfo.meeting },
+      { status: 'fail' },
+    );
+
+    await User.updateOne({ _id: user }, { $set: { meeting_status: 'none' } });
+
+    res.json({ message: 'cancel meeting success' });
   } catch (err) {
     next(err);
   }

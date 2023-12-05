@@ -70,6 +70,7 @@ export async function clickChatRoom(
         // console.log(messageGroupCreated);
 
         res.json({
+          situation: 'second',
           groupId: messageGroupCreated._id,
           users: messageGroupCreated.users,
           category: messageGroupCreated.category,
@@ -95,7 +96,7 @@ export async function clickChatRoom(
     }
 
     try {
-      await makeAllMessagesRead(userId, messageGroup._id);
+      makeAllMessagesRead(userId, messageGroup._id, messageGroup.last_sender);
     } catch (err) {
       console.log('something is wrong making messages read');
     }
@@ -109,6 +110,7 @@ export async function clickChatRoom(
       return message;
     });
     res.json({
+      situation: 'second',
       groupId: messageGroup._id,
       users: messageGroup.users,
       category: messageGroup.category,
@@ -140,6 +142,11 @@ export async function getNativeMessageGroups(
       userId,
       lastGroupId,
     );
+
+    if (messageGroups instanceof Error) {
+      next(messageGroups);
+      return;
+    }
     messageGroups.forEach((group) => {
       group.users = group.users.filter(
         (target) => target.toString() !== userId.toString(),
@@ -215,12 +222,11 @@ export async function sendMessage(
       return;
     }
 
+    await createMessage(messageGroup, user, content);
     io.to(user).emit('myself', {
       message: content,
       group: messageGroup,
     });
-
-    await createMessage(messageGroup, user, content);
 
     io.to(messageTo).emit('message', {
       message: content,
@@ -229,6 +235,28 @@ export async function sendMessage(
     });
 
     res.json({ message: 'message sent' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function readMessages(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    console.log('making messages read');
+
+    const { user, messageGroupId } = req.body;
+    const userId = new ObjectId(user);
+    const messageGroup = await MessageGroup.findOne({ _id: messageGroupId });
+    if (!messageGroup) {
+      res.status(400).json({ error: 'message group does not exist' });
+      return;
+    }
+    makeAllMessagesRead(userId, messageGroup._id, messageGroup.last_sender);
+    res.json({ message: 'updated read message' });
   } catch (err) {
     next(err);
   }

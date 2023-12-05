@@ -30,6 +30,14 @@ module.exports = {
     'operator-linebreak': 'off',
     'no-param-reassign': 'off',
     'arrow-body-style': 'off',
+    'import/no-extraneous-dependencies': [
+      'error',
+      {
+        devDependencies: false,
+        optionalDependencies: false,
+        peerDependencies: false,
+      },
+    ],
   },
   //excluded: ['.eslintrc.js'],
 };

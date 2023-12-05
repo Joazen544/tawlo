@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
+import MessageGroup from './messageGroup';
 
 const MESSAGE_PER_PAGE = 20;
 
@@ -80,7 +81,9 @@ export async function createMessageToDB(
     from,
     time,
     content,
+    read: [from],
   });
+  console.log('~~~~');
 
   return result;
 }
@@ -88,11 +91,25 @@ export async function createMessageToDB(
 export async function makeAllMessagesRead(
   userId: ObjectId,
   messageGroupId: ObjectId,
+  last_sender: ObjectId,
 ) {
-  await Message.updateMany(
-    { group: messageGroupId, read: { $ne: userId } },
-    { $push: { read: userId } },
-  );
+  try {
+    await Message.updateMany(
+      { group: messageGroupId, read: { $ne: userId } },
+      { $push: { read: userId } },
+    );
+    console.log('making');
+
+    if (last_sender !== userId) {
+      console.log('making 2');
+      console.log(messageGroupId);
+
+      await MessageGroup.updateOne({ _id: messageGroupId }, { unread: 0 });
+    }
+  } catch (err) {
+    console.log(err);
+    console.log('something is wrong making messages read');
+  }
 }
 
 export default Message;

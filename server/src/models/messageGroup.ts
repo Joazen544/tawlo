@@ -10,6 +10,7 @@ interface MessageGroupDocument {
   update_time: Date;
   last_sender: ObjectId;
   last_message: string;
+  unread: number;
 }
 
 const messageGroupSchema = new mongoose.Schema<MessageGroupDocument>({
@@ -35,6 +36,10 @@ const messageGroupSchema = new mongoose.Schema<MessageGroupDocument>({
     type: String,
     required: true,
   },
+  unread: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const MessageGroup = mongoose.model('MessageGroup', messageGroupSchema);
@@ -45,16 +50,25 @@ export async function getNativeMessageGroupsFromDB(
 ) {
   let groups;
   if (lastGroup) {
-    groups = MessageGroup.find({
+    const lastGroupInfo = await MessageGroup.findOne({ _id: lastGroup });
+    if (!lastGroupInfo) {
+      return new Error('last message group does not exist');
+    }
+    const lastGroupUpdateTime = lastGroupInfo.update_time;
+    groups = await MessageGroup.find({
       users: userId,
-      _id: { $lt: lastGroup },
+      update_time: { $gt: lastGroupUpdateTime },
       category: 'native',
-    }).limit(GROUPS_PER_PAGE);
+    })
+      .sort({ update_time: -1 })
+      .limit(GROUPS_PER_PAGE);
   } else {
     groups = MessageGroup.find({
       users: userId,
       category: 'native',
-    }).limit(GROUPS_PER_PAGE);
+    })
+      .sort({ update_time: -1 })
+      .limit(GROUPS_PER_PAGE);
   }
 
   return groups;
@@ -72,6 +86,7 @@ export async function updateLatestMessageToGroup(
       last_sender: lastUser,
       update_time: updateTime,
       last_message: lastMessage,
+      $inc: { unread: 1 },
     },
   );
 }
