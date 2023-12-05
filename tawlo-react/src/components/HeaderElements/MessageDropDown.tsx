@@ -27,6 +27,9 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   const [chatGroupId, setChatGroupId] = useState<string>('');
   const [chatName, setChatName] = useState('');
   const [messageTargetId, setMessageTargetId] = useState<string>('');
+  const [unreadNum, setUnreadNum] = useState(0);
+  const [messageFromOthers, setMessageFromOthers] = useState(0);
+  // const [messageFromMyself, setMessageFromMyself] = useState(0);
 
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
@@ -39,8 +42,6 @@ const MessageDropdown = ({ messageTarget }: Props) => {
       })
       .then((res) => {
         setMessagesGroup(res.data.messageGroups);
-        console.log('weeee');
-        //console.log(res.data.messageGroups);
       })
       .catch((err) => {
         console.log(err);
@@ -83,8 +84,6 @@ const MessageDropdown = ({ messageTarget }: Props) => {
         })
         .then((res) => {
           setMessagesGroup(res.data.messageGroups);
-          console.log('weeee');
-          //console.log(res.data.messageGroups);
         })
         .catch((err) => {
           console.log(err);
@@ -93,10 +92,18 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   }, []);
 
   useEffect(() => {
-    socket.on('message', (data) => {
-      console.log('a');
-      console.log(data);
+    if (messagesGroup.length > 0) {
+      setUnreadNum(0);
+      messagesGroup.forEach((messageGroup: MessageGroup) => {
+        if (messageGroup.unread > 0 && messageGroup.last_sender !== user) {
+          setUnreadNum((pre) => pre + messageGroup.unread);
+        }
+      });
+    }
+  }, [messagesGroup]);
 
+  useEffect(() => {
+    socket.on('message', () => {
       axios
         .get('http://localhost:3000/api/messageGroups', {
           headers: {
@@ -106,17 +113,35 @@ const MessageDropdown = ({ messageTarget }: Props) => {
         })
         .then((res) => {
           setMessagesGroup(res.data.messageGroups);
-          //console.log(res.data.messageGroups);
+          setMessageFromOthers((pre) => pre + 1);
+
+          if (ifChatBoxOpen) {
+            setUnreadNum(0);
+
+            messagesGroup.forEach((messageGroup: MessageGroup) => {
+              if (messageGroup._id !== chatGroupId) {
+                if (
+                  messageGroup.unread > 0 &&
+                  messageGroup.last_sender !== user
+                ) {
+                  setUnreadNum((pre) => pre + messageGroup.unread);
+                }
+              }
+            });
+          }
         })
         .catch((err) => {
           console.log(err);
         });
     });
 
-    socket.on('myself', (data) => {
-      console.log('b');
-      console.log(data);
+    return () => {
+      socket.off('message');
+    };
+  }, [messagesGroup, ifChatBoxOpen, messageFromOthers]);
 
+  useEffect(() => {
+    socket.on('myself', () => {
       axios
         .get('http://localhost:3000/api/messageGroups', {
           headers: {
@@ -126,7 +151,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
         })
         .then((res) => {
           setMessagesGroup(res.data.messageGroups);
-          //console.log(res.data.messageGroups);
+          // setMessageFromMyself(messageFromMyself + 1);
         })
         .catch((err) => {
           console.log(err);
@@ -163,7 +188,15 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   const openChatGroup = (id: string, name: string, targetId: string) => {
     if (ifChatBoxOpen) {
       closeChatGroup();
-      console.log('123');
+    } else {
+      setUnreadNum(0);
+      messagesGroup.forEach((messageGroup: MessageGroup) => {
+        if (messageGroup._id !== id) {
+          if (messageGroup.unread > 0 && messageGroup.last_sender !== user) {
+            setUnreadNum((pre) => pre + messageGroup.unread);
+          }
+        }
+      });
     }
 
     setIfChatBoxOpen(true);
@@ -186,40 +219,46 @@ const MessageDropdown = ({ messageTarget }: Props) => {
           ref={dropdownRef}
           onClick={toggleDropdown}
           className="w-8 h-8 bg-message-image bg-contain cursor-pointer"
-        ></button>
+        >
+          <div className="ml-4 mt-3 rounded-full bg-red-100 text-center">
+            {unreadNum}
+          </div>
+        </button>
         {isDropdownOpen && messagesGroup.length > 0 && (
           <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md">
             <ul>
-              {messagesGroup.map((message, index) => (
-                <li
-                  key={message._id}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() =>
-                    openChatGroup(
-                      message._id,
-                      messagesName[index],
-                      message.users[0],
-                    )
-                  }
-                >
-                  <div className="flex items-center w-full justify-left">
-                    <span className="font-bold mr-2">
-                      {messagesName[index]}
-                    </span>
-                    <span className="text-gray-500 text-sm mr-2">
-                      {new Date(message.update_time).toLocaleTimeString()}
-                    </span>
-                    {message.last_sender !== user ? (
-                      message.unread > 0 && (
-                        <span className="ml-3">{message.unread}</span>
+              {messagesGroup.map((message, index) => {
+                return (
+                  <li
+                    key={message._id}
+                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() =>
+                      openChatGroup(
+                        message._id,
+                        messagesName[index],
+                        message.users[0],
                       )
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-                  <p>{message.last_message}</p>
-                </li>
-              ))}
+                    }
+                  >
+                    <div className="flex items-center w-full justify-left">
+                      <span className="font-bold mr-2">
+                        {messagesName[index]}
+                      </span>
+                      <span className="text-gray-500 text-sm mr-2">
+                        {new Date(message.update_time).toLocaleTimeString()}
+                      </span>
+                      {message.last_sender !== user ? (
+                        message.unread > 0 && (
+                          <span className="ml-3">{message.unread}</span>
+                        )
+                      ) : (
+                        <></>
+                      )}
+                    </div>
+                    <p>{message.last_message}</p>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
@@ -235,6 +274,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
           targetId={messageTargetId}
           groupId={chatGroupId}
           closeBox={() => closeChatGroup()}
+          //handleReadMessage={(groupId: string) => cleanReadMessages(groupId)}
         />
       )}
     </>

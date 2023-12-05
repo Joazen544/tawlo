@@ -8,6 +8,7 @@ interface Props {
   targetId: string;
   groupId: string;
   closeBox: () => void;
+  //handleReadMessage: (groupId: string) => void;
 }
 
 interface Message {
@@ -24,7 +25,13 @@ interface Message {
   read: string[];
 }
 
-const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
+const MessageBox = ({
+  targetName,
+  targetId,
+  groupId,
+  closeBox,
+}: //handleReadMessage,
+Props) => {
   const user = Cookies.get('userId');
   const token = Cookies.get('jwtToken');
 
@@ -52,9 +59,6 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
     console.log('receiving message');
 
     socket.on('myself', (data) => {
-      //console.log(data);
-      console.log('1');
-
       if (data.group === groupId && user) {
         const newMessage: Message = {
           liked: {
@@ -74,9 +78,6 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
     });
 
     socket.on('message', (data) => {
-      //console.log(data);
-      console.log('2');
-
       if (data.group === groupId && user) {
         const newMessage: Message = {
           liked: {
@@ -92,8 +93,35 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
           read: [],
         };
         updateMessage(newMessage);
+        if (ifBoxShow) {
+          console.log('box showing, trigger clean read messages');
+
+          axios
+            .post(
+              'http://localhost:3000/api/messageGroup/read',
+              {
+                messageGroupId: groupId,
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  authorization: `Bearer ${token}`,
+                },
+              },
+            )
+            .then(() => {
+              //handleReadMessage(groupId);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
       }
     });
+    return () => {
+      socket.off('message');
+      socket.off('myself');
+    };
   }, [messages]);
 
   const handleBoxShow = () => {
@@ -101,28 +129,11 @@ const MessageBox = ({ targetName, targetId, groupId, closeBox }: Props) => {
   };
 
   const updateMessage = (newMessage: Message) => {
-    const array = [...messages];
-    setIfNewMessage(ifNewMessage + 1);
+    //const array = [...messages];
+    setIfNewMessage((pre) => pre + 1);
 
-    setMessages(array.concat(newMessage));
+    setMessages((pre) => pre.concat(newMessage));
     console.log('updating messages');
-
-    axios
-      .post(
-        `http://localhost:3000/api/messageGroup/read`,
-        {
-          messageGroupId: groupId,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
-          },
-        },
-      )
-      .catch((err) => {
-        console.log(err);
-      });
   };
 
   const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
