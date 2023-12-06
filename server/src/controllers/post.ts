@@ -1136,7 +1136,7 @@ export async function getRecommendPosts(req: Request, res: Response) {
 
   try {
     const { user } = req.body;
-    console.log(user);
+    // console.log(user);
 
     const userId = new ObjectId(user);
     // const {tags,}

@@ -20,16 +20,16 @@ export async function accessMeeting(
         .json({ error: 'role, user info, to share ,to ask must not be null' });
       return;
     }
-    console.log(user);
+    // console.log(user);
 
-    console.log('weeee');
+    // console.log('weeee');
     // const userId = new ObjectId(user);
 
     const metUsersResult = await User.findOne(
       { _id: user },
       { met_users: 1, rating: 1, meeting_status: 1 },
     );
-    console.log('22222');
+    // console.log('22222');
 
     if (metUsersResult && metUsersResult.meeting_status === 'end') {
       res

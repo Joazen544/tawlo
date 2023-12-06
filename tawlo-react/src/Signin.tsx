@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import Header from './components/HeaderElements/Header';
+//import Header from './components/HeaderElements/Header';
 import { Navigate } from 'react-router-dom';
 //import { Navigate } from 'react-router-dom';
+import { initSocket } from './socket';
 
 const Signin = () => {
   const [ifSignIn, setIfSignIn] = useState(false);
@@ -65,26 +66,29 @@ const Signin = () => {
     }
 
     // Send signup request
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_DOMAIN}/api/user/signup`,
-        signupData,
-        { withCredentials: true },
-      );
-      console.log('Signup success:', response.data);
-      console.log(response.data);
-      Cookies.set('userId', response.data.user.id);
-      Cookies.set('userName', response.data.user.name);
-      setIfSignIn(!ifSignIn);
 
-      setSignupData({ name: '', email: '', password: '' });
+    await axios
+      .post(`${import.meta.env.VITE_DOMAIN}/api/user/signup`, signupData, {
+        withCredentials: true,
+      })
+      .then((response) => {
+        // console.log('Signup success:', response.data);
+        // console.log(response.data);
+        Cookies.set('userId', response.data.user.id);
+        Cookies.set('userName', response.data.user.name);
+        setIfSignIn(!ifSignIn);
+        initSocket();
+      })
+      .catch((err) => {
+        console.log(err);
 
-      // Handle success, e.g., redirect or show a success message
-    } catch (error) {
-      console.log(error);
+        setSignupError('Error signing up');
+      })
+      .finally(() => {
+        setSignupData({ name: '', email: '', password: '' });
+      });
 
-      setSignupError('Error signing up');
-    }
+    // Handle success, e.g., redirect or show a success message
   };
 
   const handleSigninSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -97,24 +101,27 @@ const Signin = () => {
     }
 
     // Send signin request
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_DOMAIN}/api/user/signin`,
-        signinData,
-        { withCredentials: true },
-      );
-      console.log('Signin success:', response.data);
-      Cookies.set('userId', response.data.user.id);
-      Cookies.set('userName', response.data.user.name);
-      setIfSignIn(!ifSignIn);
+    await axios
+      .post(`${import.meta.env.VITE_DOMAIN}/api/user/signin`, signinData, {
+        withCredentials: true,
+      })
+      .then((response) => {
+        // console.log('Signin success:', response.data);
+        Cookies.set('userId', response.data.user.id);
+        Cookies.set('userName', response.data.user.name);
+        setIfSignIn(!ifSignIn);
+        initSocket();
+      })
+      .catch((err) => {
+        console.log(err);
 
-      setSigninData({ email: '', password: '' });
-      // Handle success, e.g., redirect or show a success message
-    } catch (error) {
-      console.log(error);
+        setSigninError('Invalid email or password');
+      })
+      .finally(() => {
+        setSigninData({ email: '', password: '' });
+      });
 
-      setSigninError('Invalid email or password');
-    }
+    // Handle success, e.g., redirect or show a success message
   };
 
   const validateEmail = (email: string) => {
@@ -125,7 +132,7 @@ const Signin = () => {
   return (
     <>
       {ifSignIn && <Navigate to="/" replace={true}></Navigate>}
-      <Header />
+      {/* <Header /> */}
       <div className="max-w-3xl mx-auto mt-8">
         <h2 className="text-2xl font-bold mb-4">Sign Up</h2>
         <form onSubmit={handleSignupSubmit}>

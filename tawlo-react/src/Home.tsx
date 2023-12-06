@@ -119,8 +119,8 @@ const Home = () => {
       nextPosts.push(postsRecommend[i]);
       nextPostsId.push(postsRecommend[i]._id);
     }
-    console.log(nextPosts);
-    console.log(nextPostsId);
+    // console.log(nextPosts);
+    // console.log(nextPostsId);
     axios.post(
       `${import.meta.env.VITE_DOMAIN}/api/user/read`,
       {

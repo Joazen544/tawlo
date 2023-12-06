@@ -109,7 +109,7 @@ export function initSocket(server: http.Server) {
           usersConnected[socketsConnected[socket.id].userId].length > 1
         ) {
           // more than 1 socket id recorded in this user
-          console.log('peeee');
+          console.log('a socket disconnected');
 
           usersConnected[socketsConnected[socket.id].userId] = usersConnected[
             socketsConnected[socket.id].userId

@@ -103,60 +103,75 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   }, [messagesGroup]);
 
   useEffect(() => {
-    socket.on('message', () => {
-      axios
-        .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
-          },
-        })
-        .then((res) => {
-          setMessagesGroup(res.data.messageGroups);
-          setMessageFromOthers((pre) => pre + 1);
+    // console.log('getting socket from drop down box');
 
-          if (ifChatBoxOpen) {
-            setUnreadNum(0);
+    //const socket = getSocket();
+    // console.log('socket is: ' + socket?.connected);
 
-            messagesGroup.forEach((messageGroup: MessageGroup) => {
-              if (messageGroup._id !== chatGroupId) {
-                if (
-                  messageGroup.unread > 0 &&
-                  messageGroup.last_sender !== user
-                ) {
-                  setUnreadNum((pre) => pre + messageGroup.unread);
+    if (socket)
+      socket.on('message', () => {
+        axios
+          .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${token}`,
+            },
+          })
+          .then((res) => {
+            setMessagesGroup(res.data.messageGroups);
+            setMessageFromOthers((pre) => pre + 1);
+
+            if (ifChatBoxOpen) {
+              setUnreadNum(0);
+
+              messagesGroup.forEach((messageGroup: MessageGroup) => {
+                if (messageGroup._id !== chatGroupId) {
+                  if (
+                    messageGroup.unread > 0 &&
+                    messageGroup.last_sender !== user
+                  ) {
+                    setUnreadNum((pre) => pre + messageGroup.unread);
+                  }
                 }
-              }
-            });
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    });
+              });
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      });
 
     return () => {
-      socket.off('message');
+      if (socket) socket.off('message');
     };
   }, [messagesGroup, ifChatBoxOpen, messageFromOthers]);
 
   useEffect(() => {
-    socket.on('myself', () => {
-      axios
-        .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
-          },
-        })
-        .then((res) => {
-          setMessagesGroup(res.data.messageGroups);
-          // setMessageFromMyself(messageFromMyself + 1);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    });
+    // console.log('getting socket from drop down box');
+
+    //const socket = getSocket();
+    // console.log('socket is: ' + socket?.connected);
+
+    if (socket)
+      socket.on('myself', () => {
+        axios
+          .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
+            headers: {
+              'Content-Type': 'application/json',
+              authorization: `Bearer ${token}`,
+            },
+          })
+          .then((res) => {
+            setMessagesGroup(res.data.messageGroups);
+            // setMessageFromMyself(messageFromMyself + 1);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      });
+    return () => {
+      if (socket) socket.off('myself');
+    };
   }, []);
 
   useEffect(() => {

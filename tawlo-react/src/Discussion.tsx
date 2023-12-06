@@ -77,7 +77,7 @@ const Discussion = () => {
           setPostsRender([...newArray]);
           setIsNextPage(res.data.nextPage);
           setPaging(paging + 1);
-          console.log(res.data);
+          // console.log(res.data);
         })
         .catch((err) => console.log(err));
     }

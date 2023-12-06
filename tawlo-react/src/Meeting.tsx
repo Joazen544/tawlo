@@ -45,7 +45,7 @@ const Meeting = () => {
         },
       })
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
 
         setMeetingStatus(res.data.status);
       });
@@ -60,7 +60,7 @@ const Meeting = () => {
           },
         })
         .then((res) => {
-          console.log(res.data);
+          // console.log(res.data);
           setUserRole(res.data.meeting.user.role);
           setUserIntro(res.data.meeting.user.user_intro);
           setUserToShare(res.data.meeting.user.to_share);
@@ -74,7 +74,7 @@ const Meeting = () => {
           },
         })
         .then((res) => {
-          console.log(res.data);
+          // console.log(res.data);
           setUserRole(res.data.meeting.user.role);
           setUserIntro(res.data.meeting.user.user_intro);
           setUserToShare(res.data.meeting.user.to_share);
@@ -94,7 +94,7 @@ const Meeting = () => {
           },
         })
         .then((res) => {
-          console.log(res.data);
+          // console.log(res.data);
           setUserRole(res.data.meeting.user.role);
           setUserIntro(res.data.meeting.user.user_intro);
           setUserToShare(res.data.meeting.user.to_share);

@@ -50,7 +50,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
     if (content) {
       try {
         // Make a request to create a new post
-        const post = await axios.post(
+        await axios.post(
           `${import.meta.env.VITE_DOMAIN}/api/post`,
           {
             category: category,
@@ -68,7 +68,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
           },
         );
 
-        console.log(post);
+        // console.log(post);
 
         // Clear input fields
         setContent('');

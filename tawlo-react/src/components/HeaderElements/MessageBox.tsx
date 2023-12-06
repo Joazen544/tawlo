@@ -57,73 +57,84 @@ Props) => {
   }, [targetName, targetId, groupId]);
 
   useEffect(() => {
-    console.log('receiving message');
+    // console.log('getting socket from message box');
 
-    socket.on('myself', (data) => {
-      if (data.group === groupId && user) {
-        const newMessage: Message = {
-          liked: {
-            number: 0,
-            users: [],
-          },
-          _id: '',
-          group: groupId,
-          from: user,
-          content: data.message,
-          time: new Date(),
-          is_removed: false,
-          read: [],
-        };
-        updateMessage(newMessage);
-      }
-    });
+    //const socket = getSocket();
+    // console.log('socket is: ' + socket?.connected);
 
-    socket.on('message', (data) => {
-      if (data.group === groupId && user) {
-        const newMessage: Message = {
-          liked: {
-            number: 0,
-            users: [],
-          },
-          _id: '',
-          group: groupId,
-          from: data.from,
-          content: data.message,
-          time: new Date(),
-          is_removed: false,
-          read: [],
-        };
-        updateMessage(newMessage);
-        if (ifBoxShow) {
-          console.log('box showing, trigger clean read messages');
+    if (socket)
+      socket.on('myself', (data) => {
+        // console.log('from myself');
+        // console.log('data.group: ' + data.group);
+        // console.log('group id: ' + groupId);
 
-          axios
-            .post(
-              `${import.meta.env.VITE_DOMAIN}/api/messageGroup/read`,
-              {
-                messageGroupId: groupId,
-              },
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                  authorization: `Bearer ${token}`,
-                },
-              },
-            )
-            .then(() => {
-              //handleReadMessage(groupId);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
+        if (data.group === groupId && user) {
+          const newMessage: Message = {
+            liked: {
+              number: 0,
+              users: [],
+            },
+            _id: '',
+            group: groupId,
+            from: user,
+            content: data.message,
+            time: new Date(),
+            is_removed: false,
+            read: [],
+          };
+          updateMessage(newMessage);
         }
-      }
-    });
+      });
+
+    if (socket)
+      socket.on('message', (data) => {
+        if (data.group === groupId && user) {
+          const newMessage: Message = {
+            liked: {
+              number: 0,
+              users: [],
+            },
+            _id: '',
+            group: groupId,
+            from: data.from,
+            content: data.message,
+            time: new Date(),
+            is_removed: false,
+            read: [],
+          };
+          updateMessage(newMessage);
+          if (ifBoxShow) {
+            // console.log('box showing, trigger clean read messages');
+
+            axios
+              .post(
+                `${import.meta.env.VITE_DOMAIN}/api/messageGroup/read`,
+                {
+                  messageGroupId: groupId,
+                },
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    authorization: `Bearer ${token}`,
+                  },
+                },
+              )
+              .then(() => {
+                //handleReadMessage(groupId);
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          }
+        }
+      });
     return () => {
-      socket.off('message');
-      socket.off('myself');
+      if (socket) {
+        socket.off('message');
+        socket.off('myself');
+      }
     };
-  }, [messages]);
+  }, [messages, ifBoxShow]);
 
   const handleBoxShow = () => {
     setIfBoxShow(!ifBoxShow);
@@ -134,7 +145,7 @@ Props) => {
     setIfNewMessage((pre) => pre + 1);
 
     setMessages((pre) => pre.concat(newMessage));
-    console.log('updating messages');
+    // console.log('updating messages');
   };
 
   const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +201,7 @@ Props) => {
             },
           )
           .finally(() => {
-            console.log('sending message');
+            // console.log('sending message');
             setIfNewMessage(ifNewMessage + 1);
             setMessageInput('');
           });
@@ -206,7 +217,7 @@ Props) => {
       const { scrollTop } = messagesAreaRef.current;
       // , scrollHeight, clientHeight
       if (scrollTop === 0 && !isLoading) {
-        console.log('scroll position is at the top');
+        // console.log('scroll position is at the top');
 
         // Scroll position is at the top, load more messages
         setIsLoading(true);
@@ -224,7 +235,6 @@ Props) => {
     try {
       // Make your request to load previous messages
       // For example, using axios and updating the state with setMessages
-      console.log('loading more messages');
 
       const response = await axios.get(
         `${
@@ -238,7 +248,7 @@ Props) => {
         },
       );
       const newMessages = response.data.messages;
-      console.log(newMessages);
+      // console.log(newMessages);
 
       // Update the state with the new messages
       if (response) {
