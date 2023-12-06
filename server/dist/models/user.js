@@ -84,7 +84,7 @@ const userSchema = new mongoose_1.default.Schema({
                 number: Number,
             },
         ],
-        default: [],
+        default: [{ name: '後端', number: 20 }],
     },
     recommend_mode: {
         type: String,

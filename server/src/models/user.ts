@@ -102,7 +102,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
         number: Number,
       },
     ],
-    default: [],
+    default: [{ name: '後端', number: 20 }],
   },
   recommend_mode: {
     type: String,
