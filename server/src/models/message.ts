@@ -98,11 +98,11 @@ export async function makeAllMessagesRead(
       { group: messageGroupId, read: { $ne: userId } },
       { $push: { read: userId } },
     );
-    console.log('making');
+    // console.log('making');
 
     if (last_sender !== userId) {
-      console.log('making 2');
-      console.log(messageGroupId);
+      // console.log('making 2');
+      // console.log(messageGroupId);
 
       await MessageGroup.updateOne({ _id: messageGroupId }, { unread: 0 });
     }

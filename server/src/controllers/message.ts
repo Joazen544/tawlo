@@ -246,7 +246,7 @@ export async function readMessages(
   next: NextFunction,
 ) {
   try {
-    console.log('making messages read');
+    // console.log('making messages read');
 
     const { user, messageGroupId } = req.body;
     const userId = new ObjectId(user);
