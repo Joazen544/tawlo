@@ -19,7 +19,7 @@ export async function signUp(req: Request, res: Response) {
       password_confirm: passwordConfirm,
     });
 
-    const token = await signJWT(JSON.stringify(userData._id));
+    const token = await signJWT(userData._id.toString());
     res
       .cookie('jwtToken', token)
       .status(200)

@@ -10,7 +10,6 @@ import {
   getUserPreference,
   UserDocument,
 } from '../models/user';
-import { getIO } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
 async function calculateMotherPostHot(
@@ -1136,17 +1135,6 @@ export async function getRecommendPosts(req: Request, res: Response) {
   // take posts from post model using the info
 
   try {
-    const io = getIO();
-    if (io) {
-      io.sockets.on('chat message', (msg) => {
-        console.log(`message: ${msg}`);
-      });
-
-      io.sockets.emit('chat message', {
-        message: 'weeee from controller',
-        name: 'hello from server',
-      });
-    }
     const { user } = req.body;
     console.log(user);
 

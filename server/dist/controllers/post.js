@@ -36,7 +36,6 @@ exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPost
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post"));
 const user_1 = require("../models/user");
-const socket_1 = require("./socket");
 const errorHandler_1 = require("../utils/errorHandler");
 function calculateMotherPostHot(postId, increaseField, increase) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -1014,16 +1013,6 @@ function getRecommendPosts(req, res) {
         // take user preference info, recommend mode
         // take posts from post model using the info
         try {
-            const io = (0, socket_1.getIO)();
-            if (io) {
-                io.sockets.on('chat message', (msg) => {
-                    console.log(`message: ${msg}`);
-                });
-                io.sockets.emit('chat message', {
-                    message: 'weeee from controller',
-                    name: 'hello from server',
-                });
-            }
             const { user } = req.body;
             console.log(user);
             const userId = new mongodb_1.ObjectId(user);

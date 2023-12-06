@@ -46,7 +46,7 @@ function signUp(req, res) {
                 password,
                 password_confirm: passwordConfirm,
             });
-            const token = yield (0, JWT_1.signJWT)(JSON.stringify(userData._id));
+            const token = yield (0, JWT_1.signJWT)(userData._id.toString());
             res
                 .cookie('jwtToken', token)
                 .status(200)
