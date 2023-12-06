@@ -51,7 +51,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
       try {
         // Make a request to create a new post
         const post = await axios.post(
-          'http://localhost:3000/api/post',
+          `${import.meta.env.VITE_DOMAIN}/api/post`,
           {
             category: category,
             content,

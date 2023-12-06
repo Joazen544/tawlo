@@ -16,19 +16,22 @@ const Board = () => {
   const [ifNextPage, setIfNextPage] = useState(false);
   const [ifAppendPostArea, setIfAppendPostArea] = useState(false);
 
+  const fetchBoardData = async () => {
+    try {
+      const response = await axios.get(
+        `${
+          import.meta.env.VITE_DOMAIN
+        }/api/board/${id}/posts?paging=${currentPage}`,
+      );
+      setPostsData(response.data.posts);
+      setIfNextPage(response.data.nextPage);
+    } catch (error) {
+      console.error('Error fetching board data:', error);
+    }
+  };
+
   useEffect(() => {
     // Fetch board data based on the board ID from the URL
-    const fetchBoardData = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/api/board/${id}/posts?paging=${currentPage}`,
-        );
-        setPostsData(response.data.posts);
-        setIfNextPage(response.data.nextPage);
-      } catch (error) {
-        console.error('Error fetching board data:', error);
-      }
-    };
 
     fetchBoardData();
   }, [id, currentPage]);
@@ -37,7 +40,7 @@ const Board = () => {
     const fetchBoardName = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/board/name?id=${id}`,
+          `${import.meta.env.VITE_DOMAIN}/api/board/name?id=${id}`,
         );
         setBoardName(response.data.name);
       } catch (error) {
@@ -46,10 +49,15 @@ const Board = () => {
     };
 
     fetchBoardName();
-  });
+  }, [postsData]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+  };
+
+  const handleNewPost = () => {
+    setIfAppendPostArea(false);
+    fetchBoardData();
   };
 
   return (
@@ -65,7 +73,7 @@ const Board = () => {
         </button>
         {ifAppendPostArea && (
           <CreatePost
-            onPostCreated={() => setIfAppendPostArea(false)}
+            onPostCreated={() => handleNewPost()}
             category="mother"
             motherPost=""
             board={id || ''}

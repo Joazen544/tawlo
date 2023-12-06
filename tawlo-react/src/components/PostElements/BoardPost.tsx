@@ -37,7 +37,7 @@ const BoardPost = ({
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/user/name?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
       })

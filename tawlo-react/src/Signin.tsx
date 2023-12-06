@@ -67,7 +67,7 @@ const Signin = () => {
     // Send signup request
     try {
       const response = await axios.post(
-        'http://localhost:3000/api/user/signup',
+        `${import.meta.env.VITE_DOMAIN}/api/user/signup`,
         signupData,
         { withCredentials: true },
       );
@@ -99,7 +99,7 @@ const Signin = () => {
     // Send signin request
     try {
       const response = await axios.post(
-        'http://localhost:3000/api/user/signin',
+        `${import.meta.env.VITE_DOMAIN}/api/user/signin`,
         signinData,
         { withCredentials: true },
       );

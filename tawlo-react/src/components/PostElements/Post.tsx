@@ -111,7 +111,7 @@ const Post = ({
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/user/name?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
       })
@@ -122,7 +122,7 @@ const Post = ({
     const nameArray: string[] = [];
     commentsData.forEach((comment, index) => {
       axios
-        .get(`http://localhost:3000/api/user/name?id=${comment.user}`)
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${comment.user}`)
         .then((res) => {
           const userName = res.data.name as string;
           nameArray[index] = userName;
@@ -142,7 +142,7 @@ const Post = ({
 
     try {
       await axios.post(
-        `http://localhost:3000/api/post/${_id}/like`,
+        `${import.meta.env.VITE_DOMAIN}/api/post/${_id}/like`,
         {
           like: likeStatus,
         },
@@ -173,7 +173,7 @@ const Post = ({
 
     try {
       await axios.post(
-        `http://localhost:3000/api/post/${_id}/upvote`,
+        `${import.meta.env.VITE_DOMAIN}/api/post/${_id}/upvote`,
         {
           upvote: upvoteStatus,
         },
@@ -203,7 +203,7 @@ const Post = ({
 
     try {
       await axios.post(
-        `http://localhost:3000/api/post/${_id}/downvote`,
+        `${import.meta.env.VITE_DOMAIN}/api/post/${_id}/downvote`,
         {
           downvote: downvoteStatus,
         },
@@ -224,7 +224,7 @@ const Post = ({
       // Make a request to create a new post
       await axios
         .post(
-          `http://localhost:3000/api/post/${_id}/comment`,
+          `${import.meta.env.VITE_DOMAIN}/api/post/${_id}/comment`,
           {
             content: commentCreate,
           },

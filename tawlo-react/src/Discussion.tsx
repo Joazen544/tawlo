@@ -67,7 +67,9 @@ const Discussion = () => {
     if (isNextPage) {
       axios
         .get(
-          `http://localhost:3000/api/board/post/detail?id=${id}&paging=${paging}`,
+          `${
+            import.meta.env.VITE_DOMAIN
+          }/api/board/post/detail?id=${id}&paging=${paging}`,
         )
         .then((res) => {
           const newArray = postsRender.concat(res.data.posts);
@@ -86,7 +88,9 @@ const Discussion = () => {
     if (paging > 0) {
       axios
         .get(
-          `http://localhost:3000/api/board/post/detail?id=${id}&paging=${paging}`,
+          `${
+            import.meta.env.VITE_DOMAIN
+          }/api/board/post/detail?id=${id}&paging=${paging}`,
         )
         .then((res) => {
           const newArray = postsRender.concat(res.data.posts);

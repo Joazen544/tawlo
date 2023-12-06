@@ -2,13 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { socket } from '../../socket';
+import { Link } from 'react-router-dom';
 
 interface Props {
   targetName: string;
   targetId: string;
   groupId: string;
   closeBox: () => void;
-  //handleReadMessage: (groupId: string) => void;
 }
 
 interface Message {
@@ -40,10 +40,11 @@ Props) => {
   const [ifBoxShow, setIfBoxShow] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [ifNewMessage, setIfNewMessage] = useState(0);
+  //const [ifNavigate, setIfNavigate] = useState(false);
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/messageGroup?group=${groupId}`, {
+      .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroup?group=${groupId}`, {
         headers: {
           'Content-Type': 'application/json',
           authorization: `Bearer ${token}`,
@@ -98,7 +99,7 @@ Props) => {
 
           axios
             .post(
-              'http://localhost:3000/api/messageGroup/read',
+              `${import.meta.env.VITE_DOMAIN}/api/messageGroup/read`,
               {
                 messageGroupId: groupId,
               },
@@ -175,7 +176,7 @@ Props) => {
       try {
         axios
           .post(
-            `http://localhost:3000/api/message`,
+            `${import.meta.env.VITE_DOMAIN}/api/message`,
             {
               messageTo: targetId,
               messageGroup: groupId,
@@ -226,7 +227,9 @@ Props) => {
       console.log('loading more messages');
 
       const response = await axios.get(
-        `http://localhost:3000/api/messages?group=${groupId}&lastMessage=${messages[0]._id}`,
+        `${
+          import.meta.env.VITE_DOMAIN
+        }/api/messages?group=${groupId}&lastMessage=${messages[0]._id}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -247,6 +250,10 @@ Props) => {
     }
   };
 
+  // const navigateToUser = () => {
+  //   setIfNavigate(true);
+  // };
+
   return (
     <div
       style={
@@ -262,7 +269,13 @@ Props) => {
         onClick={handleBoxShow}
         onScroll={handleScroll}
       >
-        <button className="ml-3 hover:text-blue-400 z-10">{targetName}</button>
+        <Link
+          to={`/user/profile/${targetId}`}
+          id="commentName"
+          className="ml-3 hover:text-blue-400 z-10"
+        >
+          {targetName}
+        </Link>
         <button className="mr-3 hover:text-blue-400" onClick={closeBox}>
           X
         </button>

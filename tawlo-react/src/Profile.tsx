@@ -17,6 +17,7 @@ const Profile = () => {
     null,
   );
   const [userName, setUserName] = useState('');
+  const [ifLogOut, setIfLogOut] = useState(false);
 
   const { userId } = useParams();
 
@@ -32,7 +33,7 @@ const Profile = () => {
     }
 
     axios
-      .get(`http://localhost:3000/api/user/name?id=${userId}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${userId}`)
       .then((res) => {
         setUserName(res.data.name);
       });
@@ -40,7 +41,7 @@ const Profile = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/user/relation?id=${userId}`, {
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/relation?id=${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -58,12 +59,13 @@ const Profile = () => {
     Cookies.remove('jwtToken');
     Cookies.remove('userName');
     setIfOwnProfile(false);
+    setIfLogOut(true);
   };
 
   const sendInvite = () => {
     axios
       .post(
-        `http://localhost:3000/api/user/request?id=${userId}`,
+        `${import.meta.env.VITE_DOMAIN}/api/user/request?id=${userId}`,
         {},
         {
           headers: {
@@ -88,7 +90,7 @@ const Profile = () => {
   const cancelRequest = () => {
     axios
       .post(
-        `http://localhost:3000/api/user/cancelRequest?id=${userId}`,
+        `${import.meta.env.VITE_DOMAIN}/api/user/cancelRequest?id=${userId}`,
         {},
         {
           headers: {
@@ -108,7 +110,7 @@ const Profile = () => {
 
   const sendMessage = () => {
     axios
-      .get(`http://localhost:3000/api/messageGroup?target=${userId}`, {
+      .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroup?target=${userId}`, {
         headers: {
           authorization: `Bearer ${token}`,
         },
@@ -122,7 +124,7 @@ const Profile = () => {
           }
         });
         const nameRes = await axios.get(
-          `http://localhost:3000/api/user/name?id=${targetId}`,
+          `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${targetId}`,
         );
 
         if (targetId) {
@@ -140,6 +142,7 @@ const Profile = () => {
       {userId === 'not-log-in' && (
         <Navigate to={'/user/signin'} replace={true}></Navigate>
       )}
+      {ifLogOut && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header target={messageTarget} />
       {ifOwnProfile && (
         <div>

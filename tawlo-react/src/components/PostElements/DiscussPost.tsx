@@ -38,7 +38,7 @@ const DisscussPost = ({
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/user/name?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
       })
@@ -49,7 +49,7 @@ const DisscussPost = ({
     console.log(board);
 
     axios
-      .get(`http://localhost:3000/api/board/name?id=${board}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/board/name?id=${board}`)
       .then((res) => {
         setBoardName(res.data.name);
       })

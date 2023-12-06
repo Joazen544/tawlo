@@ -34,7 +34,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
     axios
-      .get('http://localhost:3000/api/messageGroups', {
+      .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
         headers: {
           'Content-Type': 'application/json',
           authorization: `Bearer ${token}`,
@@ -76,7 +76,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   useEffect(() => {
     if (messagesGroup.length === 0) {
       axios
-        .get('http://localhost:3000/api/messageGroups', {
+        .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
           headers: {
             'Content-Type': 'application/json',
             authorization: `Bearer ${token}`,
@@ -105,7 +105,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   useEffect(() => {
     socket.on('message', () => {
       axios
-        .get('http://localhost:3000/api/messageGroups', {
+        .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
           headers: {
             'Content-Type': 'application/json',
             authorization: `Bearer ${token}`,
@@ -143,7 +143,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   useEffect(() => {
     socket.on('myself', () => {
       axios
-        .get('http://localhost:3000/api/messageGroups', {
+        .get(`${import.meta.env.VITE_DOMAIN}/api/messageGroups`, {
           headers: {
             'Content-Type': 'application/json',
             authorization: `Bearer ${token}`,
@@ -173,7 +173,9 @@ const MessageDropdown = ({ messageTarget }: Props) => {
     const nameArray: string[] = [];
     messagesGroup.forEach((message, index) => {
       axios
-        .get(`http://localhost:3000/api/user/name?id=${message.users[0]}`)
+        .get(
+          `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${message.users[0]}`,
+        )
         .then((res) => {
           const userName = res.data.name as string;
           nameArray[index] = userName;

@@ -39,7 +39,7 @@ const Meeting = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/meeting`, {
+      .get(`${import.meta.env.VITE_DOMAIN}/api/meeting`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -54,7 +54,7 @@ const Meeting = () => {
   useEffect(() => {
     if (meetingStatus === 'pending') {
       axios
-        .get(`http://localhost:3000/api/meeting`, {
+        .get(`${import.meta.env.VITE_DOMAIN}/api/meeting`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -68,7 +68,7 @@ const Meeting = () => {
         });
     } else if (meetingStatus === 'checking' || meetingStatus === 'waiting') {
       axios
-        .get(`http://localhost:3000/api/meeting`, {
+        .get(`${import.meta.env.VITE_DOMAIN}/api/meeting`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -88,7 +88,7 @@ const Meeting = () => {
         });
     } else if (meetingStatus === 'end') {
       axios
-        .get(`http://localhost:3000/api/meeting`, {
+        .get(`${import.meta.env.VITE_DOMAIN}/api/meeting`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -113,7 +113,7 @@ const Meeting = () => {
   useEffect(() => {
     if (targetId) {
       axios
-        .get(`http://localhost:3000/api/user/name?id=${targetId}`)
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${targetId}`)
         .then((res) => {
           setTargetName(res.data.name);
         })
@@ -195,7 +195,7 @@ const Meeting = () => {
 
     axios
       .post(
-        'http://localhost:3000/api/meeting',
+        `${import.meta.env.VITE_DOMAIN}/api/meeting`,
         {
           role: jobTitle,
           userIntro: selfIntro,
@@ -229,7 +229,7 @@ const Meeting = () => {
 
   const handleCancelPending = () => {
     axios
-      .delete('http://localhost:3000/api/meeting', {
+      .delete(`${import.meta.env.VITE_DOMAIN}/api/meeting`, {
         headers: {
           'Content-Type': 'application/json',
           authorization: `Bearer ${token}`,
@@ -245,7 +245,7 @@ const Meeting = () => {
 
   const handleRefuseMeeting = () => {
     axios.post(
-      `http://localhost:3000/api/meeting/${meetingId}`,
+      `${import.meta.env.VITE_DOMAIN}/api/meeting/${meetingId}`,
       {
         reply: 'deny',
       },
@@ -261,7 +261,7 @@ const Meeting = () => {
   const handleAcceptMeeting = () => {
     axios
       .post(
-        `http://localhost:3000/api/meeting/${meetingId}`,
+        `${import.meta.env.VITE_DOMAIN}/api/meeting/${meetingId}`,
         {
           reply: 'accept',
         },
@@ -313,7 +313,7 @@ const Meeting = () => {
 
     axios
       .post(
-        `http://localhost:3000/api/meeting/${meetingId}/score`,
+        `${import.meta.env.VITE_DOMAIN}/api/meeting/${meetingId}/score`,
         {
           targetUser: targetId,
           comment: comment,

@@ -7,7 +7,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
 import Cookies from 'js-cookie';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 
 export interface Post {
   _id: string;
@@ -74,7 +74,9 @@ const Home = () => {
     // Fetch all board IDs
     const fetchBoardIds = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/boards');
+        const response = await axios.get(
+          `${import.meta.env.VITE_DOMAIN}/api/boards`,
+        );
         setBoards(response.data.boards);
       } catch (error) {
         console.error('Error fetching board IDs:', error);
@@ -86,7 +88,7 @@ const Home = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:3000/api/posts/recommendation`, {
+      .get(`${import.meta.env.VITE_DOMAIN}/api/posts/recommendation`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -120,7 +122,7 @@ const Home = () => {
     console.log(nextPosts);
     console.log(nextPostsId);
     axios.post(
-      'http://localhost:3000/api/user/read',
+      `${import.meta.env.VITE_DOMAIN}/api/user/read`,
       {
         posts: nextPostsId,
       },
@@ -136,6 +138,7 @@ const Home = () => {
 
   return (
     <div>
+      {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header />
       <section
         id="posts_container"
@@ -144,7 +147,7 @@ const Home = () => {
         <div
           id="sideBar"
           style={{ height: '20rem' }}
-          className="flex-shrink-0 fixed left-32 top-48 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
+          className="flex-shrink-0 fixed left-0 top-48 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
         >
           <div className="mb-4 font-bold text-xl">Boards</div>
           <ul>
