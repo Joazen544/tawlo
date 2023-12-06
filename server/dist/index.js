@@ -31,7 +31,7 @@ app.use('/api', [
     meeting_1.default,
 ]);
 app.use(express_1.default.static(path_1.default.join(__dirname, '../dist')));
-app.get('/', (_req, res) => {
+app.get('*', (_req, res) => {
     res.sendFile(path_1.default.join(__dirname, '../dist/index.html'));
 });
 app.use(errorHandler_1.errorHandler);
