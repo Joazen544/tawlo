@@ -30,6 +30,12 @@ export interface UserDocument extends Document {
   upvote: number;
   downvote: number;
   honor_now: string;
+  notification: {
+    time: Date;
+    content: string;
+    category: string;
+    target: ObjectId;
+  }[];
   honors: string[];
   correctPassword: (arg1: string, arg2: string) => Boolean;
 }
@@ -112,6 +118,17 @@ const userSchema = new mongoose.Schema<UserDocument>({
   // chat rooms
   upvote: { type: Number, default: 0 },
   downvote: { type: Number, default: 0 },
+  notification: {
+    type: [
+      {
+        time: Date,
+        content: String,
+        category: { type: String, enum: ['post', 'meet', 'request'] },
+        target: ObjectId,
+      },
+    ],
+    default: [],
+  },
   honor_now: { type: String, default: '' },
   honors: { type: [String], default: [] },
 });
