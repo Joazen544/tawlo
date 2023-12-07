@@ -64,10 +64,6 @@ Props) => {
 
     if (socket)
       socket.on('myself', (data) => {
-        // console.log('from myself');
-        // console.log('data.group: ' + data.group);
-        // console.log('group id: ' + groupId);
-
         if (data.group === groupId && user) {
           const newMessage: Message = {
             liked: {

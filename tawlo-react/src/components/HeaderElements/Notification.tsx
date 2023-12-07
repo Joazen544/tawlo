@@ -1,6 +1,10 @@
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import Cookies from 'js-cookie';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { socket } from '../../socket';
 
 interface Notification {
   _id: string;
@@ -97,9 +101,57 @@ const Notification = () => {
     fetchFunction();
   }, [notifications]);
 
-  // useEffect(() => {
-  //   fetchNotifications();
-  // }, [isNotificationOpen]);
+  useEffect(() => {
+    if (socket) {
+      socket.on('notificate', (data) => {
+        const category = data.category;
+
+        let actionUser: string;
+        let targetPost: string;
+        let message: string;
+        if (
+          category === 'reply_post' ||
+          category === 'comment_post' ||
+          category === 'upvote_post' ||
+          category === 'like_post' ||
+          category === 'comment_replied' ||
+          category === 'like_comment'
+        ) {
+          actionUser = data.actionUser as string;
+          targetPost = data.targetPost;
+          message = data.message as string;
+          axios
+            .get(
+              `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${actionUser}`,
+            )
+            .then((res) => {
+              const name = res.data.name;
+
+              const CustomToastWithLink = () => (
+                <div>
+                  <Link to={`/post/${targetPost}`}>{`${name} ${message}`}</Link>
+                </div>
+              );
+              toast.info(CustomToastWithLink, {
+                position: 'top-right',
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: 'light',
+              });
+            });
+        }
+      });
+    }
+    return () => {
+      if (socket) {
+        socket.off('notificate');
+      }
+    };
+  }, []);
 
   const handleClick = () => {
     // 在這裡可以額外執行點擊通知圖標後的操作
@@ -158,6 +210,7 @@ const Notification = () => {
           </div>
         )}
       </div>
+      <ToastContainer />
     </>
   );
 };
