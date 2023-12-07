@@ -242,7 +242,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
           </div>
         </button>
         {isDropdownOpen && messagesGroup.length > 0 && (
-          <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md">
+          <div className="absolute h-64 overflow-y-auto right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md">
             <ul>
               {messagesGroup.map((message, index) => {
                 return (
