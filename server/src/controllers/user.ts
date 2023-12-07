@@ -220,6 +220,48 @@ export async function getNotifications(
       return;
     }
 
+    notifications.forEach((notification) => {
+      switch (notification.category) {
+        case 'reply_post':
+          notification.message = '回覆了你的貼文';
+          break;
+        case 'comment_post':
+          notification.message = '在你的貼文留言';
+          break;
+        case 'upvote_post':
+          notification.message = '覺得你的貼文有用';
+          break;
+        case 'like_post':
+          notification.message = '喜歡你的貼文';
+          break;
+        case 'comment_replied':
+          notification.message = '回覆了你的留言';
+          break;
+        case 'like_comment':
+          notification.message = '喜歡你的留言';
+          break;
+        case 'meet_match':
+          notification.message = '配對成功，看看對方的資訊';
+          break;
+        case 'meet_success':
+          notification.message = '配對完成，找對方聊聊吧';
+          break;
+        case 'meet_fail':
+          notification.message = '配對失敗，重新找人中！';
+          break;
+        case 'friend_request':
+          notification.message = '有人想加你好友';
+          break;
+        case 'request_accepted':
+          notification.message = '交友邀請被接受囉';
+          break;
+        default:
+          notification.message = '';
+      }
+    });
+
+    console.log(notifications);
+
     res.json(notifications);
   } catch (err) {
     next(err);
@@ -237,12 +279,10 @@ export async function readAllNotifications(
 
     const updateResult = await readNotificationsFromDB(userId);
     if (updateResult === false) {
-      res
-        .status(400)
-        .json({
-          error:
-            'no such user or something wrong updating read all notifications',
-        });
+      res.status(400).json({
+        error:
+          'no such user or something wrong updating read all notifications',
+      });
       return;
     }
 

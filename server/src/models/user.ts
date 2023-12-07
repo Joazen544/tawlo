@@ -37,6 +37,7 @@ export interface UserDocument extends Document {
     target_post: ObjectId;
     users_num: number;
     read: boolean;
+    message: string;
   }[];
   honors: string[];
   correctPassword: (arg1: string, arg2: string) => Boolean;
@@ -148,6 +149,7 @@ const userSchema = new mongoose.Schema<UserDocument>({
         users_num: { type: Number, default: 0 },
         target_post: ObjectId,
         read: Boolean,
+        message: String,
       },
     ],
     default: [],
