@@ -118,6 +118,13 @@ export async function createPost(req: Request, res: Response) {
         floor: 1,
       });
     } else if (category === 'reply') {
+      const motherPostInfo = await Post.findOne({ _id: motherPost });
+
+      if (!motherPostInfo) {
+        console.log('mother post does not exist');
+        res.status(400).json({ error: 'mother post does not exist' });
+        return;
+      }
       const updateMotherResult = Post.updateOne(
         { _id: motherPost },
         {
@@ -129,15 +136,8 @@ export async function createPost(req: Request, res: Response) {
         },
       );
 
-      const motherPostInfo = await Post.findOne({ _id: motherPost });
-
-      let postTags;
-      let postBoard;
-
-      if (motherPostInfo) {
-        postTags = motherPostInfo.tags;
-        postBoard = motherPostInfo.board;
-      }
+      const postTags = motherPostInfo.tags;
+      const postBoard = motherPostInfo.board;
 
       if ((await updateMotherResult).acknowledged === false) {
         throw new Error(
@@ -154,6 +154,13 @@ export async function createPost(req: Request, res: Response) {
         board: postBoard,
         mother_post: motherPost,
       });
+
+      await addNotificationToUserDB(
+        motherPostInfo.author,
+        'reply_post',
+        userId,
+        postData._id,
+      );
     } else {
       res.status(400).json({ error: 'The category of post is wrong' });
     }
@@ -895,6 +902,13 @@ export async function upvotePost(req: Request, res: Response) {
           throw new Error('cancel downvote from mother fail');
         }
       }
+
+      await addNotificationToUserDB(
+        upvoteTarget.author,
+        'upvote_post',
+        userId,
+        upvoteTarget._id,
+      );
 
       res.json({ message: `${message} post success` });
       return;
