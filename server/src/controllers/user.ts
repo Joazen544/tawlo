@@ -7,6 +7,7 @@ import User, {
   createRelation,
   cancelRequestFromDB,
   getNotificationsFromDB,
+  readNotificationsFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
@@ -220,6 +221,32 @@ export async function getNotifications(
     }
 
     res.json(notifications);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function readAllNotifications(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const userId = new ObjectId(user);
+
+    const updateResult = await readNotificationsFromDB(userId);
+    if (updateResult === false) {
+      res
+        .status(400)
+        .json({
+          error:
+            'no such user or something wrong updating read all notifications',
+        });
+      return;
+    }
+
+    res.json({ message: 'read all notifications' });
   } catch (err) {
     next(err);
   }

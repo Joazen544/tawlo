@@ -526,4 +526,16 @@ export async function getNotificationsFromDB(userId: ObjectId) {
   return userInfo.notification;
 }
 
+export async function readNotificationsFromDB(userId: ObjectId) {
+  const userUpdate = await User.updateOne(
+    { _id: userId, 'notification.read': false },
+    { $set: { 'notification.$[].read': true } },
+  );
+
+  if (userUpdate.acknowledged === false) {
+    return false;
+  }
+  return true;
+}
+
 export default User;
