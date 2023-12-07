@@ -32,9 +32,11 @@ export interface UserDocument extends Document {
   honor_now: string;
   notification: {
     time: Date;
-    content: string;
     category: string;
-    target: ObjectId;
+    action_users: ObjectId[];
+    target_post: ObjectId;
+    users_num: number;
+    read: boolean;
   }[];
   honors: string[];
   correctPassword: (arg1: string, arg2: string) => Boolean;
@@ -122,9 +124,30 @@ const userSchema = new mongoose.Schema<UserDocument>({
     type: [
       {
         time: Date,
-        content: String,
-        category: { type: String, enum: ['post', 'meet', 'request'] },
-        target: ObjectId,
+        category: {
+          type: String,
+          enum: [
+            'reply_post',
+            'comment_post',
+            'comment_replied',
+            'upvote_post',
+            'like_post',
+            'like_comment',
+            'meet_match',
+            'meet_success',
+            'meet_fail',
+            'friend_request',
+            'request_accepted',
+          ],
+        },
+        // three the most
+        // friends first
+        action_users: [ObjectId],
+        // reply_post, comment_post, comment_replied
+        // upvote_post,like_post,like_comment
+        users_num: { type: Number, default: 0 },
+        target_post: ObjectId,
+        read: Boolean,
       },
     ],
     default: [],
@@ -343,6 +366,148 @@ export async function cancelRequestFromDB(user: string, target: string) {
     await session.endSession();
   }
   return result;
+}
+
+export async function addNotificationToUserDB(
+  userId: ObjectId,
+  category: string,
+  actionUser: ObjectId,
+  targetPost: ObjectId,
+) {
+  // time: Date;
+  // category: string;
+  // action_users: ObjectId[];
+  // users_num: number;
+  // read: boolean;
+  // target_post
+
+  // 'reply_post',
+  // 'comment_post',
+  // 'upvote_post',
+  // 'like_post',
+  // 'comment_replied',
+  // 'like_comment',
+  // 'meet_match',
+  // 'meet_success',
+  // 'meet_fail',
+
+  // 'friend_request',
+  // 'request_accepted',
+
+  if (
+    category === 'reply_post' ||
+    category === 'comment_post' ||
+    category === 'upvote_post' ||
+    category === 'like_post' ||
+    category === 'comment_replied' ||
+    category === 'like_comment'
+  ) {
+    // if notification already exist add to it and make it unread
+    const targetNotification = await User.findOne({
+      _id: userId,
+      notification: {
+        $elemMatch: {
+          category,
+          target_post: targetPost,
+        },
+      },
+    });
+
+    if (targetNotification) {
+      await User.updateOne(
+        {
+          _id: userId,
+          notification: {
+            $elemMatch: {
+              category,
+              target_post: targetPost,
+            },
+          },
+        },
+        [
+          {
+            $push: { 'notification.$.action_users': actionUser },
+            $inc: { 'notification.$.users_num': 1 },
+            $set: {
+              'notification.$.time': new Date(),
+              'notification.$.read': false,
+            },
+          },
+          {
+            $slice: ['$notification', -5],
+          },
+        ],
+      );
+
+      return 'update';
+    }
+
+    // if notification hasn't exist yet, create a new one
+    await User.updateOne({ _id: userId }, [
+      {
+        $push: {
+          notification: {
+            category,
+            action_users: [actionUser],
+            target_post: targetPost,
+            users_num: 1,
+            time: new Date(),
+            read: false,
+          },
+        },
+      },
+      {
+        $slice: ['$notification', -5],
+      },
+    ]);
+
+    return 'create';
+  }
+
+  if (
+    category === 'meet_match' ||
+    category === 'meet_success' ||
+    category === 'meet_fail'
+  ) {
+    await User.updateOne({ _id: userId }, [
+      {
+        $push: {
+          notification: {
+            category,
+            time: new Date(),
+            read: false,
+          },
+        },
+      },
+      {
+        $slice: ['$notification', -5],
+      },
+    ]);
+
+    return 'create';
+  }
+
+  if (category === 'friend_request' || category === 'request_accepted') {
+    await User.updateOne({ _id: userId }, [
+      {
+        $push: {
+          notification: {
+            category,
+            action_users: [actionUser],
+            time: new Date(),
+            read: false,
+          },
+        },
+      },
+      {
+        $slice: ['$notification', -5],
+      },
+    ]);
+
+    return 'create';
+  }
+
+  return 'error';
 }
 
 export default User;
