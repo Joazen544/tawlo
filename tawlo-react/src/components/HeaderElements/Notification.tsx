@@ -1,17 +1,164 @@
-interface Props {
-  notificationNumber: number;
+import axios from 'axios';
+import { useState, useEffect, useRef } from 'react';
+import Cookies from 'js-cookie';
+
+interface Notification {
+  _id: string;
+  time: Date;
+  category: string;
+  action_users: string[];
+  target_post: string;
+  users_num: number;
+  read: boolean;
+  message: string;
 }
-const Notification = ({ notificationNumber }: Props) => {
+
+const Notification = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notificationsName, setNotificationsName] = useState<string[][]>([]);
+
+  const token = Cookies.get('jwtToken');
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_DOMAIN}/api/user/notification`,
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      const resNotifications: Notification[] = response.data;
+      setNotifications(resNotifications);
+      // 計算未讀通知的數量
+      const unreadNotifications = resNotifications.filter(
+        (notification) => !notification.read,
+      );
+      setUnreadCount(unreadNotifications.length);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const dropdownRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      event.target instanceof Node &&
+      !dropdownRef.current.contains(event.target)
+    ) {
+      // 點擊的位置在 dropdown 之外
+      setIsNotificationOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    // 添加全域點擊事件監聽器
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      // 移除全域點擊事件監聽器
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []); // 空的依賴陣列表示只在 component 被建立時設定一次
+
+  useEffect(() => {
+    console.log('fetching');
+
+    const fetchFunction = async () => {
+      const nameArray: string[][] = [];
+      for (let i = 0; i < notifications.length; i++) {
+        for (let j = 0; j < notifications[i].action_users.length; j++) {
+          const res = await axios.get(
+            `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${
+              notifications[i].action_users[j]
+            }`,
+          );
+
+          if (res.data.name) {
+            const userName = res.data.name as string;
+            console.log('user name is: ' + userName);
+
+            if (!nameArray[i]) {
+              nameArray[i] = [userName];
+            } else if (!nameArray[i].includes(userName)) {
+              nameArray[i].push(userName);
+            }
+          } else {
+            nameArray.push([]);
+          }
+        }
+      }
+      setNotificationsName([...nameArray]);
+    };
+    fetchFunction();
+  }, [notifications]);
+
+  // useEffect(() => {
+  //   fetchNotifications();
+  // }, [isNotificationOpen]);
+
+  const handleClick = () => {
+    // 在這裡可以額外執行點擊通知圖標後的操作
+    // 例如標記所有通知為已讀
+    // ...
+
+    console.log('click');
+    fetchNotifications();
+    setIsNotificationOpen(!isNotificationOpen);
+    // 更新通知狀態
+    if (!isNotificationOpen) setUnreadCount(0); // 將未讀數量歸零
+  };
+
   return (
-    <a
-      href="#"
-      className="w-8 h-8 bg-bell-image bg-contain bg-no-repeat"
-      style={{ backgroundSize: '1.5rem' }}
-    >
-      <div className="ml-4 mt-3 rounded-full bg-red-100 text-center">
-        {notificationNumber}
+    <>
+      <div className="relative inline-block">
+        <button
+          className="w-8 h-8 bg-bell-image bg-contain bg-no-repeat"
+          style={{ backgroundSize: '1.5rem' }}
+          ref={dropdownRef}
+          onClick={handleClick}
+        >
+          <div className="ml-4 mt-3 rounded-full bg-red-100 text-center">
+            {unreadCount}
+          </div>
+        </button>
+        {isNotificationOpen && notifications.length > 0 && (
+          <div className="absolute h-64 overflow-y-auto right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md">
+            <ul>
+              {notifications.map((notification, index) => {
+                // console.log(index);
+                // console.log(notificationsName);
+
+                return (
+                  <li
+                    key={notification._id}
+                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {}}
+                  >
+                    <div className="flex items-center w-full justify-left">
+                      <span className="text-gray-500 text-sm mr-2">
+                        {new Date(notification.time).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    {notificationsName[index] && (
+                      <span className="font-bold mr-2">
+                        {notificationsName[index]}
+                      </span>
+                    )}
+
+                    <p>{notification.message}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </div>
-    </a>
+    </>
   );
 };
 

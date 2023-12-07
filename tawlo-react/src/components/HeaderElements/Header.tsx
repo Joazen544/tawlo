@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Notification from './Notification';
 import { Link } from 'react-router-dom';
 import MessageDropdown from './MessageDropDown';
@@ -9,8 +8,6 @@ interface Props {
 }
 
 const Header = ({ target }: Props) => {
-  const [notification] = useState(0);
-
   return (
     <>
       <div
@@ -48,7 +45,7 @@ const Header = ({ target }: Props) => {
           className="w-32 h-12 flex items-center justify-around"
         >
           <MessageDropdown messageTarget={target} />
-          <Notification notificationNumber={notification} />
+          <Notification />
           <Link
             to={`/user/profile/${Cookies.get('userId') || 'not-log-in'}`}
             className="w-8 h-8 bg-user-image bg-contain bg-no-repeat"
