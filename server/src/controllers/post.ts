@@ -442,7 +442,15 @@ export async function likePost(req: Request, res: Response) {
       {
         _id: postId,
       },
-      { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 },
+      {
+        _id: 1,
+        liked: 1,
+        category: 1,
+        mother_post: 1,
+        tags: 1,
+        board: 1,
+        author: 1,
+      },
     );
 
     // console.log(JSON.stringify(likeTarget, null, 4));
@@ -545,6 +553,13 @@ export async function likePost(req: Request, res: Response) {
         throw Error('like a post fail');
       }
 
+      await addNotificationToUserDB(
+        likeTarget.author,
+        'like_post',
+        userId,
+        likeTarget._id,
+      );
+
       res.json({ message: `${message} post success` });
       return;
     }
@@ -612,6 +627,7 @@ export async function upvotePost(req: Request, res: Response) {
         downvote: 1,
         tags: 1,
         board: 1,
+        author: 1,
       },
     );
 
@@ -775,6 +791,13 @@ export async function upvotePost(req: Request, res: Response) {
           throw new Error('cancel downvote fail');
         }
       }
+
+      await addNotificationToUserDB(
+        upvoteTarget.author,
+        'upvote_post',
+        userId,
+        upvoteTarget._id,
+      );
 
       res.json({ message: `${message} post success` });
       return;
