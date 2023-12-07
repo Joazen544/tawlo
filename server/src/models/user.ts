@@ -425,42 +425,42 @@ export async function addNotificationToUserDB(
             },
           },
         },
-        [
-          {
-            $push: { 'notification.$.action_users': actionUser },
-            $inc: { 'notification.$.users_num': 1 },
-            $set: {
-              'notification.$.time': new Date(),
-              'notification.$.read': false,
-            },
+        {
+          $push: {
+            'notification.$.action_users': { $each: [actionUser], $slice: -5 },
           },
-          {
-            $slice: ['$notification', -5],
+          $inc: { 'notification.$.users_num': 1 },
+          $set: {
+            'notification.$.time': new Date(),
+            'notification.$.read': false,
           },
-        ],
+        },
       );
 
       return 'update';
     }
 
     // if notification hasn't exist yet, create a new one
-    await User.updateOne({ _id: userId }, [
+    await User.updateOne(
+      { _id: userId },
       {
         $push: {
           notification: {
-            category,
-            action_users: [actionUser],
-            target_post: targetPost,
-            users_num: 1,
-            time: new Date(),
-            read: false,
+            $each: [
+              {
+                category,
+                action_users: [actionUser],
+                target_post: targetPost,
+                users_num: 1,
+                time: new Date(),
+                read: false,
+              },
+            ],
+            $slice: -5,
           },
         },
       },
-      {
-        $slice: ['$notification', -5],
-      },
-    ]);
+    );
 
     return 'create';
   }
@@ -470,45 +470,60 @@ export async function addNotificationToUserDB(
     category === 'meet_success' ||
     category === 'meet_fail'
   ) {
-    await User.updateOne({ _id: userId }, [
+    await User.updateOne(
+      { _id: userId },
       {
         $push: {
           notification: {
-            category,
-            time: new Date(),
-            read: false,
+            $each: [
+              {
+                category,
+                time: new Date(),
+                read: false,
+              },
+            ],
+            $slice: -5,
           },
         },
       },
-      {
-        $slice: ['$notification', -5],
-      },
-    ]);
+    );
 
     return 'create';
   }
 
   if (category === 'friend_request' || category === 'request_accepted') {
-    await User.updateOne({ _id: userId }, [
+    await User.updateOne(
+      { _id: userId },
       {
         $push: {
           notification: {
-            category,
-            action_users: [actionUser],
-            time: new Date(),
-            read: false,
+            $each: [
+              {
+                category,
+                action_users: [actionUser],
+                time: new Date(),
+                read: false,
+              },
+            ],
+            $slice: -5,
           },
         },
       },
-      {
-        $slice: ['$notification', -5],
-      },
-    ]);
+    );
 
     return 'create';
   }
 
   return 'error';
+}
+
+export async function getNotificationsFromDB(userId: ObjectId) {
+  const userInfo = await User.findOne({ _id: userId });
+
+  if (!userInfo) {
+    return false;
+  }
+  return userInfo.notification;
 }
 
 export default User;

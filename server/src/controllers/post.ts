@@ -155,12 +155,14 @@ export async function createPost(req: Request, res: Response) {
         mother_post: motherPost,
       });
 
-      await addNotificationToUserDB(
-        motherPostInfo.author,
-        'reply_post',
-        userId,
-        postData._id,
-      );
+      if (motherPostInfo.author.toString() !== userId.toString()) {
+        addNotificationToUserDB(
+          motherPostInfo.author,
+          'reply_post',
+          userId,
+          postData._id,
+        );
+      }
     } else {
       res.status(400).json({ error: 'The category of post is wrong' });
     }
@@ -323,12 +325,14 @@ export async function commentPost(req: Request, res: Response) {
 
     // create notification to author
 
-    await addNotificationToUserDB(
-      target.author,
-      'comment_post',
-      userId,
-      target._id,
-    );
+    if (target.author.toString() !== userId.toString()) {
+      addNotificationToUserDB(
+        target.author,
+        'comment_post',
+        userId,
+        target._id,
+      );
+    }
 
     return res.json({ message: 'Add comment success' });
   } catch (err) {
@@ -391,12 +395,17 @@ export async function likeComment(req: Request, res: Response) {
         throw Error('like comment fail');
       }
 
-      await addNotificationToUserDB(
-        likeTargetComment.comments.data[floor].user,
-        'like_comment',
-        userId,
-        likeTargetComment._id,
-      );
+      if (
+        userId.toString() !==
+        likeTargetComment.comments.data[floor].user.toString()
+      ) {
+        addNotificationToUserDB(
+          likeTargetComment.comments.data[floor].user,
+          'like_comment',
+          userId,
+          likeTargetComment._id,
+        );
+      }
 
       res.json({ message: 'like comment success' });
       return;
@@ -510,8 +519,6 @@ export async function likePost(req: Request, res: Response) {
       throw Error('req body must contain like, and it should be boolean');
     }
 
-    updateUserAction(userId, likeTarget.tags, likeTarget.board);
-
     // console.log(adjustUserArray);
 
     let result;
@@ -560,12 +567,14 @@ export async function likePost(req: Request, res: Response) {
         throw Error('like a post fail');
       }
 
-      await addNotificationToUserDB(
-        likeTarget.author,
-        'like_post',
-        userId,
-        likeTarget._id,
-      );
+      if (likeTarget.author.toString() !== userId.toString() && like === true) {
+        addNotificationToUserDB(
+          likeTarget.author,
+          'like_post',
+          userId,
+          likeTarget._id,
+        );
+      }
 
       res.json({ message: `${message} post success` });
       return;
@@ -691,8 +700,6 @@ export async function upvotePost(req: Request, res: Response) {
       throw Error('req body must contain key upvote, and it should be boolean');
     }
 
-    updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
-
     let result;
     // console.log('upvoting post');
 
@@ -799,12 +806,17 @@ export async function upvotePost(req: Request, res: Response) {
         }
       }
 
-      await addNotificationToUserDB(
-        upvoteTarget.author,
-        'upvote_post',
-        userId,
-        upvoteTarget._id,
-      );
+      if (
+        upvoteTarget.author.toString() !== userId.toString() &&
+        upvote === true
+      ) {
+        addNotificationToUserDB(
+          upvoteTarget.author,
+          'upvote_post',
+          userId,
+          upvoteTarget._id,
+        );
+      }
 
       res.json({ message: `${message} post success` });
       return;
@@ -903,12 +915,14 @@ export async function upvotePost(req: Request, res: Response) {
         }
       }
 
-      await addNotificationToUserDB(
-        upvoteTarget.author,
-        'upvote_post',
-        userId,
-        upvoteTarget._id,
-      );
+      if (upvoteTarget.author.toString() !== userId.toString()) {
+        addNotificationToUserDB(
+          upvoteTarget.author,
+          'upvote_post',
+          userId,
+          upvoteTarget._id,
+        );
+      }
 
       res.json({ message: `${message} post success` });
       return;

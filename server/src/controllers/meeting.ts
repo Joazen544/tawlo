@@ -391,7 +391,7 @@ export async function replyMeeting(
           meeting.to_ask[index],
         );
 
-        addNotificationToUserDB(userId, 'meet_match', null, null);
+        addNotificationToUserDB(userId, 'meet_fail', null, null);
 
         await User.updateOne(
           { _id: userId },

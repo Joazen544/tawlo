@@ -6,6 +6,7 @@ import User, {
   getUserRelationFromDB,
   createRelation,
   cancelRequestFromDB,
+  getNotificationsFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 
@@ -198,6 +199,27 @@ export async function cancelRequest(
       return;
     }
     res.status(500).json({ error: 'cancel request fail' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getNotifications(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const userId = new ObjectId(user);
+
+    const notifications = await getNotificationsFromDB(userId);
+    if (notifications === false) {
+      res.status(400).json({ error: 'no such user' });
+      return;
+    }
+
+    res.json(notifications);
   } catch (err) {
     next(err);
   }
