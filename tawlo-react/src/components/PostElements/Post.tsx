@@ -220,6 +220,9 @@ const Post = ({
   };
 
   const handleCreateComment = async () => {
+    if (!commentCreate) {
+      return;
+    }
     try {
       // Make a request to create a new post
       await axios
