@@ -371,8 +371,8 @@ export async function cancelRequestFromDB(user: string, target: string) {
 export async function addNotificationToUserDB(
   userId: ObjectId,
   category: string,
-  actionUser: ObjectId,
-  targetPost: ObjectId,
+  actionUser: ObjectId | null,
+  targetPost: ObjectId | null,
 ) {
   // time: Date;
   // category: string;
@@ -387,6 +387,7 @@ export async function addNotificationToUserDB(
   // 'like_post',
   // 'comment_replied',
   // 'like_comment',
+
   // 'meet_match',
   // 'meet_success',
   // 'meet_fail',

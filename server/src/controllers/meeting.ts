@@ -5,7 +5,7 @@ import Meeting, {
   joinMeeting,
   MeetingDocument,
 } from '../models/meeting';
-import User, { UserDocument } from '../models/user';
+import User, { UserDocument, addNotificationToUserDB } from '../models/user';
 
 export async function accessMeeting(
   req: Request,
@@ -68,6 +68,8 @@ export async function accessMeeting(
       // joined a meeting
       // send notification to both users
 
+      // can be better!!!
+
       try {
         await User.updateOne(
           { _id: joinResult.users[0] },
@@ -78,6 +80,8 @@ export async function accessMeeting(
           },
         );
 
+        addNotificationToUserDB(joinResult.users[0], 'meet_match', null, null);
+
         await User.updateOne(
           { _id: user },
           {
@@ -86,6 +90,8 @@ export async function accessMeeting(
             $push: { met_users: joinResult.users[0] },
           },
         );
+
+        // addNotificationToUserDB(userId, 'meet_match', null, null);
       } catch (err) {
         throw new Error(
           `something wrong updating meeting info for users: ${err}`,
@@ -307,6 +313,9 @@ export async function replyMeeting(
 
       // notificate them
 
+      addNotificationToUserDB(meeting.users[0], 'meet_success', null, null);
+      addNotificationToUserDB(meeting.users[1], 'meet_success', null, null);
+
       // open a chat for them
       req.query.target = meeting.accept[0].toString();
       next();
@@ -357,6 +366,14 @@ export async function replyMeeting(
               $push: { met_users: joinResult.users[0] },
             },
           );
+
+          addNotificationToUserDB(
+            joinResult.users[0],
+            'meet_match',
+            null,
+            null,
+          );
+          addNotificationToUserDB(userId, 'meet_match', null, null);
         } catch (err) {
           throw new Error(
             `something wrong updating meeting info for users: ${err}`,
@@ -373,6 +390,8 @@ export async function replyMeeting(
           meeting.to_share[index],
           meeting.to_ask[index],
         );
+
+        addNotificationToUserDB(userId, 'meet_match', null, null);
 
         await User.updateOne(
           { _id: userId },
