@@ -9,6 +9,7 @@ import {
   updateUserAction,
   getUserPreference,
   UserDocument,
+  addNotificationToUserDB,
 } from '../models/user';
 import { ValidationError } from '../utils/errorHandler';
 
@@ -183,7 +184,15 @@ export async function commentPost(req: Request, res: Response) {
       {
         _id: postId,
       },
-      { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 },
+      {
+        _id: 1,
+        liked: 1,
+        category: 1,
+        mother_post: 1,
+        tags: 1,
+        board: 1,
+        author: 1,
+      },
     );
 
     if (target === null) {
@@ -304,6 +313,15 @@ export async function commentPost(req: Request, res: Response) {
         throw Error('calculate hot fail');
       }
     }
+
+    // create notification to author
+
+    await addNotificationToUserDB(
+      target.author,
+      'comment_post',
+      userId,
+      target._id,
+    );
 
     return res.json({ message: 'Add comment success' });
   } catch (err) {
