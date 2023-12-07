@@ -352,7 +352,6 @@ export async function likeComment(req: Request, res: Response) {
     const likeTargetComment = await Post.findOne(
       {
         _id: postId,
-        // [commentTargetUser]: { $in: [userId] },
       },
       { _id: 1, comments: 1 },
     );
@@ -372,7 +371,6 @@ export async function likeComment(req: Request, res: Response) {
       if (ifAlreadyLike === true) {
         throw Error('user already liked the comment');
       }
-      // console.log('liking comment');
 
       result = await Post.updateOne(
         { _id: postId },
@@ -385,6 +383,14 @@ export async function likeComment(req: Request, res: Response) {
       if (result.acknowledged === false) {
         throw Error('like comment fail');
       }
+
+      await addNotificationToUserDB(
+        likeTargetComment.comments.data[floor].user,
+        'like_comment',
+        userId,
+        likeTargetComment._id,
+      );
+
       res.json({ message: 'like comment success' });
       return;
     }
