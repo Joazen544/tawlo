@@ -4,6 +4,7 @@ import Signin from './Signin';
 import Profile from './Profile';
 import Board from './Board';
 import Meeting from './Meeting';
+import PostPage from './PostPage';
 import { Routes, Route } from 'react-router-dom';
 import './socket';
 
@@ -16,6 +17,7 @@ function App() {
       <Route path="/user/profile/:userId" element={<Profile />}></Route>
       <Route path="/board" element={<Board />}></Route>
       <Route path="/meeting" element={<Meeting />}></Route>
+      <Route path="/post/:postId" element={<PostPage />}></Route>
     </Routes>
   );
 }

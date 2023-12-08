@@ -2,7 +2,7 @@ import Header from './components/HeaderElements/Header';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Post } from './Home';
+import { PostInterface } from './Home';
 import BoardPost from './components/PostElements/BoardPost';
 import CreatePost from './components/CreatePost';
 
@@ -10,7 +10,7 @@ const Board = () => {
   const [searchParams] = useSearchParams({});
   const id = searchParams.get('id');
 
-  const [postsData, setPostsData] = useState<Post[]>([]);
+  const [postsData, setPostsData] = useState<PostInterface[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [boardName, setBoardName] = useState('');
   const [ifNextPage, setIfNextPage] = useState(false);

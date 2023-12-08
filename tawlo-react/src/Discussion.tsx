@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Header from './components/HeaderElements/Header';
 import Post from './components/PostElements/Post';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
 import CreatePost from './components/CreatePost';
+import { PostInterface } from './Home';
 
 export interface Post {
   _id: string;
@@ -52,7 +53,7 @@ export interface Post {
   };
 }
 
-interface PostArray extends Array<Post> {}
+interface PostArray extends Array<PostInterface> {}
 
 const Discussion = () => {
   const [searchParams] = useSearchParams({});
@@ -124,6 +125,14 @@ const Discussion = () => {
             loader={<p>Loading...</p>}
             endMessage={<p>No more data to load</p>}
           >
+            {postsRender[0] && (
+              <Link
+                className="px-4 w-20 h-16 mt-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+                to={`/board?id=${postsRender[0].board}`}
+              >
+                回到討論版
+              </Link>
+            )}
             {postsRender[0] && (
               <Post
                 key={postsRender[0]._id}

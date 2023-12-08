@@ -5,11 +5,11 @@ import DiscussPost from './components/PostElements/DiscussPost';
 import CreatePost from './components/CreatePost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
-import 'dotenv';
 import Cookies from 'js-cookie';
+import 'dotenv';
 import { Link, Navigate } from 'react-router-dom';
 
-export interface Post {
+export interface PostInterface {
   _id: string;
   category: string;
   title: string;
@@ -54,7 +54,7 @@ export interface Post {
   };
 }
 
-interface PostArray extends Array<Post> {}
+interface PostArray extends Array<PostInterface> {}
 
 interface Board {
   _id: string;

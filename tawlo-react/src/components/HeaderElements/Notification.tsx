@@ -20,8 +20,9 @@ interface Notification {
 const Notification = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
   const [notificationsName, setNotificationsName] = useState<string[][]>([]);
+  //const [ifNotification, setIfNotification] = useState<number>(0);
 
   const token = Cookies.get('jwtToken');
 
@@ -105,10 +106,8 @@ const Notification = () => {
     if (socket) {
       socket.on('notificate', (data) => {
         const category = data.category;
+        console.log('receiving notification!!');
 
-        let actionUser: string;
-        let targetPost: string;
-        let message: string;
         if (
           category === 'reply_post' ||
           category === 'comment_post' ||
@@ -117,9 +116,9 @@ const Notification = () => {
           category === 'comment_replied' ||
           category === 'like_comment'
         ) {
-          actionUser = data.actionUser as string;
-          targetPost = data.targetPost;
-          message = data.message as string;
+          const actionUser: string = data.actionUser;
+          const targetPost: string = data.targetPost;
+          const message: string = data.message;
           axios
             .get(
               `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${actionUser}`,
@@ -142,7 +141,53 @@ const Notification = () => {
                 progress: undefined,
                 theme: 'light',
               });
+            })
+            .catch((err) => {
+              console.log(err);
+            })
+            .finally(() => {
+              setUnreadCount((pre) => pre + 1);
             });
+        }
+
+        if (
+          category === 'meet_match' ||
+          category === 'meet_success' ||
+          category === 'meet_fail'
+        ) {
+          const message: string = data.message;
+          const CustomToastWithLink = () => (
+            <div>
+              <Link to="/meeting">{`${message}`}</Link>
+            </div>
+          );
+          toast.info(CustomToastWithLink, {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: 'light',
+          });
+          setUnreadCount((pre) => pre + 1);
+        }
+
+        if (category === 'meet_match' || category === 'request_accepted') {
+          const message: string = data.message;
+
+          toast.info(`${message}`, {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: 'light',
+          });
+          setUnreadCount((pre) => pre + 1);
         }
       });
     }
@@ -151,9 +196,9 @@ const Notification = () => {
         socket.off('notificate');
       }
     };
-  }, []);
+  }, [unreadCount]);
 
-  const handleClick = () => {
+  const handleClick = async () => {
     // 在這裡可以額外執行點擊通知圖標後的操作
     // 例如標記所有通知為已讀
     // ...
@@ -162,7 +207,21 @@ const Notification = () => {
     fetchNotifications();
     setIsNotificationOpen(!isNotificationOpen);
     // 更新通知狀態
-    if (!isNotificationOpen) setUnreadCount(0); // 將未讀數量歸零
+    if (!isNotificationOpen) {
+      console.log('updating');
+      console.log('token is: ' + token);
+
+      await axios.post(
+        `${import.meta.env.VITE_DOMAIN}/api/user/notification`,
+        {},
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      setUnreadCount(0);
+    } // 將未讀數量歸零
   };
 
   return (
