@@ -262,7 +262,7 @@ export async function getNotifications(
 
     console.log(notifications);
 
-    res.json(notifications);
+    res.json(notifications.reverse());
   } catch (err) {
     next(err);
   }

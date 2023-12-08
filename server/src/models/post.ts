@@ -325,4 +325,9 @@ export async function getMotherAndReplyPostsFromDB(
   return { posts, nextPage };
 }
 
+export async function getPostFromDB(post: string) {
+  const postInfo = await Post.findOne({ _id: post });
+  return postInfo;
+}
+
 export default Post;

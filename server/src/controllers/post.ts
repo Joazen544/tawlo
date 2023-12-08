@@ -4,6 +4,7 @@ import Post, {
   getAutoRecommendedPosts,
   getBoardPostsFromDB,
   getMotherAndReplyPostsFromDB,
+  getPostFromDB,
 } from '../models/post';
 import {
   updateUserAction,
@@ -11,6 +12,7 @@ import {
   UserDocument,
   addNotificationToUserDB,
 } from '../models/user';
+import { getIO } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
 async function calculateMotherPostHot(
@@ -162,6 +164,20 @@ export async function createPost(req: Request, res: Response) {
           userId,
           postData._id,
         );
+
+        const io = getIO();
+
+        if (!io) {
+          res.status(500).json({ message: 'io connection fail' });
+          return;
+        }
+
+        io.to(motherPostInfo.author.toString()).emit('notificate', {
+          category: 'reply_post',
+          message: '有人回覆了你的貼文',
+          actionUser: userId.toString(),
+          targetPost: postData._id,
+        });
       }
     } else {
       res.status(400).json({ error: 'The category of post is wrong' });
@@ -180,7 +196,11 @@ export async function createPost(req: Request, res: Response) {
   }
 }
 
-export async function commentPost(req: Request, res: Response) {
+export async function commentPost(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { postId } = req.params;
     const { content, user } = req.body;
@@ -332,15 +352,25 @@ export async function commentPost(req: Request, res: Response) {
         userId,
         target._id,
       );
+
+      const io = getIO();
+
+      if (!io) {
+        res.status(500).json({ message: 'io connection fail' });
+        return;
+      }
+
+      io.to(target.author.toString()).emit('notificate', {
+        category: 'comment_post',
+        message: '有人在你的貼文留言',
+        actionUser: userId.toString(),
+        targetPost: target._id,
+      });
     }
 
-    return res.json({ message: 'Add comment success' });
+    res.json({ message: 'Add comment success' });
   } catch (err) {
-    console.log(err);
-    if (err instanceof Error) {
-      return res.status(400).json({ error: err.message });
-    }
-    return res.status(500).json({ error: 'Create comment fail' });
+    next(err);
   }
 }
 
@@ -404,6 +434,23 @@ export async function likeComment(req: Request, res: Response) {
           'like_comment',
           userId,
           likeTargetComment._id,
+        );
+
+        const io = getIO();
+
+        if (!io) {
+          res.status(500).json({ message: 'io connection fail' });
+          return;
+        }
+
+        io.to(likeTargetComment.comments.data[floor].user.toString()).emit(
+          'notificate',
+          {
+            category: 'like_comment',
+            message: '有人喜歡你的留言',
+            actionUser: userId.toString(),
+            targetPost: likeTargetComment._id,
+          },
         );
       }
 
@@ -574,6 +621,20 @@ export async function likePost(req: Request, res: Response) {
           userId,
           likeTarget._id,
         );
+
+        const io = getIO();
+
+        if (!io) {
+          res.status(500).json({ message: 'io connection fail' });
+          return;
+        }
+
+        io.to(likeTarget.author.toString()).emit('notificate', {
+          category: 'like_post',
+          message: '有人喜歡你的貼文',
+          actionUser: userId.toString(),
+          targetPost: likeTarget._id,
+        });
       }
 
       res.json({ message: `${message} post success` });
@@ -816,6 +877,20 @@ export async function upvotePost(req: Request, res: Response) {
           userId,
           upvoteTarget._id,
         );
+
+        const io = getIO();
+
+        if (!io) {
+          res.status(500).json({ message: 'io connection fail' });
+          return;
+        }
+
+        io.to(upvoteTarget.author.toString()).emit('notificate', {
+          category: 'upvote_post',
+          message: '有人覺得你的貼文有用',
+          actionUser: userId.toString(),
+          targetPost: upvoteTarget._id,
+        });
       }
 
       res.json({ message: `${message} post success` });
@@ -922,6 +997,19 @@ export async function upvotePost(req: Request, res: Response) {
           userId,
           upvoteTarget._id,
         );
+        const io = getIO();
+
+        if (!io) {
+          res.status(500).json({ message: 'io connection fail' });
+          return;
+        }
+
+        io.to(upvoteTarget.author.toString()).emit('notificate', {
+          category: 'upvote_post',
+          message: '有人覺得你的貼文有用',
+          actionUser: userId.toString(),
+          targetPost: upvoteTarget._id,
+        });
       }
 
       res.json({ message: `${message} post success` });
@@ -1298,6 +1386,27 @@ export async function getMotherAndReplies(
     const posts = await getMotherAndReplyPostsFromDB(motherPostId, paging);
 
     res.json(posts);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getPost(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.query.id as string;
+
+    if (!id) {
+      res.status(400).json({ error: 'post id should be in req body' });
+      return;
+    }
+
+    const postInfo = await getPostFromDB(id);
+    if (!postInfo) {
+      res.status(400).json({ error: 'post does not exist' });
+      return;
+    }
+
+    res.json(postInfo);
   } catch (err) {
     next(err);
   }

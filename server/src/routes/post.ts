@@ -9,12 +9,14 @@ import {
   getRecommendPosts,
   getPostsOnBoard,
   getMotherAndReplies,
+  getPost,
 } from '../controllers/post';
 import verifyJWT from '../middleware/verifyJWT';
 
 const router = Router();
 
 router.route('/post').post(verifyJWT, createPost);
+router.route('/post').get(getPost);
 router.route('/posts/recommendation').get(verifyJWT, getRecommendPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(getPostsOnBoard);
