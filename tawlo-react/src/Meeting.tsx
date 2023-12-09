@@ -31,6 +31,7 @@ const Meeting = () => {
   const [targetToShare, setTargetToShare] = useState<string[]>([]);
   const [targetToAsk, setTargetToAsk] = useState<string[]>([]);
   const [targetRating, setTargetRating] = useState<number>(0);
+  const [targetComments, setTargetComments] = useState<string[]>([]);
   const [targetId, setTargetId] = useState<string>('');
   const [targetName, setTargetName] = useState<string>('');
   const [score, setScore] = useState<number>();
@@ -82,6 +83,7 @@ const Meeting = () => {
           setTargetRole(res.data.meeting.target.role);
           setTargetIntro(res.data.meeting.target.user_intro);
           setTargetRating(res.data.meeting.target.rating);
+          setTargetComments(res.data.meeting.target.meeting_comment);
           setTargetToShare(res.data.meeting.target.to_share);
           setTargetToAsk(res.data.meeting.target.to_ask);
           setMeetingId(res.data.meeting._id);
@@ -102,6 +104,7 @@ const Meeting = () => {
           setTargetRole(res.data.meeting.target.role);
           setTargetIntro(res.data.meeting.target.user_intro);
           setTargetRating(res.data.meeting.target.rating);
+          setTargetComments(res.data.meeting.target.meeting_comment);
           setTargetToShare(res.data.meeting.target.to_share);
           setTargetToAsk(res.data.meeting.target.to_ask);
           setTargetId(res.data.meeting.target.userId);
@@ -298,8 +301,8 @@ const Meeting = () => {
       setCommentError('記得給對方一個分數！');
       return;
     }
-    if (score > 5 || score < 0) {
-      setCommentError('分數要介於 0~5！');
+    if (score > 5 || score < 1) {
+      setCommentError('分數要介於 1~5！');
       return;
     }
     if (!comment) {
@@ -508,6 +511,13 @@ const Meeting = () => {
                     {targetRating}
                   </div>
                 </div>
+                <div id="comments" className="mt-5">
+                  <div>他的評價</div>
+                  <div className="bg-gray-300 max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
+                    {targetComments.length &&
+                      targetComments.map((comment) => <p>{comment}</p>)}
+                  </div>
+                </div>
                 <div id="toAsk" className="mt-5">
                   <div>他想了解的領域</div>
                   <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
@@ -570,6 +580,13 @@ const Meeting = () => {
                   <div>他的評分</div>
                   <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
                     {targetRating}
+                  </div>
+                </div>
+                <div id="comments" className="mt-5">
+                  <div>他的評價</div>
+                  <div className="bg-gray-300 max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
+                    {targetComments.length &&
+                      targetComments.map((comment) => <p>{comment}</p>)}
                   </div>
                 </div>
                 <div id="toAsk" className="mt-5">
@@ -648,6 +665,13 @@ const Meeting = () => {
                     {targetRating}
                   </div>
                 </div>
+                <div id="comments" className="mt-5">
+                  <div>他的評價</div>
+                  <div className="bg-gray-300 max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
+                    {targetComments.length &&
+                      targetComments.map((comment) => <p>{comment}</p>)}
+                  </div>
+                </div>
                 <div id="toAsk" className="mt-5">
                   <div>他想了解的領域</div>
                   <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
@@ -683,15 +707,15 @@ const Meeting = () => {
 
                 <div className="mt-10">
                   <div id="score" className="mb-2">
-                    <div className="mb-2">給這位分享者 0~5 分的評價</div>
+                    <div className="mb-2">給這位分享者 1~5 分的評價</div>
                     <input
                       type="number"
                       value={score}
                       onChange={handleScoreChange}
                       className="pl-2 w-20"
                       max={5}
-                      min={0}
-                      placeholder="0~5"
+                      min={1}
+                      placeholder="1~5"
                     />
                   </div>
                   <div id="comment">
