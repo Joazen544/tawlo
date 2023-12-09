@@ -13,7 +13,6 @@ export default async function (
   next: NextFunction,
 ) {
   const authHeader = req.headers.authorization;
-  console.log(req);
 
   if (!authHeader) {
     next(new Error('No auth!!'));

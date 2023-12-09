@@ -8,8 +8,10 @@ import User, {
   cancelRequestFromDB,
   getNotificationsFromDB,
   readNotificationsFromDB,
+  addNotificationToUserDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
+import { getIO } from './socket';
 
 export async function signUp(req: Request, res: Response) {
   try {
@@ -170,6 +172,29 @@ export async function sendRequest(
     }
 
     const result = await createRelation(user, id);
+    const userId = new ObjectId(user);
+    const targetUserId = new ObjectId(id);
+
+    const io = getIO();
+    if (!io) {
+      res.status(500).json({ message: 'io connection fail' });
+      return;
+    }
+    if (result === 'send') {
+      addNotificationToUserDB(targetUserId, 'friend_request', userId, null);
+      io.to(id).emit('notificate', {
+        category: 'friend_request',
+        message: '有人發出交友邀請',
+        actionUser: user,
+      });
+    } else if (result === 'accept') {
+      addNotificationToUserDB(targetUserId, 'request_accepted', userId, null);
+      io.to(id).emit('notificate', {
+        category: 'request_accepted',
+        message: '有人接受你的邀請',
+        actionUser: user,
+      });
+    }
     if (result) {
       res.json({ status: 'send or accept request success' });
       return;

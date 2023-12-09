@@ -295,7 +295,7 @@ export async function getUserRelationFromDB(user: string, targetId: string) {
 
 export async function createRelation(user: string, target: string) {
   const session = await User.startSession();
-  let result;
+  let result: string;
   try {
     session.startTransaction();
     const relation = await getUserRelationFromDB(user, target);
@@ -310,6 +310,7 @@ export async function createRelation(user: string, target: string) {
         { $push: { friends: { user, status: 'received' } } },
         { session },
       );
+      result = 'send';
     } else if (relation === 'received') {
       await User.updateOne(
         { _id: user, 'friends.user': target },
@@ -321,13 +322,16 @@ export async function createRelation(user: string, target: string) {
         { $set: { 'friends.$.status': 'friends' } },
         { session },
       );
+      result = 'accept';
+    } else {
+      result = 'error';
+      throw Error('the relationship is neither null nor received');
     }
     await session.commitTransaction();
-    result = true;
   } catch (err) {
     console.log(err);
     await session.abortTransaction();
-    result = false;
+    result = 'error';
   } finally {
     await session.endSession();
   }

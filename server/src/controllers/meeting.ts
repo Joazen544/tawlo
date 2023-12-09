@@ -44,7 +44,7 @@ export async function accessMeeting(
       return;
     }
 
-    console.log(metUsersResult);
+    // console.log(metUsersResult);
     const metUsers = metUsersResult?.met_users || [];
     let rating;
     if (metUsersResult) {
@@ -90,10 +90,13 @@ export async function accessMeeting(
           return;
         }
 
+        console.log('send io 1');
+
         io.to(joinResult.users[0].toString()).emit('notificate', {
           category: 'meet_match',
-          message: '配對成功，看看對方的資訊吧',
+          message: '配對成功，看看對方的資訊吧 ouo',
         });
+        console.log('send io 2');
 
         await User.updateOne(
           { _id: user },
@@ -165,7 +168,7 @@ export async function getMeeting(
       { $project: { meeting: 1, meeting_status: 1 } },
     ]);
 
-    console.log(result[0].meeting_status);
+    // console.log(result[0].meeting_status);
 
     if (result[0] && result[0].meeting_status === 'none') {
       res.json({ status: 'none', message: 'no meeting now' });
@@ -174,7 +177,7 @@ export async function getMeeting(
 
     let targetIndex: number = -1;
     let userIndex: number = -1;
-    console.log(result[0]);
+    // console.log(result[0]);
 
     if (!result[0].meeting[0]) {
       res.status(400).json({ error: 'the meeting does not exist' });
@@ -183,11 +186,11 @@ export async function getMeeting(
 
     result[0].meeting[0].users.forEach((userInfo: ObjectId, index: number) => {
       if (userInfo.toString() === user) {
-        console.log('weee');
+        // console.log('weee');
 
         userIndex = index;
       } else {
-        console.log('aaaa');
+        // console.log('aaaa');
 
         targetIndex = index;
       }
@@ -213,7 +216,7 @@ export async function getMeeting(
       return;
     }
 
-    console.log(JSON.stringify(result[0], null, 4));
+    // console.log(JSON.stringify(result[0], null, 4));
 
     if (userIndex >= 0 && targetIndex >= 0) {
       res.json({
@@ -289,7 +292,7 @@ export async function replyMeeting(
       return;
     }
 
-    console.log(meeting);
+    // console.log(meeting);
 
     if (reply === 'accept') {
       // update the status of users, meeting to meeting
@@ -414,12 +417,12 @@ export async function replyMeeting(
 
           io.to(joinResult.users[0].toString()).emit('notificate', {
             category: 'meet_match',
-            message: '配對成功，看看對方的資訊吧',
+            message: '配對成功，看看對方的資訊吧 OAO',
           });
 
           io.to(userId.toString()).emit('notificate', {
             category: 'meet_match',
-            message: '配對成功，看看對方的資訊吧',
+            message: '配對成功，看看對方的資訊吧 XDD',
           });
         } catch (err) {
           throw new Error(
@@ -474,7 +477,7 @@ export async function scoreMeeting(
   try {
     const { user, score, targetUser, comment } = req.body;
     const { meetingId } = req.params;
-    console.log(user);
+    // console.log(user);
     if (!comment) {
       res.status(400).json({ error: 'comment is missing' });
       return;
@@ -488,7 +491,7 @@ export async function scoreMeeting(
       res.status(400).json({ error: 'score is not number' });
       return;
     }
-    console.log(meetingId);
+    // console.log(meetingId);
 
     const meeting = await Meeting.findOne({ _id: meetingId });
 
@@ -507,7 +510,7 @@ export async function scoreMeeting(
       return;
     }
 
-    console.log(score);
+    // console.log(score);
 
     const userInfo = await User.findOne<UserDocument>({ _id: targetUser });
     if (!userInfo) {
@@ -518,7 +521,7 @@ export async function scoreMeeting(
     const ratingNumber = userInfo.rating_number;
     const newRatingNumber = ratingNumber + 1;
     const newRating = (rating * ratingNumber + score) / newRatingNumber;
-    console.log(newRating);
+    // console.log(newRating);
 
     await User.updateOne(
       { _id: targetUser },
