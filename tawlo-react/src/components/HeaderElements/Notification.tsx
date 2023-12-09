@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import Cookies from 'js-cookie';
 import { ToastContainer, toast } from 'react-toastify';
@@ -22,6 +22,8 @@ const Notification = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
   const [notificationsName, setNotificationsName] = useState<string[][]>([]);
+  const navigate = useNavigate();
+
   //const [ifNotification, setIfNotification] = useState<number>(0);
 
   const token = Cookies.get('jwtToken');
@@ -42,11 +44,17 @@ const Notification = () => {
       const unreadNotifications = resNotifications.filter(
         (notification) => !notification.read,
       );
+      console.log('watching');
+
       setUnreadCount(unreadNotifications.length);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   const dropdownRef = useRef<HTMLButtonElement | null>(null);
 
@@ -146,6 +154,8 @@ const Notification = () => {
               console.log(err);
             })
             .finally(() => {
+              console.log('watching');
+
               setUnreadCount((pre) => pre + 1);
             });
         }
@@ -171,23 +181,42 @@ const Notification = () => {
             progress: undefined,
             theme: 'light',
           });
+          console.log('watching');
+
           setUnreadCount((pre) => pre + 1);
         }
 
-        if (category === 'meet_match' || category === 'request_accepted') {
+        if (category === 'friend_request' || category === 'request_accepted') {
           const message: string = data.message;
+          const actionUser: string = data.actionUser;
 
-          toast.info(`${message}`, {
-            position: 'top-right',
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: 'light',
-          });
-          setUnreadCount((pre) => pre + 1);
+          axios
+            .get(
+              `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${actionUser}`,
+            )
+            .then((res) => {
+              const CustomToastWithLink = () => (
+                <div>
+                  <Link
+                    to={`/user/profile/${actionUser}`}
+                  >{`${message} : ${res.data.name}`}</Link>
+                </div>
+              );
+              toast.info(CustomToastWithLink, {
+                position: 'top-right',
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: 'light',
+              });
+              setUnreadCount((pre) => pre + 1);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
         }
       });
     }
@@ -220,8 +249,39 @@ const Notification = () => {
           },
         },
       );
+      console.log('watching');
+
       setUnreadCount(0);
     } // 將未讀數量歸零
+  };
+
+  const handleTurnPage = (
+    category: string,
+    targetPost: string,
+    targetUser?: string,
+  ) => {
+    if (
+      category === 'reply_post' ||
+      category === 'comment_post' ||
+      category === 'upvote_post' ||
+      category === 'like_post' ||
+      category === 'comment_replied' ||
+      category === 'like_comment'
+    ) {
+      navigate(`/post/${targetPost}`);
+    }
+
+    if (
+      category === 'meet_match' ||
+      category === 'meet_success' ||
+      category === 'meet_fail'
+    ) {
+      navigate('/meeting');
+    }
+
+    if (category === 'friend_request' || category === 'request_accepted') {
+      navigate(`/user/profile/${targetUser}`);
+    }
   };
 
   return (
@@ -248,7 +308,13 @@ const Notification = () => {
                   <li
                     key={notification._id}
                     className="p-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => {}}
+                    onClick={() =>
+                      handleTurnPage(
+                        notification.category,
+                        notification.target_post,
+                        notification.action_users[0],
+                      )
+                    }
                   >
                     <div className="flex items-center w-full justify-left">
                       <span className="text-gray-500 text-sm mr-2">
