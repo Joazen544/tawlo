@@ -178,7 +178,7 @@ const Signin = () => {
         fetch(res.data.message).then(async (response) => {
           // const contentType = response.headers.get('content-type');
           const blob = await response.blob();
-          const file = new File([blob], 'userImage', { type: 'image/jpg' });
+          const file = new File([blob], 'userImage.jpg', { type: 'image/jpg' });
           // access file here
           setUploadImage(file);
         });

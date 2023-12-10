@@ -1,5 +1,8 @@
 node_modules
 
+.jpg
+.png
+.jpeg
 uploads/*
 !uploads/.gitkeep 
 .env
