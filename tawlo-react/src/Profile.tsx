@@ -3,6 +3,7 @@ import Header from './components/HeaderElements/Header';
 import Cookies from 'js-cookie';
 import { Navigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { socket } from './socket';
 
 interface MessageTarget {
   id: string;
@@ -60,6 +61,9 @@ const Profile = () => {
     Cookies.remove('userName');
     setIfOwnProfile(false);
     setIfLogOut(true);
+    if (socket) {
+      socket.disconnect();
+    }
   };
 
   const sendInvite = () => {
