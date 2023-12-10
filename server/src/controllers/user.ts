@@ -9,17 +9,32 @@ import User, {
   getNotificationsFromDB,
   readNotificationsFromDB,
   addNotificationToUserDB,
+  getUserImageFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 import { getIO } from './socket';
+import 'dotenv';
+
+const CDN_DOMAIN = process.env.DISTRIBUTION_DOMAIN;
 
 export async function signUp(req: Request, res: Response) {
   try {
     const { name, email, password, passwordConfirm } = req.body;
+    let image;
+    if (req.file) {
+      image = req.file.filename;
+    }
+
+    console.log('file');
+    console.log(req.file);
+    console.log('files');
+    console.log(req.files);
+
     const userData = await User.create({
       name,
       email,
       password,
+      image,
       password_confirm: passwordConfirm,
     });
 
@@ -130,6 +145,41 @@ export async function getUserName(
     } else {
       throw Error('can not find user name');
     }
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getUserImage(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.query;
+    if (!id) {
+      res.status(400).json({ error: 'user id is not in req body' });
+      return;
+    }
+
+    if (typeof id !== 'string') {
+      res.status(400).json({ error: 'user id is not string' });
+      return;
+    }
+
+    const userInfo = await getUserImageFromDB(id);
+
+    if (!userInfo) {
+      res.status(400).json({ error: 'user does not exist' });
+      return;
+    }
+
+    if (userInfo.image === '') {
+      res.json({ image: '' });
+      return;
+    }
+
+    res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
   } catch (err) {
     next(err);
   }
@@ -285,7 +335,7 @@ export async function getNotifications(
       }
     });
 
-    console.log(notifications);
+    // console.log(notifications);
 
     res.json(notifications.reverse());
   } catch (err) {

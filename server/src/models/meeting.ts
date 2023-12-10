@@ -6,6 +6,7 @@ export interface MeetingDocument {
   status: string;
   users: ObjectId[];
   ratings: number[];
+  meeting_comments: string[][];
   role: string[];
   user_intro: string[];
   to_share: string[][];
@@ -44,6 +45,11 @@ const meetingSchema = new mongoose.Schema<MeetingDocument>({
     default: undefined,
     required: true,
   },
+  meeting_comments: {
+    type: [[String]],
+    default: undefined,
+    required: true,
+  },
   role: {
     type: [String],
     default: undefined,
@@ -76,6 +82,7 @@ export async function createMeeting(
   user: string,
   role: string,
   rating: number,
+  meetingComments: string[],
   userIntro: string,
   toShare: string[],
   toAsk: string[],
@@ -84,6 +91,7 @@ export async function createMeeting(
     users: [user],
     role: [role],
     ratings: [rating],
+    meeting_comments: [meetingComments],
     user_intro: [userIntro],
     to_share: [toShare],
     to_ask: [toAsk],
@@ -97,6 +105,7 @@ export async function joinMeeting(
   user: string,
   role: string,
   rating: number,
+  meetingComments: string[],
   userIntro: string,
   toShare: string[],
   toAsk: string[],
@@ -181,7 +190,7 @@ export async function joinMeeting(
     },
   ]);
 
-  console.log(result);
+  // console.log(result);
 
   if (!result[0]) {
     // create a new one
@@ -199,6 +208,7 @@ export async function joinMeeting(
         users: userId,
         role,
         ratings: rating,
+        meeting_comments: meetingComments,
         user_intro: userIntro,
         to_share: toShare,
         to_ask: toAsk,
@@ -207,7 +217,7 @@ export async function joinMeeting(
     },
   );
 
-  console.log(result);
+  // console.log(result);
 
   return result[0];
 }

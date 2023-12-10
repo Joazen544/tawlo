@@ -1,11 +1,13 @@
 import multer from 'multer';
 import path from 'path';
 
-const storage = multer.diskStorage({
-  destination: (_req, file, cb) => {
-    if (file.fieldname === 'user_image') {
-      cb(null, `${__dirname}/../../public/userImage`);
-    }
+const store = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    console.log('storing image 1');
+
+    console.log('storing image');
+
+    cb(null, `${__dirname}/../../public/userImage`);
   },
   filename: (_req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -13,13 +15,8 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
-  limits: { fileSize: 104857 },
-}).fields([
-  {
-    name: 'user_image',
-    maxCount: 1,
-  },
-]);
+  storage: store,
+  // limits: { fileSize: 104857 },
+}).single('image');
 
 export default upload;

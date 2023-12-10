@@ -83,7 +83,7 @@ export async function createMessageToDB(
     content,
     read: [from],
   });
-  console.log('~~~~');
+  // console.log('~~~~');
 
   return result;
 }

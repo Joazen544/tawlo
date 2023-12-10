@@ -75,7 +75,7 @@ export function initSocket(server: http.Server) {
 
     socket.on('chat message', async (messageData: MessageData) => {
       console.log('receiving message!!');
-      console.log(messageData.to);
+      // console.log(messageData.to);
 
       try {
         socket.broadcast.to(messageData.from).emit('myself', {

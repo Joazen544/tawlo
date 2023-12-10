@@ -21,35 +21,34 @@ export async function accessMeeting(
         .json({ error: 'role, user info, to share ,to ask must not be null' });
       return;
     }
-    // console.log(user);
-
-    // console.log('weeee');
-    // const userId = new ObjectId(user);
 
     const metUsersResult = await User.findOne(
       { _id: user },
-      { met_users: 1, rating: 1, meeting_status: 1 },
+      { met_users: 1, rating: 1, meeting_comments: 1, meeting_status: 1 },
     );
     // console.log('22222');
 
-    if (metUsersResult && metUsersResult.meeting_status === 'end') {
+    if (!metUsersResult) {
+      res.status(500).json({ error: 'user not found' });
+      return;
+    }
+
+    if (metUsersResult.meeting_status === 'end') {
       res
         .status(500)
         .json({ error: 'user should give last meeting a score first' });
       return;
     }
 
-    if (metUsersResult && metUsersResult.meeting_status !== 'none') {
+    if (metUsersResult.meeting_status !== 'none') {
       res.status(500).json({ error: 'user already has a meeting' });
       return;
     }
 
-    // console.log(metUsersResult);
-    const metUsers = metUsersResult?.met_users || [];
-    let rating;
-    if (metUsersResult) {
-      rating = metUsersResult.rating;
-    }
+    const metUsers = metUsersResult.met_users || [];
+    const meetingComments = metUsersResult.meeting_comments || [];
+    const { rating } = metUsersResult;
+
     if (!rating) {
       res.status(400).json({ error: 'user does not have rating property' });
       return;
@@ -60,6 +59,7 @@ export async function accessMeeting(
       user,
       role,
       rating,
+      meetingComments,
       userIntro,
       toShare,
       toAsk,
@@ -90,13 +90,13 @@ export async function accessMeeting(
           return;
         }
 
-        console.log('send io 1');
+        // console.log('send io 1');
 
         io.to(joinResult.users[0].toString()).emit('notificate', {
           category: 'meet_match',
           message: '配對成功，看看對方的資訊吧 ouo',
         });
-        console.log('send io 2');
+        // console.log('send io 2');
 
         await User.updateOne(
           { _id: user },
@@ -126,6 +126,7 @@ export async function accessMeeting(
       user,
       role,
       rating,
+      meetingComments,
       userIntro,
       toShare,
       toAsk,
@@ -208,6 +209,7 @@ export async function getMeeting(
             role: result[0].meeting[0].role[0],
             user_intro: result[0].meeting[0].user_intro[0],
             rating: Math.round(result[0].meeting[0].ratings[0] * 10) / 10,
+            meeting_comment: result[0].meeting[0].meeting_comments[0],
             to_share: result[0].meeting[0].to_share[0],
             to_ask: result[0].meeting[0].to_ask[0],
           },
@@ -231,6 +233,7 @@ export async function getMeeting(
             user_intro: result[0].meeting[0].user_intro[userIndex],
             rating:
               Math.round(result[0].meeting[0].ratings[userIndex] * 10) / 10,
+            meeting_comment: result[0].meeting[0].meeting_comments[userIndex],
             to_share: result[0].meeting[0].to_share[userIndex],
             to_ask: result[0].meeting[0].to_ask[userIndex],
           },
@@ -240,6 +243,7 @@ export async function getMeeting(
             user_intro: result[0].meeting[0].user_intro[targetIndex],
             rating:
               Math.round(result[0].meeting[0].ratings[targetIndex] * 10) / 10,
+            meeting_comment: result[0].meeting[0].meeting_comments[targetIndex],
             to_share: result[0].meeting[0].to_share[targetIndex],
             to_ask: result[0].meeting[0].to_ask[targetIndex],
           },
@@ -365,13 +369,21 @@ export async function replyMeeting(
         { met_users: 1, rating: 1, meeting_status: 1 },
       );
 
-      const metUsers = metUsersResult?.met_users || [];
+      if (!metUsersResult) {
+        res
+          .status(500)
+          .json({ error: 'can not find user while updating meeting' });
+        return;
+      }
+
+      const metUsers = metUsersResult.met_users || [];
 
       const joinResult = await joinMeeting(
         metUsers,
         userId.toString(),
         meeting.role[index],
         meeting.ratings[index],
+        meeting.meeting_comments[index],
         meeting.user_intro[index],
         meeting.to_share[index],
         meeting.to_ask[index],
@@ -436,6 +448,7 @@ export async function replyMeeting(
           userId.toString(),
           meeting.role[index],
           meeting.ratings[index],
+          meeting.meeting_comments[index],
           meeting.user_intro[index],
           meeting.to_share[index],
           meeting.to_ask[index],

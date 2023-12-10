@@ -8,6 +8,7 @@ export interface UserDocument extends Document {
   name: string;
   email: string;
   password: string;
+  image: string;
   introduction: string;
   // password_confirm: string;
   read_posts: ObjectId[];
@@ -61,6 +62,10 @@ const userSchema = new mongoose.Schema<UserDocument>({
     required: [true, 'Please provide a password'],
     minlength: [8, 'Password must contain at least 8 characters'],
     select: false,
+  },
+  image: {
+    type: String,
+    default: '',
   },
   introduction: {
     type: String,
@@ -433,7 +438,7 @@ export async function addNotificationToUserDB(
         },
         {
           $push: {
-            'notification.$.action_users': { $each: [actionUser], $slice: -5 },
+            'notification.$.action_users': { $each: [actionUser], $slice: -20 },
           },
           $inc: { 'notification.$.users_num': 1 },
           $set: {
@@ -462,7 +467,7 @@ export async function addNotificationToUserDB(
                 read: false,
               },
             ],
-            $slice: -5,
+            $slice: -20,
           },
         },
       },
@@ -488,7 +493,7 @@ export async function addNotificationToUserDB(
                 read: false,
               },
             ],
-            $slice: -5,
+            $slice: -20,
           },
         },
       },
@@ -511,7 +516,7 @@ export async function addNotificationToUserDB(
                 read: false,
               },
             ],
-            $slice: -5,
+            $slice: -20,
           },
         },
       },
@@ -542,6 +547,12 @@ export async function readNotificationsFromDB(userId: ObjectId) {
     return false;
   }
   return true;
+}
+
+export async function getUserImageFromDB(user: string) {
+  const userInfo = await User.findOne({ _id: user }, { image: 1 });
+
+  return userInfo;
 }
 
 export default User;
