@@ -285,6 +285,7 @@ export async function getBoardPostsFromDB(boardId: string, paging: number) {
   const postsOnBoard = await Post.find({
     category: 'mother',
     board,
+    is_delete: false,
   })
     .sort({ update_date: -1 })
     .skip(paging * MOTHER_POST_PER_PAGE)

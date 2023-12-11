@@ -184,7 +184,7 @@ export async function createPost(req: Request, res: Response) {
     }
 
     res.json({
-      data: postData,
+      postData,
     });
   } catch (err) {
     console.log(err);
@@ -1383,9 +1383,12 @@ export async function getMotherAndReplies(
 
     const motherPostId = new ObjectId(motherPost);
 
-    const posts = await getMotherAndReplyPostsFromDB(motherPostId, paging);
+    const postsInfo = await getMotherAndReplyPostsFromDB(motherPostId, paging);
+    postsInfo.posts = postsInfo.posts.filter(
+      (post) => post.is_delete === false,
+    );
 
-    res.json(posts);
+    res.json(postsInfo);
   } catch (err) {
     next(err);
   }
@@ -1403,6 +1406,13 @@ export async function getPost(req: Request, res: Response, next: NextFunction) {
     const postInfo = await getPostFromDB(id);
     if (!postInfo) {
       res.status(400).json({ error: 'post does not exist' });
+      return;
+    }
+
+    if (postInfo.is_delete === true) {
+      res
+        .status(404)
+        .json({ status: 'deleted', message: 'the post was deleted' });
       return;
     }
 
