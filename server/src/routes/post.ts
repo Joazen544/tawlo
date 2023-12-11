@@ -10,6 +10,7 @@ import {
   getPostsOnBoard,
   getMotherAndReplies,
   getPost,
+  deletePost,
 } from '../controllers/post';
 import verifyJWT from '../middleware/verifyJWT';
 
@@ -17,6 +18,7 @@ const router = Router();
 
 router.route('/post').post(verifyJWT, createPost);
 router.route('/post').get(getPost);
+router.route('/post').delete(verifyJWT, deletePost);
 router.route('/posts/recommendation').get(verifyJWT, getRecommendPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(getPostsOnBoard);

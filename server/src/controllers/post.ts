@@ -1372,6 +1372,18 @@ export async function getMotherAndReplies(
       throw new ValidationError('There should be mother post id');
     }
 
+    const motherPostInfo = await Post.findOne({ _id: motherPost });
+
+    if (!motherPostInfo) {
+      res.status(400).json({ error: 'Mother post does not exist' });
+      return;
+    }
+
+    if (motherPostInfo.is_delete === true) {
+      res.status(404).json({ error: 'Mother post was deleted' });
+      return;
+    }
+
     let paging;
     if (req.query.paging && !Number.isNaN(req.query.paging)) {
       paging = +req.query.paging as number;
@@ -1384,6 +1396,7 @@ export async function getMotherAndReplies(
     const motherPostId = new ObjectId(motherPost);
 
     const postsInfo = await getMotherAndReplyPostsFromDB(motherPostId, paging);
+
     postsInfo.posts = postsInfo.posts.filter(
       (post) => post.is_delete === false,
     );
@@ -1417,6 +1430,42 @@ export async function getPost(req: Request, res: Response, next: NextFunction) {
     }
 
     res.json(postInfo);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deletePost(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const { id } = req.query;
+
+    if (!id) {
+      res.status(400).json({ error: 'post id should be in query' });
+      return;
+    }
+
+    const targetPost = await Post.findOne({ _id: id });
+
+    if (!targetPost) {
+      res.status(400).json({ error: 'target post does not exist' });
+      return;
+    }
+
+    if (targetPost.author.toString() !== user) {
+      res
+        .status(403)
+        .json({ message: 'user is not author, can not delete the post' });
+      return;
+    }
+
+    await Post.updateOne({ _id: id }, { $set: { is_delete: true } });
+
+    res.json({ message: 'post deleted' });
   } catch (err) {
     next(err);
   }
