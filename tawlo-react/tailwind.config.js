@@ -10,6 +10,7 @@ export default {
       'up-arrow': 'url(/src/assets/up-arrow.png)',
       'down-arrow': 'url(/src/assets/down-arrow.png)',
       'message-image': 'url(/src/assets/message.png)',
+      'more-image': 'url(/src/assets/more.png)',
     },
   },
   plugins: [],

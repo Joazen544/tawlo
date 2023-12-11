@@ -136,6 +136,15 @@ const Home = () => {
     setPostsRender(postsNowRender.concat(nextPosts));
   }
 
+  const handleNewPost = (newPost: PostInterface) => {
+    setPostsRender([newPost, ...postsRender]);
+  };
+
+  const removePost = (postId: string) => {
+    setPostsRecommend(postsRecommend.filter((post) => post._id !== postId));
+    setPostsRender(postsRender.filter((post) => post._id !== postId));
+  };
+
   return (
     <div>
       {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
@@ -168,7 +177,7 @@ const Home = () => {
           className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
         >
           <CreatePost
-            onPostCreated={() => console.log(1)}
+            onPostCreated={(newPost: PostInterface) => handleNewPost(newPost)}
             category="native"
             motherPost=""
             board=""
@@ -206,6 +215,7 @@ const Home = () => {
                     downvote={post.downvote}
                     comments={post.comments}
                     clickReply={() => {}}
+                    clickDelete={(postId: string) => removePost(postId)}
                   />
                 );
               } else {

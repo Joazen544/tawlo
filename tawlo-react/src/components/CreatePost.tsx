@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { PostInterface } from '../Home';
 
 interface CreatePostProps {
-  onPostCreated: () => void; // Callback function to execute after a post is created
+  onPostCreated: (postCreated: PostInterface) => void; // Callback function to execute after a post is created
   category: string;
   motherPost: string;
   board: string;
+}
+
+interface Tag {
+  id: number;
+  text: string;
 }
 
 const CreatePost: React.FC<CreatePostProps> = ({
@@ -16,7 +22,8 @@ const CreatePost: React.FC<CreatePostProps> = ({
   board,
 }) => {
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState<string>('');
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [tagInput, setTagInput] = useState<string>('');
   const [postError, setPostError] = useState('');
   const [title, setTitle] = useState('');
 
@@ -26,8 +33,24 @@ const CreatePost: React.FC<CreatePostProps> = ({
     setContent(event.target.value);
   };
 
-  const handleTagsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTags(event.target.value);
+  const handleTagInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInput(event.target.value);
+  };
+
+  const handleAddToTags = () => {
+    if (tagInput.trim() !== '') {
+      const newItem: Tag = {
+        id: new Date().getTime(),
+        text: tagInput,
+      };
+      setTags([...tags, newItem]);
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (id: number) => {
+    const updatedTags = tags.filter((tag) => tag.id !== id);
+    setTags(updatedTags);
   };
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,15 +65,16 @@ const CreatePost: React.FC<CreatePostProps> = ({
       return;
     }
 
-    if (category !== 'reply' && !tags) {
-      setPostError('A post must have tags');
+    if (category !== 'reply' && tags.length === 0) {
+      setPostError('貼文至少要有一個標籤');
       return;
     }
 
     if (content) {
       try {
         // Make a request to create a new post
-        await axios.post(
+        const tagsArray = tags.map((tag) => tag.text);
+        const res = await axios.post(
           `${import.meta.env.VITE_DOMAIN}/api/post`,
           {
             category: category,
@@ -58,7 +82,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
             motherPost,
             board,
             title,
-            tags: tags.split(',').map((tag) => tag.trim()), // Split tags by comma and trim whitespace
+            tags: tagsArray,
           },
           {
             headers: {
@@ -68,14 +92,14 @@ const CreatePost: React.FC<CreatePostProps> = ({
           },
         );
 
-        // console.log(post);
-
         // Clear input fields
         setContent('');
-        setTags('');
+        setTags([]);
+
+        console.log(res.data.postData);
 
         // Trigger the callback function to notify parent component about the new post
-        onPostCreated();
+        onPostCreated(res.data.postData);
       } catch (error) {
         console.error('Error creating post:', error);
       }
@@ -95,32 +119,58 @@ const CreatePost: React.FC<CreatePostProps> = ({
             type="text"
             value={title}
             onChange={handleTitleChange}
-            className="w-full mt-4 p-2 border border-gray-300 rounded-md"
-            placeholder="What is this post about?"
+            className="w-full mt-4 p-2 border border-gray-300 rounded-md mb-3"
+            placeholder="這篇貼文的標題是什麼"
           />
         )}
         <textarea
           value={content}
           onChange={handleContentChange}
           className="w-full h-32 p-2 border border-gray-300 rounded-md"
-          placeholder="Write your post content..."
+          placeholder="內文..."
         />
         {category !== 'reply' && (
-          <input
-            type="text"
-            value={tags}
-            onChange={handleTagsChange}
-            className="w-full mt-4 p-2 border border-gray-300 rounded-md"
-            placeholder="Enter up to three tags (comma-separated)"
-          />
+          <>
+            <div className="pl-2 flex items-center h-10 rounded-lg bg-gray-200 mt-2 mb-2">
+              {tags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
+                >
+                  <span>{tag.text}</span>
+                  <button
+                    className="ml-1"
+                    onClick={() => handleRemoveTag(tag.id)}
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={handleTagInputChange}
+              className="w-48 mt-4 p-2 border border-gray-300 rounded-md"
+              placeholder="這篇貼文跟什麼相關"
+            />
+            <button
+              className="ml-2 border-2 border-solid border-black rounded-md bg-white p-1"
+              onClick={handleAddToTags}
+            >
+              新增
+            </button>
+          </>
         )}
+        <div>
+          <button
+            onClick={handleCreatePost}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Create Post
+          </button>
+        </div>
 
-        <button
-          onClick={handleCreatePost}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        >
-          Create Post
-        </button>
         {postError && <p className="text-red-500">{postError}</p>}
       </div>
     </div>

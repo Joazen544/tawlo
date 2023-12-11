@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Cookies from 'js-cookie';
 import Comment from '../Comment';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface Props {
   _id: string;
@@ -44,6 +44,7 @@ interface Props {
     ];
   };
   clickReply: () => void;
+  clickDelete: (postId: string) => void;
 }
 
 interface CommentsData {
@@ -65,6 +66,7 @@ const Post = ({
   content,
   hot,
   score,
+  board,
   liked,
   upvote,
   downvote,
@@ -72,6 +74,7 @@ const Post = ({
   title,
   category,
   clickReply,
+  clickDelete,
 }: Props) => {
   const [authorName, setAuthorName] = useState('');
   const [commentNames, setCommentNames] = useState<string[]>([]);
@@ -85,9 +88,13 @@ const Post = ({
   );
   const [commentNumber, setCommentNumber] = useState(comments.number);
   const [commentCreate, setCommentCreate] = useState('');
+  const [authorImage, setAuthorImage] = useState();
+  const [isSettingAppend, setIsSettingAppend] = useState(false);
 
   const token = Cookies.get('jwtToken');
   const userId = Cookies.get('userId');
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     // setToken(Cookies.get('jwtToken'));
@@ -116,6 +123,17 @@ const Post = ({
         setAuthorName(res.data.name);
       })
       .catch((err) => console.log(err));
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/image?id=${author}`)
+      .then((res) => {
+        setAuthorImage(res.data.image);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }, []);
 
   useEffect(() => {
@@ -267,6 +285,54 @@ const Post = ({
     setCommentCreate(event.target.value);
   };
 
+  const handleSettingAppend = () => {
+    setIsSettingAppend(!isSettingAppend);
+  };
+
+  const settingRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      settingRef.current &&
+      event.target instanceof Node &&
+      !settingRef.current.contains(event.target)
+    ) {
+      // 點擊的位置在 dropdown 之外
+      setIsSettingAppend(false);
+    }
+  };
+
+  useEffect(() => {
+    // 添加全域點擊事件監聽器
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      // 移除全域點擊事件監聽器
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  const handleDelete = () => {
+    axios
+      .delete(`${import.meta.env.VITE_DOMAIN}/api/post?id=${_id}`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        if (category === 'mother') {
+          console.log('board is');
+          console.log(board);
+
+          navigate(`/board?id=${board}`);
+          console.log('123');
+        }
+        clickDelete(_id);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   const publishTime = new Date(publishDate);
   let postContainer;
   if (category === 'native') {
@@ -274,7 +340,7 @@ const Post = ({
       'max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg  overflow-hidden border-solid border-2 border-gray-400';
   } else {
     postContainer =
-      'w-full mx-auto mt-2 pb-6  bg-white overflow-hidden border-solid border-b-2 border-gray-400';
+      'w-full mx-auto mt-2 pb-6  bg-white overflow-hidden border-solid border-b-2 border-gray-200';
   }
 
   return (
@@ -296,48 +362,106 @@ const Post = ({
           </div>
         )}
         {category === 'reply' && (
-          <div
-            id="title"
-            className="pr-4 border-gray-200 flex justify-between items-center"
-          >
-            <span className="text-2xl">#{floor} 回答</span>
-            <div id="authorInfo" className="r-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  {/* Add user avatar or profile image here */}
-                </div>
-                <div className="ml-3">
-                  <Link
-                    to={`/user/profile/${author}`}
-                    id="commentName"
-                    className="w-20 text-left text-blue-400"
-                  >
-                    {authorName}
-                  </Link>
-                  <div className="text-gray-500">
-                    {publishTime.toDateString()}
+          <>
+            {author === userId && (
+              <div
+                id="settings"
+                className="relative ml-2 flex justify-end mt-10"
+              >
+                <button
+                  onClick={handleSettingAppend}
+                  ref={settingRef}
+                  className="w-8 h-8 bg-more-image bg-no-repeat bg-contain mr-5 mb-5"
+                ></button>
+                {isSettingAppend && (
+                  <div className="absolute w-14 rounded-lg top-7 right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
+                    <button className="hover:bg-blue-400 h-full w-full">
+                      編輯
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="hover:bg-red-400 h-full w-full"
+                    >
+                      刪除
+                    </button>
                   </div>
-                </div>
-                <div id="tags" className="ml-10 text-gray-500 flex">
-                  {category !== 'reply' &&
-                    tags.map((tag, index) => (
-                      <p
-                        className="border-solid border-2 rounded-md p-0.5 mr-3"
-                        key={index}
-                      >
-                        {tag}
-                      </p>
-                    ))}
+                )}
+              </div>
+            )}
+            <div
+              id="title"
+              className="pr-4 mt-2 border-gray-200 flex justify-between items-center"
+            >
+              <span className="text-2xl">#{floor} 回答</span>
+              <div id="authorInfo" className="r-4 flex">
+                <div className="flex items-center">
+                  <div className="ml-3">
+                    <Link
+                      to={`/user/profile/${author}`}
+                      id="commentName"
+                      className="w-20 text-left text-blue-400"
+                    >
+                      {authorName}
+                    </Link>
+                    <div className="text-gray-500">
+                      {publishTime.toDateString()}
+                    </div>
+                  </div>
+                  <div id="tags" className="ml-10 text-gray-500 flex">
+                    {category !== 'reply' &&
+                      tags.map((tag, index) => (
+                        <p
+                          className="border-solid border-2 rounded-md p-0.5 mr-3"
+                          key={index}
+                        >
+                          {tag}
+                        </p>
+                      ))}
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div
+                      id="userImage"
+                      className={`h-12 w-12 border-2 border-solid border-gray-400 ${
+                        !authorImage && 'bg-user-image'
+                      } bg-contain bg-no-repeat`}
+                    >
+                      {authorImage && (
+                        <img
+                          style={{ objectFit: 'cover' }}
+                          src={authorImage}
+                          alt="user-image"
+                          className="h-full w-full"
+                        />
+                      )}
+                    </div>{' '}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
         {category !== 'reply' && (
-          <div id="authorInfo" className="p-4">
+          <div
+            id="authorInfo"
+            className="p-4 flex items-center justify-between"
+          >
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {/* Add user avatar or profile image here */}
+                <div
+                  id="userImage"
+                  className={`h-12 w-12 border-2 border-solid border-gray-400 ${
+                    !authorImage && 'bg-user-image'
+                  } bg-contain bg-no-repeat`}
+                >
+                  {authorImage && (
+                    <img
+                      style={{ objectFit: 'cover' }}
+                      src={authorImage}
+                      alt="user-image"
+                      className="h-full w-full"
+                    />
+                  )}
+                </div>
               </div>
               <div className="ml-3">
                 <Link
@@ -363,9 +487,30 @@ const Post = ({
                   ))}
               </div>
             </div>
+            {author === userId && (
+              <div id="settings" className="relative">
+                <button
+                  onClick={handleSettingAppend}
+                  ref={settingRef}
+                  className="w-8 h-8 bg-more-image bg-no-repeat bg-contain"
+                ></button>
+                {isSettingAppend && (
+                  <div className="absolute w-14 rounded-lg right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
+                    <button className="hover:bg-blue-400 h-full w-full">
+                      編輯
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="hover:bg-red-400 h-full w-full"
+                    >
+                      刪除
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
-
         <div id="postContent" className="p-4 flex mt-3 mb-3">
           <div
             id="useful"

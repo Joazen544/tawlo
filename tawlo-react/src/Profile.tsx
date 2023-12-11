@@ -192,7 +192,9 @@ const Profile = () => {
             <h1 className="text-2xl font-bold mb-4">{userName}</h1>
             <div
               id="userImage"
-              className="h-32 w-32 border-2 border-solid border-gray-400 bg-user-image bg-contain bg-no-repeat"
+              className={`h-32 w-32 border-2 border-solid border-gray-400 ${
+                !userImage && 'bg-user-image'
+              } bg-contain bg-no-repeat`}
             >
               {userImage && (
                 <img
@@ -237,9 +239,26 @@ const Profile = () => {
         </div>
       )}
       {!ifOwnProfile && (
-        <div className="max-w-md mx-auto mt-8 p-4 bg-white shadow-md">
-          <h1 className="text-2xl font-bold mb-4">{userName}</h1>
-          <div className="mb-4 flex">
+        <div className="max-w-md mx-auto mt-8 p-4 bg-white shadow-md flex">
+          <div>
+            <h1 className="text-2xl font-bold mb-4">{userName}</h1>
+            <div
+              id="userImage"
+              className={`h-32 w-32 border-2 border-solid border-gray-400 ${
+                !userImage && 'bg-user-image'
+              } bg-contain bg-no-repeat`}
+            >
+              {userImage && (
+                <img
+                  style={{ objectFit: 'cover' }}
+                  src={userImage}
+                  alt="user-image"
+                  className="h-full w-full"
+                />
+              )}
+            </div>
+          </div>
+          <div className="mb-4 flex ml-10">
             <div id="friendButton">
               {relationship === 'friends' && (
                 <span className="text-green-500">已是朋友</span>
