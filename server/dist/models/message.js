@@ -74,7 +74,7 @@ function createMessageToDB(group, from, content, time) {
             content,
             read: [from],
         });
-        console.log('~~~~');
+        // console.log('~~~~');
         return result;
     });
 }
@@ -83,10 +83,10 @@ function makeAllMessagesRead(userId, messageGroupId, last_sender) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield Message.updateMany({ group: messageGroupId, read: { $ne: userId } }, { $push: { read: userId } });
-            console.log('making');
+            // console.log('making');
             if (last_sender !== userId) {
-                console.log('making 2');
-                console.log(messageGroupId);
+                // console.log('making 2');
+                // console.log(messageGroupId);
                 yield messageGroup_1.default.updateOne({ _id: messageGroupId }, { unread: 0 });
             }
         }

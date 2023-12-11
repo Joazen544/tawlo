@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
+exports.getUserImageFromDB = exports.readNotificationsFromDB = exports.getNotificationsFromDB = exports.addNotificationToUserDB = exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const validator_1 = __importDefault(require("validator"));
@@ -35,6 +35,10 @@ const userSchema = new mongoose_1.default.Schema({
         required: [true, 'Please provide a password'],
         minlength: [8, 'Password must contain at least 8 characters'],
         select: false,
+    },
+    image: {
+        type: String,
+        default: '',
     },
     introduction: {
         type: String,
@@ -94,6 +98,39 @@ const userSchema = new mongoose_1.default.Schema({
     // chat rooms
     upvote: { type: Number, default: 0 },
     downvote: { type: Number, default: 0 },
+    notification: {
+        type: [
+            {
+                time: Date,
+                category: {
+                    type: String,
+                    enum: [
+                        'reply_post',
+                        'comment_post',
+                        'comment_replied',
+                        'upvote_post',
+                        'like_post',
+                        'like_comment',
+                        'meet_match',
+                        'meet_success',
+                        'meet_fail',
+                        'friend_request',
+                        'request_accepted',
+                    ],
+                },
+                // three the most
+                // friends first
+                action_users: [mongodb_1.ObjectId],
+                // reply_post, comment_post, comment_replied
+                // upvote_post,like_post,like_comment
+                users_num: { type: Number, default: 0 },
+                target_post: mongodb_1.ObjectId,
+                read: Boolean,
+                message: String,
+            },
+        ],
+        default: [],
+    },
     honor_now: { type: String, default: '' },
     honors: { type: [String], default: [] },
 });
@@ -175,7 +212,7 @@ function updateUserReadPosts(userId, readPosts) {
             {
                 $set: {
                     read_posts: {
-                        $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -30],
+                        $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -100],
                     },
                 },
             },
@@ -232,18 +269,23 @@ function createRelation(user, target) {
             if (relation === null) {
                 yield User.updateOne({ _id: user }, { $push: { friends: { user: target, status: 'requested' } } }, { session });
                 yield User.updateOne({ _id: target }, { $push: { friends: { user, status: 'received' } } }, { session });
+                result = 'send';
             }
             else if (relation === 'received') {
                 yield User.updateOne({ _id: user, 'friends.user': target }, { $set: { 'friends.$.status': 'friends' } }, { session });
                 yield User.updateOne({ _id: target, 'friends.user': user }, { $set: { 'friends.$.status': 'friends' } }, { session });
+                result = 'accept';
+            }
+            else {
+                result = 'error';
+                throw Error('the relationship is neither null nor received');
             }
             yield session.commitTransaction();
-            result = true;
         }
         catch (err) {
             console.log(err);
             yield session.abortTransaction();
-            result = false;
+            result = 'error';
         }
         finally {
             yield session.endSession();
@@ -282,4 +324,148 @@ function cancelRequestFromDB(user, target) {
     });
 }
 exports.cancelRequestFromDB = cancelRequestFromDB;
+function addNotificationToUserDB(userId, category, actionUser, targetPost) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // time: Date;
+        // category: string;
+        // action_users: ObjectId[];
+        // users_num: number;
+        // read: boolean;
+        // target_post
+        // 'reply_post',
+        // 'comment_post',
+        // 'upvote_post',
+        // 'like_post',
+        // 'comment_replied',
+        // 'like_comment',
+        // 'meet_match',
+        // 'meet_success',
+        // 'meet_fail',
+        // 'friend_request',
+        // 'request_accepted',
+        if (category === 'reply_post' ||
+            category === 'comment_post' ||
+            category === 'upvote_post' ||
+            category === 'like_post' ||
+            category === 'comment_replied' ||
+            category === 'like_comment') {
+            // if notification already exist add to it and make it unread
+            const targetNotification = yield User.findOne({
+                _id: userId,
+                notification: {
+                    $elemMatch: {
+                        category,
+                        target_post: targetPost,
+                    },
+                },
+            });
+            if (targetNotification) {
+                yield User.updateOne({
+                    _id: userId,
+                    notification: {
+                        $elemMatch: {
+                            category,
+                            target_post: targetPost,
+                        },
+                    },
+                }, {
+                    $push: {
+                        'notification.$.action_users': { $each: [actionUser], $slice: -20 },
+                    },
+                    $inc: { 'notification.$.users_num': 1 },
+                    $set: {
+                        'notification.$.time': new Date(),
+                        'notification.$.read': false,
+                    },
+                });
+                return 'update';
+            }
+            // if notification hasn't exist yet, create a new one
+            yield User.updateOne({ _id: userId }, {
+                $push: {
+                    notification: {
+                        $each: [
+                            {
+                                category,
+                                action_users: [actionUser],
+                                target_post: targetPost,
+                                users_num: 1,
+                                time: new Date(),
+                                read: false,
+                            },
+                        ],
+                        $slice: -20,
+                    },
+                },
+            });
+            return 'create';
+        }
+        if (category === 'meet_match' ||
+            category === 'meet_success' ||
+            category === 'meet_fail') {
+            yield User.updateOne({ _id: userId }, {
+                $push: {
+                    notification: {
+                        $each: [
+                            {
+                                category,
+                                time: new Date(),
+                                read: false,
+                            },
+                        ],
+                        $slice: -20,
+                    },
+                },
+            });
+            return 'create';
+        }
+        if (category === 'friend_request' || category === 'request_accepted') {
+            yield User.updateOne({ _id: userId }, {
+                $push: {
+                    notification: {
+                        $each: [
+                            {
+                                category,
+                                action_users: [actionUser],
+                                time: new Date(),
+                                read: false,
+                            },
+                        ],
+                        $slice: -20,
+                    },
+                },
+            });
+            return 'create';
+        }
+        return 'error';
+    });
+}
+exports.addNotificationToUserDB = addNotificationToUserDB;
+function getNotificationsFromDB(userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userInfo = yield User.findOne({ _id: userId });
+        if (!userInfo) {
+            return false;
+        }
+        return userInfo.notification;
+    });
+}
+exports.getNotificationsFromDB = getNotificationsFromDB;
+function readNotificationsFromDB(userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userUpdate = yield User.updateOne({ _id: userId, 'notification.read': false }, { $set: { 'notification.$[].read': true } });
+        if (userUpdate.acknowledged === false) {
+            return false;
+        }
+        return true;
+    });
+}
+exports.readNotificationsFromDB = readNotificationsFromDB;
+function getUserImageFromDB(user) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userInfo = yield User.findOne({ _id: user }, { image: 1 });
+        return userInfo;
+    });
+}
+exports.getUserImageFromDB = getUserImageFromDB;
 exports.default = User;

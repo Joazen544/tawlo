@@ -62,7 +62,7 @@ function initSocket(server) {
         });
         socket.on('chat message', (messageData) => __awaiter(this, void 0, void 0, function* () {
             console.log('receiving message!!');
-            console.log(messageData.to);
+            // console.log(messageData.to);
             try {
                 socket.broadcast.to(messageData.from).emit('myself', {
                     message: messageData.content,
@@ -91,7 +91,7 @@ function initSocket(server) {
                 if (usersConnected[socketsConnected[socket.id].userId] &&
                     usersConnected[socketsConnected[socket.id].userId].length > 1) {
                     // more than 1 socket id recorded in this user
-                    console.log('peeee');
+                    console.log('a socket disconnected');
                     usersConnected[socketsConnected[socket.id].userId] = usersConnected[socketsConnected[socket.id].userId].filter((socketId) => socketId !== socket.id);
                 }
                 else {

@@ -32,6 +32,11 @@ const meetingSchema = new mongoose_1.default.Schema({
         default: undefined,
         required: true,
     },
+    meeting_comments: {
+        type: [[String]],
+        default: undefined,
+        required: true,
+    },
     role: {
         type: [String],
         default: undefined,
@@ -58,12 +63,13 @@ const meetingSchema = new mongoose_1.default.Schema({
     },
 });
 const Meeting = mongoose_1.default.model('Meeting', meetingSchema);
-function createMeeting(user, role, rating, userIntro, toShare, toAsk) {
+function createMeeting(user, role, rating, meetingComments, userIntro, toShare, toAsk) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield Meeting.create({
             users: [user],
             role: [role],
             ratings: [rating],
+            meeting_comments: [meetingComments],
             user_intro: [userIntro],
             to_share: [toShare],
             to_ask: [toAsk],
@@ -72,7 +78,7 @@ function createMeeting(user, role, rating, userIntro, toShare, toAsk) {
     });
 }
 exports.createMeeting = createMeeting;
-function joinMeeting(metUsers, user, role, rating, userIntro, toShare, toAsk) {
+function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, toShare, toAsk) {
     return __awaiter(this, void 0, void 0, function* () {
         const creatorShouldShare = [];
         toAsk.forEach((ask) => {
@@ -149,7 +155,7 @@ function joinMeeting(metUsers, user, role, rating, userIntro, toShare, toAsk) {
                 $limit: 1,
             },
         ]);
-        console.log(result);
+        // console.log(result);
         if (!result[0]) {
             // create a new one
             return false;
@@ -162,13 +168,14 @@ function joinMeeting(metUsers, user, role, rating, userIntro, toShare, toAsk) {
                 users: userId,
                 role,
                 ratings: rating,
+                meeting_comments: meetingComments,
                 user_intro: userIntro,
                 to_share: toShare,
                 to_ask: toAsk,
             },
             status: 'checking',
         });
-        console.log(result);
+        // console.log(result);
         return result[0];
     });
 }

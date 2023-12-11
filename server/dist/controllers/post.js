@@ -32,10 +32,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
+exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post"));
 const user_1 = require("../models/user");
+const socket_1 = require("./socket");
 const errorHandler_1 = require("../utils/errorHandler");
 function calculateMotherPostHot(postId, increaseField, increase) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -137,6 +138,12 @@ function createPost(req, res) {
                 });
             }
             else if (category === 'reply') {
+                const motherPostInfo = yield post_1.default.findOne({ _id: motherPost });
+                if (!motherPostInfo) {
+                    console.log('mother post does not exist');
+                    res.status(400).json({ error: 'mother post does not exist' });
+                    return;
+                }
                 const updateMotherResult = post_1.default.updateOne({ _id: motherPost }, {
                     $set: {
                         update_date: publishDate,
@@ -144,13 +151,8 @@ function createPost(req, res) {
                     },
                     $inc: { sum_reply: 1 },
                 });
-                const motherPostInfo = yield post_1.default.findOne({ _id: motherPost });
-                let postTags;
-                let postBoard;
-                if (motherPostInfo) {
-                    postTags = motherPostInfo.tags;
-                    postBoard = motherPostInfo.board;
-                }
+                const postTags = motherPostInfo.tags;
+                const postBoard = motherPostInfo.board;
                 if ((yield updateMotherResult).acknowledged === false) {
                     throw new Error('mother post deoes not exist or something is wrong updating it');
                 }
@@ -164,12 +166,26 @@ function createPost(req, res) {
                     board: postBoard,
                     mother_post: motherPost,
                 });
+                if (motherPostInfo.author.toString() !== userId.toString()) {
+                    (0, user_1.addNotificationToUserDB)(motherPostInfo.author, 'reply_post', userId, postData._id);
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    io.to(motherPostInfo.author.toString()).emit('notificate', {
+                        category: 'reply_post',
+                        message: '有人回覆了你的貼文',
+                        actionUser: userId.toString(),
+                        targetPost: postData._id,
+                    });
+                }
             }
             else {
                 res.status(400).json({ error: 'The category of post is wrong' });
             }
             res.json({
-                data: postData,
+                postData,
             });
         }
         catch (err) {
@@ -183,7 +199,7 @@ function createPost(req, res) {
     });
 }
 exports.createPost = createPost;
-function commentPost(req, res) {
+function commentPost(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { postId } = req.params;
@@ -193,7 +209,15 @@ function commentPost(req, res) {
             const publishDate = new Date();
             const target = yield post_1.default.findOne({
                 _id: postId,
-            }, { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 });
+            }, {
+                _id: 1,
+                liked: 1,
+                category: 1,
+                mother_post: 1,
+                tags: 1,
+                board: 1,
+                author: 1,
+            });
             if (target === null) {
                 throw Error('Comment post does not exist');
             }
@@ -301,14 +325,25 @@ function commentPost(req, res) {
                     throw Error('calculate hot fail');
                 }
             }
-            return res.json({ message: 'Add comment success' });
+            // create notification to author
+            if (target.author.toString() !== userId.toString()) {
+                (0, user_1.addNotificationToUserDB)(target.author, 'comment_post', userId, target._id);
+                const io = (0, socket_1.getIO)();
+                if (!io) {
+                    res.status(500).json({ message: 'io connection fail' });
+                    return;
+                }
+                io.to(target.author.toString()).emit('notificate', {
+                    category: 'comment_post',
+                    message: '有人在你的貼文留言',
+                    actionUser: userId.toString(),
+                    targetPost: target._id,
+                });
+            }
+            res.json({ message: 'Add comment success' });
         }
         catch (err) {
-            console.log(err);
-            if (err instanceof Error) {
-                return res.status(400).json({ error: err.message });
-            }
-            return res.status(500).json({ error: 'Create comment fail' });
+            next(err);
         }
     });
 }
@@ -330,7 +365,6 @@ function likeComment(req, res) {
             // check if the post and comment exist
             const likeTargetComment = yield post_1.default.findOne({
                 _id: postId,
-                // [commentTargetUser]: { $in: [userId] },
             }, { _id: 1, comments: 1 });
             if (likeTargetComment === null || !likeTargetComment.comments.data[floor]) {
                 throw Error('like target post or comment floor does not exist');
@@ -344,13 +378,27 @@ function likeComment(req, res) {
                 if (ifAlreadyLike === true) {
                     throw Error('user already liked the comment');
                 }
-                // console.log('liking comment');
                 result = yield post_1.default.updateOne({ _id: postId }, {
                     $inc: { [commentTargetLike]: 1 },
                     $push: { 'comments.data.0.like.users': userId },
                 });
                 if (result.acknowledged === false) {
                     throw Error('like comment fail');
+                }
+                if (userId.toString() !==
+                    likeTargetComment.comments.data[floor].user.toString()) {
+                    (0, user_1.addNotificationToUserDB)(likeTargetComment.comments.data[floor].user, 'like_comment', userId, likeTargetComment._id);
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    io.to(likeTargetComment.comments.data[floor].user.toString()).emit('notificate', {
+                        category: 'like_comment',
+                        message: '有人喜歡你的留言',
+                        actionUser: userId.toString(),
+                        targetPost: likeTargetComment._id,
+                    });
                 }
                 res.json({ message: 'like comment success' });
                 return;
@@ -397,7 +445,15 @@ function likePost(req, res) {
             // check if the post exist
             const likeTarget = yield post_1.default.findOne({
                 _id: postId,
-            }, { _id: 1, liked: 1, category: 1, mother_post: 1, tags: 1, board: 1 });
+            }, {
+                _id: 1,
+                liked: 1,
+                category: 1,
+                mother_post: 1,
+                tags: 1,
+                board: 1,
+                author: 1,
+            });
             // console.log(JSON.stringify(likeTarget, null, 4));
             if (likeTarget === null) {
                 throw Error('like target post does not exist');
@@ -443,7 +499,6 @@ function likePost(req, res) {
             else {
                 throw Error('req body must contain like, and it should be boolean');
             }
-            (0, user_1.updateUserAction)(userId, likeTarget.tags, likeTarget.board);
             // console.log(adjustUserArray);
             let result;
             // console.log('liking comment');
@@ -487,6 +542,20 @@ function likePost(req, res) {
                 ]);
                 if (result.acknowledged === false) {
                     throw Error('like a post fail');
+                }
+                if (likeTarget.author.toString() !== userId.toString() && like === true) {
+                    (0, user_1.addNotificationToUserDB)(likeTarget.author, 'like_post', userId, likeTarget._id);
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    io.to(likeTarget.author.toString()).emit('notificate', {
+                        category: 'like_post',
+                        message: '有人喜歡你的貼文',
+                        actionUser: userId.toString(),
+                        targetPost: likeTarget._id,
+                    });
                 }
                 res.json({ message: `${message} post success` });
                 return;
@@ -541,6 +610,7 @@ function upvotePost(req, res) {
                 downvote: 1,
                 tags: 1,
                 board: 1,
+                author: 1,
             });
             // console.log(JSON.stringify(upvoteTarget, null, 4));
             if (upvoteTarget === null) {
@@ -589,7 +659,6 @@ function upvotePost(req, res) {
             else {
                 throw Error('req body must contain key upvote, and it should be boolean');
             }
-            (0, user_1.updateUserAction)(userId, upvoteTarget.tags, upvoteTarget.board);
             let result;
             // console.log('upvoting post');
             if (upvoteTarget.category === 'mother' ||
@@ -689,6 +758,21 @@ function upvotePost(req, res) {
                         throw new Error('cancel downvote fail');
                     }
                 }
+                if (upvoteTarget.author.toString() !== userId.toString() &&
+                    upvote === true) {
+                    (0, user_1.addNotificationToUserDB)(upvoteTarget.author, 'upvote_post', userId, upvoteTarget._id);
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    io.to(upvoteTarget.author.toString()).emit('notificate', {
+                        category: 'upvote_post',
+                        message: '有人覺得你的貼文有用',
+                        actionUser: userId.toString(),
+                        targetPost: upvoteTarget._id,
+                    });
+                }
                 res.json({ message: `${message} post success` });
                 return;
             }
@@ -765,6 +849,20 @@ function upvotePost(req, res) {
                     if (cancelDownVoteFromMotherResult.acknowledged === false) {
                         throw new Error('cancel downvote from mother fail');
                     }
+                }
+                if (upvoteTarget.author.toString() !== userId.toString()) {
+                    (0, user_1.addNotificationToUserDB)(upvoteTarget.author, 'upvote_post', userId, upvoteTarget._id);
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    io.to(upvoteTarget.author.toString()).emit('notificate', {
+                        category: 'upvote_post',
+                        message: '有人覺得你的貼文有用',
+                        actionUser: userId.toString(),
+                        targetPost: upvoteTarget._id,
+                    });
                 }
                 res.json({ message: `${message} post success` });
                 return;
@@ -1014,7 +1112,7 @@ function getRecommendPosts(req, res) {
         // take posts from post model using the info
         try {
             const { user } = req.body;
-            console.log(user);
+            // console.log(user);
             const userId = new mongodb_1.ObjectId(user);
             // const {tags,}
             const userInfo = (yield (0, user_1.getUserPreference)(userId));
@@ -1074,6 +1172,15 @@ function getMotherAndReplies(req, res, next) {
             if (!motherPost || typeof motherPost !== 'string') {
                 throw new errorHandler_1.ValidationError('There should be mother post id');
             }
+            const motherPostInfo = yield post_1.default.findOne({ _id: motherPost });
+            if (!motherPostInfo) {
+                res.status(400).json({ error: 'Mother post does not exist' });
+                return;
+            }
+            if (motherPostInfo.is_delete === true) {
+                res.status(404).json({ error: 'Mother post was deleted' });
+                return;
+            }
             let paging;
             if (req.query.paging && !Number.isNaN(req.query.paging)) {
                 paging = +req.query.paging;
@@ -1085,8 +1192,9 @@ function getMotherAndReplies(req, res, next) {
                 paging = 0;
             }
             const motherPostId = new mongodb_1.ObjectId(motherPost);
-            const posts = yield (0, post_1.getMotherAndReplyPostsFromDB)(motherPostId, paging);
-            res.json(posts);
+            const postsInfo = yield (0, post_1.getMotherAndReplyPostsFromDB)(motherPostId, paging);
+            postsInfo.posts = postsInfo.posts.filter((post) => post.is_delete === false);
+            res.json(postsInfo);
         }
         catch (err) {
             next(err);
@@ -1094,3 +1202,59 @@ function getMotherAndReplies(req, res, next) {
     });
 }
 exports.getMotherAndReplies = getMotherAndReplies;
+function getPost(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const id = req.query.id;
+            if (!id) {
+                res.status(400).json({ error: 'post id should be in req body' });
+                return;
+            }
+            const postInfo = yield (0, post_1.getPostFromDB)(id);
+            if (!postInfo) {
+                res.status(400).json({ error: 'post does not exist' });
+                return;
+            }
+            if (postInfo.is_delete === true) {
+                res
+                    .status(404)
+                    .json({ status: 'deleted', message: 'the post was deleted' });
+                return;
+            }
+            res.json(postInfo);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getPost = getPost;
+function deletePost(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const { id } = req.query;
+            if (!id) {
+                res.status(400).json({ error: 'post id should be in query' });
+                return;
+            }
+            const targetPost = yield post_1.default.findOne({ _id: id });
+            if (!targetPost) {
+                res.status(400).json({ error: 'target post does not exist' });
+                return;
+            }
+            if (targetPost.author.toString() !== user) {
+                res
+                    .status(403)
+                    .json({ message: 'user is not author, can not delete the post' });
+                return;
+            }
+            yield post_1.default.updateOne({ _id: id }, { $set: { is_delete: true } });
+            res.json({ message: 'post deleted' });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.deletePost = deletePost;

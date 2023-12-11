@@ -237,7 +237,7 @@ exports.sendMessage = sendMessage;
 function readMessages(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            console.log('making messages read');
+            // console.log('making messages read');
             const { user, messageGroupId } = req.body;
             const userId = new mongodb_1.ObjectId(user);
             const messageGroup = yield messageGroup_1.default.findOne({ _id: messageGroupId });

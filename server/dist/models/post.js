@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMotherAndReplyPostsFromDB = exports.getBoardPostsFromDB = exports.getAutoRecommendedPosts = void 0;
+exports.getPostFromDB = exports.getMotherAndReplyPostsFromDB = exports.getBoardPostsFromDB = exports.getAutoRecommendedPosts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const MOTHER_POST_PER_PAGE = 20;
@@ -177,7 +177,7 @@ function getAutoRecommendedPosts(preferenceTags, boards, read_posts) {
                                 '$score',
                                 {
                                     $multiply: [
-                                        -200,
+                                        -400,
                                         {
                                             $size: {
                                                 $filter: {
@@ -241,6 +241,7 @@ function getBoardPostsFromDB(boardId, paging) {
         const postsOnBoard = yield Post.find({
             category: 'mother',
             board,
+            is_delete: false,
         })
             .sort({ update_date: -1 })
             .skip(paging * MOTHER_POST_PER_PAGE)
@@ -277,4 +278,11 @@ function getMotherAndReplyPostsFromDB(motherPostId, paging) {
     });
 }
 exports.getMotherAndReplyPostsFromDB = getMotherAndReplyPostsFromDB;
+function getPostFromDB(post) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const postInfo = yield Post.findOne({ _id: post });
+        return postInfo;
+    });
+}
+exports.getPostFromDB = getPostFromDB;
 exports.default = Post;

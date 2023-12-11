@@ -32,18 +32,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserName = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
+exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserImage = exports.getUserName = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
 const mongodb_1 = require("mongodb");
 const user_1 = __importStar(require("../models/user"));
 const JWT_1 = require("../utils/JWT");
+const socket_1 = require("./socket");
+require("dotenv");
+const CDN_DOMAIN = process.env.DISTRIBUTION_DOMAIN;
 function signUp(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { name, email, password, passwordConfirm } = req.body;
+            let image;
+            if (req.file) {
+                image = req.file.filename;
+            }
             const userData = yield user_1.default.create({
                 name,
                 email,
                 password,
+                image,
                 password_confirm: passwordConfirm,
             });
             const token = yield (0, JWT_1.signJWT)(userData._id.toString());
@@ -153,6 +161,35 @@ function getUserName(req, res, next) {
     });
 }
 exports.getUserName = getUserName;
+function getUserImage(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { id } = req.query;
+            if (!id) {
+                res.status(400).json({ error: 'user id is not in req body' });
+                return;
+            }
+            if (typeof id !== 'string') {
+                res.status(400).json({ error: 'user id is not string' });
+                return;
+            }
+            const userInfo = yield (0, user_1.getUserImageFromDB)(id);
+            if (!userInfo) {
+                res.status(400).json({ error: 'user does not exist' });
+                return;
+            }
+            if (userInfo.image === '') {
+                res.json({ image: '' });
+                return;
+            }
+            res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getUserImage = getUserImage;
 function getUserRelation(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -181,6 +218,29 @@ function sendRequest(req, res, next) {
                 return;
             }
             const result = yield (0, user_1.createRelation)(user, id);
+            const userId = new mongodb_1.ObjectId(user);
+            const targetUserId = new mongodb_1.ObjectId(id);
+            const io = (0, socket_1.getIO)();
+            if (!io) {
+                res.status(500).json({ message: 'io connection fail' });
+                return;
+            }
+            if (result === 'send') {
+                (0, user_1.addNotificationToUserDB)(targetUserId, 'friend_request', userId, null);
+                io.to(id).emit('notificate', {
+                    category: 'friend_request',
+                    message: '有人發出交友邀請',
+                    actionUser: user,
+                });
+            }
+            else if (result === 'accept') {
+                (0, user_1.addNotificationToUserDB)(targetUserId, 'request_accepted', userId, null);
+                io.to(id).emit('notificate', {
+                    category: 'request_accepted',
+                    message: '有人接受你的邀請',
+                    actionUser: user,
+                });
+            }
             if (result) {
                 res.json({ status: 'send or accept request success' });
                 return;
@@ -215,3 +275,103 @@ function cancelRequest(req, res, next) {
     });
 }
 exports.cancelRequest = cancelRequest;
+function getNotifications(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const userId = new mongodb_1.ObjectId(user);
+            const notifications = yield (0, user_1.getNotificationsFromDB)(userId);
+            if (notifications === false) {
+                res.status(400).json({ error: 'no such user' });
+                return;
+            }
+            notifications.forEach((notification) => {
+                switch (notification.category) {
+                    case 'reply_post':
+                        notification.message = '回覆了你的貼文';
+                        break;
+                    case 'comment_post':
+                        notification.message = '在你的貼文留言';
+                        break;
+                    case 'upvote_post':
+                        notification.message = '覺得你的貼文有用';
+                        break;
+                    case 'like_post':
+                        notification.message = '喜歡你的貼文';
+                        break;
+                    case 'comment_replied':
+                        notification.message = '回覆了你的留言';
+                        break;
+                    case 'like_comment':
+                        notification.message = '喜歡你的留言';
+                        break;
+                    case 'meet_match':
+                        notification.message = '配對成功，看看對方的資訊';
+                        break;
+                    case 'meet_success':
+                        notification.message = '配對完成，找對方聊聊吧';
+                        break;
+                    case 'meet_fail':
+                        notification.message = '配對失敗，重新找人中！';
+                        break;
+                    case 'friend_request':
+                        notification.message = '有人想加你好友';
+                        break;
+                    case 'request_accepted':
+                        notification.message = '交友邀請被接受囉';
+                        break;
+                    default:
+                        notification.message = '';
+                }
+            });
+            // console.log(notifications);
+            res.json(notifications.reverse());
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getNotifications = getNotifications;
+function readAllNotifications(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const userId = new mongodb_1.ObjectId(user);
+            const updateResult = yield (0, user_1.readNotificationsFromDB)(userId);
+            if (updateResult === false) {
+                res.status(400).json({
+                    error: 'no such user or something wrong updating read all notifications',
+                });
+                return;
+            }
+            res.json({ message: 'read all notifications' });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.readAllNotifications = readAllNotifications;
+function changeImage(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            let imageName;
+            if (req.file) {
+                imageName = req.file.filename;
+            }
+            else {
+                res.status(400).json({ error: 'no image in req' });
+            }
+            console.log(`image is ${imageName}`);
+            console.log(user);
+            yield user_1.default.updateOne({ _id: user }, { $set: { image: imageName } });
+            res.json({ image: `${CDN_DOMAIN}/user-image/${imageName}` });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.changeImage = changeImage;

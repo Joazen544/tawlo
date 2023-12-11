@@ -31,14 +31,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cancelMeeting = exports.scoreMeeting = exports.replyMeeting = exports.getMeeting = exports.accessMeeting = void 0;
 const mongodb_1 = require("mongodb");
 const meeting_1 = __importStar(require("../models/meeting"));
-const user_1 = __importDefault(require("../models/user"));
+const socket_1 = require("./socket");
+const user_1 = __importStar(require("../models/user"));
 function accessMeeting(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -49,46 +47,58 @@ function accessMeeting(req, res, next) {
                     .json({ error: 'role, user info, to share ,to ask must not be null' });
                 return;
             }
-            console.log(user);
-            console.log('weeee');
-            // const userId = new ObjectId(user);
-            const metUsersResult = yield user_1.default.findOne({ _id: user }, { met_users: 1, rating: 1, meeting_status: 1 });
-            console.log('22222');
-            if (metUsersResult && metUsersResult.meeting_status === 'end') {
+            const metUsersResult = yield user_1.default.findOne({ _id: user }, { met_users: 1, rating: 1, meeting_comments: 1, meeting_status: 1 });
+            // console.log('22222');
+            if (!metUsersResult) {
+                res.status(500).json({ error: 'user not found' });
+                return;
+            }
+            if (metUsersResult.meeting_status === 'end') {
                 res
                     .status(500)
                     .json({ error: 'user should give last meeting a score first' });
                 return;
             }
-            if (metUsersResult && metUsersResult.meeting_status !== 'none') {
+            if (metUsersResult.meeting_status !== 'none') {
                 res.status(500).json({ error: 'user already has a meeting' });
                 return;
             }
-            console.log(metUsersResult);
-            const metUsers = (metUsersResult === null || metUsersResult === void 0 ? void 0 : metUsersResult.met_users) || [];
-            let rating;
-            if (metUsersResult) {
-                rating = metUsersResult.rating;
-            }
+            const metUsers = metUsersResult.met_users || [];
+            const meetingComments = metUsersResult.meeting_comments || [];
+            const { rating } = metUsersResult;
             if (!rating) {
                 res.status(400).json({ error: 'user does not have rating property' });
                 return;
             }
-            const joinResult = yield (0, meeting_1.joinMeeting)(metUsers, user, role, rating, userIntro, toShare, toAsk);
+            const joinResult = yield (0, meeting_1.joinMeeting)(metUsers, user, role, rating, meetingComments, userIntro, toShare, toAsk);
             if (joinResult) {
                 // joined a meeting
                 // send notification to both users
+                // can be better!!!
                 try {
                     yield user_1.default.updateOne({ _id: joinResult.users[0] }, {
                         meeting: joinResult._id,
                         meeting_status: 'checking',
                         $push: { met_users: user },
                     });
+                    (0, user_1.addNotificationToUserDB)(joinResult.users[0], 'meet_match', null, null);
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    // console.log('send io 1');
+                    io.to(joinResult.users[0].toString()).emit('notificate', {
+                        category: 'meet_match',
+                        message: '配對成功，看看對方的資訊吧 ouo',
+                    });
+                    // console.log('send io 2');
                     yield user_1.default.updateOne({ _id: user }, {
                         meeting: joinResult._id,
                         meeting_status: 'checking',
                         $push: { met_users: joinResult.users[0] },
                     });
+                    // addNotificationToUserDB(userId, 'meet_match', null, null);
                 }
                 catch (err) {
                     throw new Error(`something wrong updating meeting info for users: ${err}`);
@@ -100,7 +110,7 @@ function accessMeeting(req, res, next) {
                 return;
             }
             // else, if false: create a new one
-            const createResult = yield (0, meeting_1.createMeeting)(user, role, rating, userIntro, toShare, toAsk);
+            const createResult = yield (0, meeting_1.createMeeting)(user, role, rating, meetingComments, userIntro, toShare, toAsk);
             yield user_1.default.updateOne({ _id: user }, { meeting: createResult._id, meeting_status: 'pending' });
             res.json({
                 status: 'No meeting to join, created meeting',
@@ -130,25 +140,25 @@ function getMeeting(req, res, next) {
                 },
                 { $project: { meeting: 1, meeting_status: 1 } },
             ]);
-            console.log(result[0].meeting_status);
+            // console.log(result[0].meeting_status);
             if (result[0] && result[0].meeting_status === 'none') {
                 res.json({ status: 'none', message: 'no meeting now' });
                 return;
             }
             let targetIndex = -1;
             let userIndex = -1;
-            console.log(result[0]);
+            // console.log(result[0]);
             if (!result[0].meeting[0]) {
                 res.status(400).json({ error: 'the meeting does not exist' });
                 return;
             }
             result[0].meeting[0].users.forEach((userInfo, index) => {
                 if (userInfo.toString() === user) {
-                    console.log('weee');
+                    // console.log('weee');
                     userIndex = index;
                 }
                 else {
-                    console.log('aaaa');
+                    // console.log('aaaa');
                     targetIndex = index;
                 }
             });
@@ -164,6 +174,7 @@ function getMeeting(req, res, next) {
                             role: result[0].meeting[0].role[0],
                             user_intro: result[0].meeting[0].user_intro[0],
                             rating: Math.round(result[0].meeting[0].ratings[0] * 10) / 10,
+                            meeting_comment: result[0].meeting[0].meeting_comments[0],
                             to_share: result[0].meeting[0].to_share[0],
                             to_ask: result[0].meeting[0].to_ask[0],
                         },
@@ -171,7 +182,7 @@ function getMeeting(req, res, next) {
                 });
                 return;
             }
-            console.log(JSON.stringify(result[0], null, 4));
+            // console.log(JSON.stringify(result[0], null, 4));
             if (userIndex >= 0 && targetIndex >= 0) {
                 res.json({
                     _id: result[0]._id,
@@ -184,6 +195,7 @@ function getMeeting(req, res, next) {
                             role: result[0].meeting[0].role[userIndex],
                             user_intro: result[0].meeting[0].user_intro[userIndex],
                             rating: Math.round(result[0].meeting[0].ratings[userIndex] * 10) / 10,
+                            meeting_comment: result[0].meeting[0].meeting_comments[userIndex],
                             to_share: result[0].meeting[0].to_share[userIndex],
                             to_ask: result[0].meeting[0].to_ask[userIndex],
                         },
@@ -192,6 +204,7 @@ function getMeeting(req, res, next) {
                             role: result[0].meeting[0].role[targetIndex],
                             user_intro: result[0].meeting[0].user_intro[targetIndex],
                             rating: Math.round(result[0].meeting[0].ratings[targetIndex] * 10) / 10,
+                            meeting_comment: result[0].meeting[0].meeting_comments[targetIndex],
                             to_share: result[0].meeting[0].to_share[targetIndex],
                             to_ask: result[0].meeting[0].to_ask[targetIndex],
                         },
@@ -235,7 +248,7 @@ function replyMeeting(req, res, next) {
                 res.status(400).json({ error: 'the meeting is not checking' });
                 return;
             }
-            console.log(meeting);
+            // console.log(meeting);
             if (reply === 'accept') {
                 // update the status of users, meeting to meeting
                 // create a chat room for them
@@ -254,6 +267,21 @@ function replyMeeting(req, res, next) {
                 yield meeting_1.default.updateOne({ _id: meetingId }, { $push: { accept: user }, $set: { status: 'end' } });
                 yield user_1.default.updateMany({ _id: meeting.users }, { $set: { meeting_status: 'end' } });
                 // notificate them
+                (0, user_1.addNotificationToUserDB)(meeting.users[0], 'meet_success', null, null);
+                (0, user_1.addNotificationToUserDB)(meeting.users[1], 'meet_success', null, null);
+                const io = (0, socket_1.getIO)();
+                if (!io) {
+                    res.status(500).json({ message: 'io connection fail' });
+                    return;
+                }
+                io.to(meeting.users[0].toString()).emit('notificate', {
+                    category: 'meet_success',
+                    message: '雙方都接受配對了，來跟對方聯絡吧！',
+                });
+                io.to(meeting.users[1].toString()).emit('notificate', {
+                    category: 'meet_success',
+                    message: '雙方都接受配對了，來跟對方聯絡吧！',
+                });
                 // open a chat for them
                 req.query.target = meeting.accept[0].toString();
                 next();
@@ -263,8 +291,14 @@ function replyMeeting(req, res, next) {
             yield meeting_1.default.updateOne({ _id: meetingId }, { $set: { status: 'fail' } });
             meeting.users.forEach((userId, index) => __awaiter(this, void 0, void 0, function* () {
                 const metUsersResult = yield user_1.default.findOne({ _id: userId }, { met_users: 1, rating: 1, meeting_status: 1 });
-                const metUsers = (metUsersResult === null || metUsersResult === void 0 ? void 0 : metUsersResult.met_users) || [];
-                const joinResult = yield (0, meeting_1.joinMeeting)(metUsers, userId.toString(), meeting.role[index], meeting.ratings[index], meeting.user_intro[index], meeting.to_share[index], meeting.to_ask[index]);
+                if (!metUsersResult) {
+                    res
+                        .status(500)
+                        .json({ error: 'can not find user while updating meeting' });
+                    return;
+                }
+                const metUsers = metUsersResult.met_users || [];
+                const joinResult = yield (0, meeting_1.joinMeeting)(metUsers, userId.toString(), meeting.role[index], meeting.ratings[index], meeting.meeting_comments[index], meeting.user_intro[index], meeting.to_share[index], meeting.to_ask[index]);
                 if (joinResult) {
                     // joined a meeting
                     // send notification to both users
@@ -279,6 +313,21 @@ function replyMeeting(req, res, next) {
                             meeting_status: 'checking',
                             $push: { met_users: joinResult.users[0] },
                         });
+                        (0, user_1.addNotificationToUserDB)(joinResult.users[0], 'meet_match', null, null);
+                        (0, user_1.addNotificationToUserDB)(userId, 'meet_match', null, null);
+                        const io = (0, socket_1.getIO)();
+                        if (!io) {
+                            res.status(500).json({ message: 'io connection fail' });
+                            return;
+                        }
+                        io.to(joinResult.users[0].toString()).emit('notificate', {
+                            category: 'meet_match',
+                            message: '配對成功，看看對方的資訊吧 OAO',
+                        });
+                        io.to(userId.toString()).emit('notificate', {
+                            category: 'meet_match',
+                            message: '配對成功，看看對方的資訊吧 XDD',
+                        });
                     }
                     catch (err) {
                         throw new Error(`something wrong updating meeting info for users: ${err}`);
@@ -286,9 +335,19 @@ function replyMeeting(req, res, next) {
                 }
                 else {
                     // else, if false: create a new one
-                    const createResult = yield (0, meeting_1.createMeeting)(userId.toString(), meeting.role[index], meeting.ratings[index], meeting.user_intro[index], meeting.to_share[index], meeting.to_ask[index]);
+                    const createResult = yield (0, meeting_1.createMeeting)(userId.toString(), meeting.role[index], meeting.ratings[index], meeting.meeting_comments[index], meeting.user_intro[index], meeting.to_share[index], meeting.to_ask[index]);
+                    (0, user_1.addNotificationToUserDB)(userId, 'meet_fail', null, null);
                     yield user_1.default.updateOne({ _id: userId }, { meeting: createResult._id, meeting_status: 'pending' });
                     // notificate the user the result
+                    const io = (0, socket_1.getIO)();
+                    if (!io) {
+                        res.status(500).json({ message: 'io connection fail' });
+                        return;
+                    }
+                    io.to(userId.toString()).emit('notificate', {
+                        category: 'meet_fail',
+                        message: '配對失敗，自動重新配對',
+                    });
                 }
             }));
             res.json({ message: 'create or join new meeting for users' });
@@ -304,7 +363,7 @@ function scoreMeeting(req, res, next) {
         try {
             const { user, score, targetUser, comment } = req.body;
             const { meetingId } = req.params;
-            console.log(user);
+            // console.log(user);
             if (!comment) {
                 res.status(400).json({ error: 'comment is missing' });
                 return;
@@ -317,7 +376,7 @@ function scoreMeeting(req, res, next) {
                 res.status(400).json({ error: 'score is not number' });
                 return;
             }
-            console.log(meetingId);
+            // console.log(meetingId);
             const meeting = yield meeting_1.default.findOne({ _id: meetingId });
             if (!meeting) {
                 res.status(400).json({ error: 'meeting does not exist' });
@@ -331,7 +390,7 @@ function scoreMeeting(req, res, next) {
                 res.status(400).json({ error: 'meeting does not include target user' });
                 return;
             }
-            console.log(score);
+            // console.log(score);
             const userInfo = yield user_1.default.findOne({ _id: targetUser });
             if (!userInfo) {
                 res.status(400).json({ error: 'user does not exist' });
@@ -341,7 +400,7 @@ function scoreMeeting(req, res, next) {
             const ratingNumber = userInfo.rating_number;
             const newRatingNumber = ratingNumber + 1;
             const newRating = (rating * ratingNumber + score) / newRatingNumber;
-            console.log(newRating);
+            // console.log(newRating);
             yield user_1.default.updateOne({ _id: targetUser }, {
                 $set: {
                     rating: newRating,

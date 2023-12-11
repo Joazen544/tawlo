@@ -8,6 +8,8 @@ const post_1 = require("../controllers/post");
 const verifyJWT_1 = __importDefault(require("../middleware/verifyJWT"));
 const router = (0, express_1.Router)();
 router.route('/post').post(verifyJWT_1.default, post_1.createPost);
+router.route('/post').get(post_1.getPost);
+router.route('/post').delete(verifyJWT_1.default, post_1.deletePost);
 router.route('/posts/recommendation').get(verifyJWT_1.default, post_1.getRecommendPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(post_1.getPostsOnBoard);
