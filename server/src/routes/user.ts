@@ -10,6 +10,7 @@ import {
   getNotifications,
   readAllNotifications,
   getUserImage,
+  changeImage,
 } from '../controllers/user';
 import verifyJWT from '../middleware/verifyJWT';
 import uploadImage from '../middleware/uploadImage';
@@ -23,6 +24,9 @@ router.route('/user/signin').post(signIn);
 router.route('/user/read').post(verifyJWT, updateUserRead);
 router.route('/user/name').get(getUserName);
 router.route('/user/image').get(getUserImage);
+router
+  .route('/user/image')
+  .post(uploadImage, uploadToS3, verifyJWT, changeImage);
 router.route('/user/relation').get(verifyJWT, getUserRelation);
 router.route('/user/request').post(verifyJWT, sendRequest);
 router.route('/user/cancelRequest').post(verifyJWT, cancelRequest);

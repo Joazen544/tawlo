@@ -25,11 +25,6 @@ export async function signUp(req: Request, res: Response) {
       image = req.file.filename;
     }
 
-    console.log('file');
-    console.log(req.file);
-    console.log('files');
-    console.log(req.files);
-
     const userData = await User.create({
       name,
       email,
@@ -362,6 +357,31 @@ export async function readAllNotifications(
     }
 
     res.json({ message: 'read all notifications' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changeImage(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    let imageName;
+    if (req.file) {
+      imageName = req.file.filename;
+    } else {
+      res.status(400).json({ error: 'no image in req' });
+    }
+
+    console.log(`image is ${imageName}`);
+    console.log(user);
+
+    await User.updateOne({ _id: user }, { $set: { image: imageName } });
+
+    res.json({ image: `${CDN_DOMAIN}/user-image/${imageName}` });
   } catch (err) {
     next(err);
   }

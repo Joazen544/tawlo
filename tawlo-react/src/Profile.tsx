@@ -19,6 +19,7 @@ const Profile = () => {
   );
   const [userName, setUserName] = useState('');
   const [ifLogOut, setIfLogOut] = useState(false);
+  const [userImage, setUserImage] = useState<string>();
 
   const { userId } = useParams();
 
@@ -32,7 +33,6 @@ const Profile = () => {
     } else {
       setIfOwnProfile(false);
     }
-
     axios
       .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${userId}`)
       .then((res) => {
@@ -141,6 +141,44 @@ const Profile = () => {
       });
   };
 
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/image?id=${userId}`)
+      .then((res) => {
+        if (res.data.image) {
+          setUserImage(res.data.image);
+        } else {
+          setUserImage('');
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
+  const handleUserImageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const formData = new FormData();
+      formData.append('image', file);
+      axios
+        .post(`${import.meta.env.VITE_DOMAIN}/api/user/image`, formData, {
+          headers: {
+            authorization: `Bearer ${token}`,
+            'content-type': 'multipart/form-data',
+          },
+        })
+        .then((res) => {
+          setUserImage(res.data.image);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  };
+
   return (
     <>
       {userId === 'not-log-in' && (
@@ -149,8 +187,53 @@ const Profile = () => {
       {ifLogOut && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header target={messageTarget} />
       {ifOwnProfile && (
-        <div>
-          <button onClick={logOut}>Log out</button>
+        <div className="max-w-md mx-auto mt-8 p-4 bg-white shadow-md flex">
+          <div>
+            <h1 className="text-2xl font-bold mb-4">{userName}</h1>
+            <div
+              id="userImage"
+              className="h-32 w-32 border-2 border-solid border-gray-400 bg-user-image bg-contain bg-no-repeat"
+            >
+              {userImage && (
+                <img
+                  style={{ objectFit: 'cover' }}
+                  src={userImage}
+                  alt="user-image"
+                  className="h-full w-full"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="mb-4 flex ml-10">
+            <div id="logOutButton">
+              <button
+                className={
+                  'bg-red-500 text-white px-4 py-2 text-xs rounded hover:bg-red-600'
+                }
+                onClick={logOut}
+              >
+                登出
+              </button>
+            </div>
+            <div id="logOutButton" className="ml-10">
+              <label
+                htmlFor="changeImage"
+                className={
+                  'bg-gray-400 text-white px-4 py-2 text-xs rounded hover:bg-gray-500 cursor-pointer'
+                }
+              >
+                更換頭貼
+              </label>
+              <input
+                id="changeImage"
+                type="file"
+                style={{ display: 'none' }}
+                accept=".png,.jpeg,.jpg"
+                onChange={handleUserImageChange}
+              />
+            </div>
+          </div>
         </div>
       )}
       {!ifOwnProfile && (

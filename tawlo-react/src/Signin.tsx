@@ -170,6 +170,7 @@ const Signin = () => {
     event.preventDefault();
     try {
       setIsFetching(true);
+      setPreviewImage('1');
       const res = await axios.get('https://dog.ceo/api/breeds/image/random');
       if (res.data.status === 'success') {
         setPreviewImage(res.data.message);
@@ -265,8 +266,8 @@ const Signin = () => {
                   生成狗狗頭貼
                 </button>
               </div>
-              <div className="ml-10 h-32 w-32">
-                {previewImage && isFetching ? (
+              <div className="ml-10 h-32 w-32 border-solid border-2 border-gray-500">
+                {!previewImage ? null : isFetching ? (
                   <img
                     style={{ objectFit: 'cover' }}
                     src={loading}

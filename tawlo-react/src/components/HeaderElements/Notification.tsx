@@ -44,7 +44,6 @@ const Notification = () => {
       const unreadNotifications = resNotifications.filter(
         (notification) => !notification.read,
       );
-      console.log('watching');
 
       setUnreadCount(unreadNotifications.length);
     } catch (error) {
@@ -79,8 +78,6 @@ const Notification = () => {
   }, []); // 空的依賴陣列表示只在 component 被建立時設定一次
 
   useEffect(() => {
-    console.log('fetching');
-
     const fetchFunction = async () => {
       const nameArray: string[][] = [];
       for (let i = 0; i < notifications.length; i++) {
@@ -93,7 +90,6 @@ const Notification = () => {
 
           if (res.data.name) {
             const userName = res.data.name as string;
-            console.log('user name is: ' + userName);
 
             if (!nameArray[i]) {
               nameArray[i] = [userName];
@@ -154,8 +150,6 @@ const Notification = () => {
               console.log(err);
             })
             .finally(() => {
-              console.log('watching');
-
               setUnreadCount((pre) => pre + 1);
             });
         }
@@ -181,7 +175,6 @@ const Notification = () => {
             progress: undefined,
             theme: 'light',
           });
-          console.log('watching');
 
           setUnreadCount((pre) => pre + 1);
         }
@@ -249,7 +242,6 @@ const Notification = () => {
           },
         },
       );
-      console.log('watching');
 
       setUnreadCount(0);
     } // 將未讀數量歸零
