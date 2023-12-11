@@ -216,7 +216,7 @@ export async function getAutoRecommendedPosts(
                 '$score',
                 {
                   $multiply: [
-                    -200,
+                    -400,
                     {
                       $size: {
                         $filter: {

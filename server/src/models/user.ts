@@ -249,7 +249,7 @@ export async function updateUserReadPosts(
     {
       $set: {
         read_posts: {
-          $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -30],
+          $slice: [{ $concatArrays: ['$read_posts', readPosts] }, -100],
         },
       },
     },
