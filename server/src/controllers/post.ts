@@ -12,6 +12,7 @@ import {
   UserDocument,
   addNotificationToUserDB,
 } from '../models/user';
+import { addPostTagsToDB, getRecommendedTags } from '../models/tag';
 import { getIO } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
@@ -181,6 +182,13 @@ export async function createPost(req: Request, res: Response) {
       }
     } else {
       res.status(400).json({ error: 'The category of post is wrong' });
+    }
+
+    try {
+      addPostTagsToDB(tags);
+    } catch (err) {
+      console.log(err);
+      console.log('something goes wrong adding post tags to DB');
     }
 
     res.json({
@@ -1466,6 +1474,28 @@ export async function deletePost(
     await Post.updateOne({ _id: id }, { $set: { is_delete: true } });
 
     res.json({ message: 'post deleted' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getTags(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { search } = req.query;
+
+    if (!search) {
+      res.status(400).json({ error: 'search missing' });
+      return;
+    }
+
+    if (typeof search !== 'string') {
+      res.status(400).json({ error: 'search invalid' });
+      return;
+    }
+
+    const tags = await getRecommendedTags(search);
+
+    res.json(tags);
   } catch (err) {
     next(err);
   }

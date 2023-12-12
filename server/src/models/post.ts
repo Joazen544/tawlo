@@ -184,27 +184,6 @@ export async function getAutoRecommendedPosts(
     scoring -= 10;
   });
 
-  //
-  // read_posts.forEach(post=>{
-  //   aggregateArray.push({
-  //     $set: {
-  //       score: {
-  //         $cond: [
-  //           {
-  //             $in: [post, '$tags'],
-  //           },
-  //           {
-  //             $add: ['$score', -50],
-  //           },
-  //           {
-  //             $add: ['$score', 0],
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   });
-  // })
-
   aggregateArray.push(
     {
       $set: {
@@ -216,7 +195,7 @@ export async function getAutoRecommendedPosts(
                 '$score',
                 {
                   $multiply: [
-                    -400,
+                    -300,
                     {
                       $size: {
                         $filter: {
@@ -228,10 +207,36 @@ export async function getAutoRecommendedPosts(
                     },
                   ],
                 },
+                {
+                  $multiply: [
+                    200,
+                    {
+                      $dateDiff: {
+                        startDate: '$$NOW',
+                        endDate: '$update_date',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
               ],
             },
             {
-              $add: ['$score', 0],
+              $add: [
+                '$score',
+                {
+                  $multiply: [
+                    200,
+                    {
+                      $dateDiff: {
+                        startDate: '$$NOW',
+                        endDate: '$update_date',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },
