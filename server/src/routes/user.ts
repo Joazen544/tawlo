@@ -11,6 +11,7 @@ import {
   readAllNotifications,
   getUserImage,
   changeImage,
+  getFriendsList,
 } from '../controllers/user';
 import verifyJWT from '../middleware/verifyJWT';
 import uploadImage from '../middleware/uploadImage';
@@ -32,5 +33,6 @@ router.route('/user/request').post(verifyJWT, sendRequest);
 router.route('/user/cancelRequest').post(verifyJWT, cancelRequest);
 router.route('/user/notification').get(verifyJWT, getNotifications);
 router.route('/user/notification').post(verifyJWT, readAllNotifications);
+router.route('/user/friends').get(verifyJWT, getFriendsList);
 
 export default router;

@@ -386,3 +386,30 @@ export async function changeImage(
     next(err);
   }
 }
+
+export async function getFriendsList(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+
+    const userInfo = await User.findOne({ _id: user });
+
+    if (!userInfo) {
+      res.status(400).json({ error: 'user does not exist' });
+      return;
+    }
+
+    const friendArray = userInfo.friends.filter(
+      (friend) => friend.status === 'friends',
+    );
+
+    const returnArray = friendArray.map((el) => el.user);
+
+    res.json(returnArray);
+  } catch (err) {
+    next(err);
+  }
+}

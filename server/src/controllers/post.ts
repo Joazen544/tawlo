@@ -12,7 +12,11 @@ import {
   UserDocument,
   addNotificationToUserDB,
 } from '../models/user';
-import { addPostTagsToDB, getRecommendedTags } from '../models/tag';
+import {
+  addPostTagsToDB,
+  getAutoCompleteTags,
+  getRelevantTagsFromDB,
+} from '../models/tag';
 import { getIO } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
@@ -1479,7 +1483,11 @@ export async function deletePost(
   }
 }
 
-export async function getTags(req: Request, res: Response, next: NextFunction) {
+export async function getAutoTags(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { search } = req.query;
 
@@ -1493,9 +1501,51 @@ export async function getTags(req: Request, res: Response, next: NextFunction) {
       return;
     }
 
-    const tags = await getRecommendedTags(search);
+    const tags = await getAutoCompleteTags(search);
 
     res.json(tags);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getRelevantTags(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { tag } = req.query;
+
+    if (!tag) {
+      res.status(400).json({ error: 'tag undefined' });
+      return;
+    }
+
+    if (typeof tag !== 'string') {
+      res.status(400).json({ error: 'tag is not string' });
+      return;
+    }
+
+    const tags = await getRelevantTagsFromDB(tag);
+
+    if (tags === 'error') {
+      res.status(400).json({ error: 'tag not found' });
+      return;
+    }
+
+    const obj = new Map();
+    const returnArray: string[] = [];
+
+    tags.forEach((eachTag) => {
+      if (!obj.get(eachTag)) {
+        obj.set(eachTag, 1);
+      } else if (obj.get(eachTag) === 1) {
+        returnArray.push(eachTag);
+        obj.set(eachTag, 2);
+      }
+    });
+    res.json(returnArray);
   } catch (err) {
     next(err);
   }

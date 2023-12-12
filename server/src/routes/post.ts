@@ -11,7 +11,8 @@ import {
   getMotherAndReplies,
   getPost,
   deletePost,
-  getTags,
+  getAutoTags,
+  getRelevantTags,
 } from '../controllers/post';
 import verifyJWT from '../middleware/verifyJWT';
 
@@ -29,6 +30,7 @@ router.route('/post/:postId/comment/like').post(verifyJWT, likeComment);
 router.route('/post/:postId/like').post(verifyJWT, likePost);
 router.route('/post/:postId/upvote').post(verifyJWT, upvotePost);
 router.route('/post/:postId/downvote').post(verifyJWT, downvotePost);
-router.route('/post/tags').get(getTags);
+router.route('/post/tags/auto').get(getAutoTags);
+router.route('/post/tags/relevant').get(getRelevantTags);
 
 export default router;

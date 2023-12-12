@@ -28,8 +28,9 @@ const tagSchema = new mongoose.Schema<TagDocument>({
 const Tag = mongoose.model('Tag', tagSchema);
 
 export async function addPostTagsToDB(tags: string[]) {
-  const arr = tags.map((tag) => {
-    const releventTags = tags.filter((el) => el !== tag);
+  const tagArray = tags.map((el) => el.toLowerCase());
+  const arr = tagArray.map((tag) => {
+    const releventTags = tagArray.filter((el) => el !== tag);
 
     return {
       updateOne: {
@@ -46,20 +47,20 @@ export async function addPostTagsToDB(tags: string[]) {
   await Tag.bulkWrite(arr);
 }
 
-export async function getRecommendedTags(search: string) {
+export async function getAutoCompleteTags(search: string) {
   const tags = await Tag.aggregate([
     {
       $search: {
         index: 'autoCompleteTags',
         autocomplete: {
-          query: search,
+          query: `${search}`,
           path: 'name',
           tokenOrder: 'sequential',
         },
       },
     },
     { $sort: { post_num: -1 } },
-    { $limit: 10 },
+    { $limit: 6 },
     {
       $project: {
         name: 1,
@@ -68,6 +69,16 @@ export async function getRecommendedTags(search: string) {
   ]);
 
   return tags;
+}
+
+export async function getRelevantTagsFromDB(tag: string) {
+  const tagsInfo = await Tag.findOne({ name: tag });
+
+  if (!tagsInfo) {
+    return 'error';
+  }
+
+  return tagsInfo.relevant;
 }
 
 export default Tag;

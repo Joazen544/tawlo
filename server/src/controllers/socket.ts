@@ -4,7 +4,7 @@ import http from 'http';
 import { verify } from '../utils/JWT';
 
 interface UserConnected {
-  [userId: string]: string[];
+  [userId: string]: { socketId: string[]; friends: string[] };
 }
 
 interface SocketConnected {
@@ -59,9 +59,12 @@ export function initSocket(server: http.Server) {
 
     socket.on('new-user', (data) => {
       if (usersConnected[data.userId]) {
-        usersConnected[data.userId].push(socket.id);
+        usersConnected[data.userId].socketId.push(socket.id);
       } else {
-        usersConnected[data.userId] = [socket.id];
+        usersConnected[data.userId] = { socketId: [], friends: [] };
+
+        usersConnected[data.userId].socketId = [socket.id];
+        usersConnected[data.userId].friends = data.friends;
         usersId.push(data.userId);
         socket.broadcast.emit('new-user', data.userId);
       }
@@ -85,12 +88,6 @@ export function initSocket(server: http.Server) {
           group: messageData.group,
         });
 
-        // await createMessage(
-        //   messageData.group,
-        //   messageData.from,
-        //   messageData.content,
-        // );
-
         socket.broadcast.to(messageData.to).emit('message', {
           message: messageData.content,
           from: messageData.from,
@@ -106,14 +103,15 @@ export function initSocket(server: http.Server) {
       try {
         if (
           usersConnected[socketsConnected[socket.id].userId] &&
-          usersConnected[socketsConnected[socket.id].userId].length > 1
+          usersConnected[socketsConnected[socket.id].userId].socketId.length > 1
         ) {
           // more than 1 socket id recorded in this user
           console.log('a socket disconnected');
 
-          usersConnected[socketsConnected[socket.id].userId] = usersConnected[
-            socketsConnected[socket.id].userId
-          ].filter((socketId) => socketId !== socket.id);
+          usersConnected[socketsConnected[socket.id].userId].socketId =
+            usersConnected[socketsConnected[socket.id].userId].socketId.filter(
+              (socketId) => socketId !== socket.id,
+            );
         } else {
           delete usersConnected[socketsConnected[socket.id].userId];
           usersId = usersId.filter(
