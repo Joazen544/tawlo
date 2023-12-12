@@ -47,10 +47,12 @@ function initSocket(server) {
             socket.emit('now-users', `These users are online: ${usersId}`);
         socket.on('new-user', (data) => {
             if (usersConnected[data.userId]) {
-                usersConnected[data.userId].push(socket.id);
+                usersConnected[data.userId].socketId.push(socket.id);
             }
             else {
-                usersConnected[data.userId] = [socket.id];
+                usersConnected[data.userId] = { socketId: [], friends: [] };
+                usersConnected[data.userId].socketId = [socket.id];
+                usersConnected[data.userId].friends = data.friends;
                 usersId.push(data.userId);
                 socket.broadcast.emit('new-user', data.userId);
             }
@@ -70,11 +72,6 @@ function initSocket(server) {
                     name: socketsConnected[socket.id].name,
                     group: messageData.group,
                 });
-                // await createMessage(
-                //   messageData.group,
-                //   messageData.from,
-                //   messageData.content,
-                // );
                 socket.broadcast.to(messageData.to).emit('message', {
                     message: messageData.content,
                     from: messageData.from,
@@ -89,10 +86,11 @@ function initSocket(server) {
         socket.on('disconnect', () => {
             try {
                 if (usersConnected[socketsConnected[socket.id].userId] &&
-                    usersConnected[socketsConnected[socket.id].userId].length > 1) {
+                    usersConnected[socketsConnected[socket.id].userId].socketId.length > 1) {
                     // more than 1 socket id recorded in this user
                     console.log('a socket disconnected');
-                    usersConnected[socketsConnected[socket.id].userId] = usersConnected[socketsConnected[socket.id].userId].filter((socketId) => socketId !== socket.id);
+                    usersConnected[socketsConnected[socket.id].userId].socketId =
+                        usersConnected[socketsConnected[socket.id].userId].socketId.filter((socketId) => socketId !== socket.id);
                 }
                 else {
                     delete usersConnected[socketsConnected[socket.id].userId];

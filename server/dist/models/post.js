@@ -147,26 +147,6 @@ function getAutoRecommendedPosts(preferenceTags, boards, read_posts) {
             });
             scoring -= 10;
         });
-        //
-        // read_posts.forEach(post=>{
-        //   aggregateArray.push({
-        //     $set: {
-        //       score: {
-        //         $cond: [
-        //           {
-        //             $in: [post, '$tags'],
-        //           },
-        //           {
-        //             $add: ['$score', -50],
-        //           },
-        //           {
-        //             $add: ['$score', 0],
-        //           },
-        //         ],
-        //       },
-        //     },
-        //   });
-        // })
         aggregateArray.push({
             $set: {
                 score: {
@@ -177,7 +157,7 @@ function getAutoRecommendedPosts(preferenceTags, boards, read_posts) {
                                 '$score',
                                 {
                                     $multiply: [
-                                        -400,
+                                        -300,
                                         {
                                             $size: {
                                                 $filter: {
@@ -189,10 +169,36 @@ function getAutoRecommendedPosts(preferenceTags, boards, read_posts) {
                                         },
                                     ],
                                 },
+                                {
+                                    $multiply: [
+                                        200,
+                                        {
+                                            $dateDiff: {
+                                                startDate: '$$NOW',
+                                                endDate: '$update_date',
+                                                unit: 'day',
+                                            },
+                                        },
+                                    ],
+                                },
                             ],
                         },
                         {
-                            $add: ['$score', 0],
+                            $add: [
+                                '$score',
+                                {
+                                    $multiply: [
+                                        200,
+                                        {
+                                            $dateDiff: {
+                                                startDate: '$$NOW',
+                                                endDate: '$update_date',
+                                                unit: 'day',
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
                         },
                     ],
                 },

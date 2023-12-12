@@ -23,4 +23,5 @@ router.route('/user/request').post(verifyJWT_1.default, user_1.sendRequest);
 router.route('/user/cancelRequest').post(verifyJWT_1.default, user_1.cancelRequest);
 router.route('/user/notification').get(verifyJWT_1.default, user_1.getNotifications);
 router.route('/user/notification').post(verifyJWT_1.default, user_1.readAllNotifications);
+router.route('/user/friends').get(verifyJWT_1.default, user_1.getFriendsList);
 exports.default = router;

@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserImage = exports.getUserName = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
+exports.getFriendsList = exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserImage = exports.getUserName = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
 const mongodb_1 = require("mongodb");
 const user_1 = __importStar(require("../models/user"));
 const JWT_1 = require("../utils/JWT");
@@ -375,3 +375,22 @@ function changeImage(req, res, next) {
     });
 }
 exports.changeImage = changeImage;
+function getFriendsList(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const userInfo = yield user_1.default.findOne({ _id: user });
+            if (!userInfo) {
+                res.status(400).json({ error: 'user does not exist' });
+                return;
+            }
+            const friendArray = userInfo.friends.filter((friend) => friend.status === 'friends');
+            const returnArray = friendArray.map((el) => el.user);
+            res.json(returnArray);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getFriendsList = getFriendsList;

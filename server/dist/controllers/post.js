@@ -32,10 +32,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
+exports.getRelevantTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post"));
 const user_1 = require("../models/user");
+const tag_1 = require("../models/tag");
 const socket_1 = require("./socket");
 const errorHandler_1 = require("../utils/errorHandler");
 function calculateMotherPostHot(postId, increaseField, increase) {
@@ -183,6 +184,13 @@ function createPost(req, res) {
             }
             else {
                 res.status(400).json({ error: 'The category of post is wrong' });
+            }
+            try {
+                (0, tag_1.addPostTagsToDB)(tags);
+            }
+            catch (err) {
+                console.log(err);
+                console.log('something goes wrong adding post tags to DB');
             }
             res.json({
                 postData,
@@ -1258,3 +1266,60 @@ function deletePost(req, res, next) {
     });
 }
 exports.deletePost = deletePost;
+function getAutoTags(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { search } = req.query;
+            if (!search) {
+                res.status(400).json({ error: 'search missing' });
+                return;
+            }
+            if (typeof search !== 'string') {
+                res.status(400).json({ error: 'search invalid' });
+                return;
+            }
+            const tags = yield (0, tag_1.getAutoCompleteTags)(search);
+            res.json(tags);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getAutoTags = getAutoTags;
+function getRelevantTags(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { tag } = req.query;
+            if (!tag) {
+                res.status(400).json({ error: 'tag undefined' });
+                return;
+            }
+            if (typeof tag !== 'string') {
+                res.status(400).json({ error: 'tag is not string' });
+                return;
+            }
+            const tags = yield (0, tag_1.getRelevantTagsFromDB)(tag);
+            if (tags === 'error') {
+                res.status(400).json({ error: 'tag not found' });
+                return;
+            }
+            const obj = new Map();
+            const returnArray = [];
+            tags.forEach((eachTag) => {
+                if (!obj.get(eachTag)) {
+                    obj.set(eachTag, 1);
+                }
+                else if (obj.get(eachTag) === 1) {
+                    returnArray.push(eachTag);
+                    obj.set(eachTag, 2);
+                }
+            });
+            res.json(returnArray);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getRelevantTags = getRelevantTags;

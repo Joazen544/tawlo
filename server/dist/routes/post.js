@@ -19,4 +19,6 @@ router.route('/post/:postId/comment/like').post(verifyJWT_1.default, post_1.like
 router.route('/post/:postId/like').post(verifyJWT_1.default, post_1.likePost);
 router.route('/post/:postId/upvote').post(verifyJWT_1.default, post_1.upvotePost);
 router.route('/post/:postId/downvote').post(verifyJWT_1.default, post_1.downvotePost);
+router.route('/post/tags/auto').get(post_1.getAutoTags);
+router.route('/post/tags/relevant').get(post_1.getRelevantTags);
 exports.default = router;
