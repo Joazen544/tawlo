@@ -70,6 +70,7 @@ const PostPage = () => {
               downvote={postInfo.downvote}
               comments={postInfo.comments}
               clickReply={() => {}}
+              clickDelete={() => {}}
             />
           )}
         </div>

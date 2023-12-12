@@ -153,6 +153,7 @@ const Discussion = () => {
                 downvote={postsRender[0].downvote}
                 comments={postsRender[0].comments}
                 clickReply={() => setIfAppendReplyArea(!ifAppendReplyArea)}
+                clickDelete={() => {}}
               />
             )}
             {ifAppendReplyArea && (
@@ -185,6 +186,7 @@ const Discussion = () => {
                     downvote={post.downvote}
                     comments={post.comments}
                     clickReply={() => {}}
+                    clickDelete={() => {}}
                   />
                 );
               }
