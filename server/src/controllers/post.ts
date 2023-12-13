@@ -44,12 +44,6 @@ async function calculateMotherPostHot(
   } else {
     num = -1;
   }
-  // console.log('num is: ');
-  // console.log(num);
-
-  // console.log('post id is: ');
-
-  // console.log(postId);
 
   const calculateResult = await Post.updateOne({ _id: postId }, [
     {
@@ -60,21 +54,10 @@ async function calculateMotherPostHot(
     {
       $set: {
         hot: {
-          $divide: [
+          $multiply: [
+            100,
             {
               $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-            },
-            {
-              $add: [
-                1,
-                {
-                  $dateDiff: {
-                    startDate: '$publish_date',
-                    endDate: '$$NOW',
-                    unit: 'day',
-                  },
-                },
-              ],
             },
           ],
         },
@@ -287,21 +270,10 @@ export async function commentPost(
         {
           $set: {
             hot: {
-              $divide: [
+              $multiply: [
+                100,
                 {
                   $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-                {
-                  $add: [
-                    1,
-                    {
-                      $dateDiff: {
-                        startDate: '$publish_date',
-                        endDate: '$$NOW',
-                        unit: 'day',
-                      },
-                    },
-                  ],
                 },
               ],
             },
@@ -600,21 +572,10 @@ export async function likePost(req: Request, res: Response) {
         {
           $set: {
             hot: {
-              $divide: [
+              $multiply: [
+                100,
                 {
                   $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-                {
-                  $add: [
-                    1,
-                    {
-                      $dateDiff: {
-                        startDate: '$publish_date',
-                        endDate: '$$NOW',
-                        unit: 'day',
-                      },
-                    },
-                  ],
                 },
               ],
             },
@@ -796,21 +757,10 @@ export async function upvotePost(req: Request, res: Response) {
         {
           $set: {
             hot: {
-              $divide: [
+              $multiply: [
+                100,
                 {
                   $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-                {
-                  $add: [
-                    1,
-                    {
-                      $dateDiff: {
-                        startDate: '$publish_date',
-                        endDate: '$$NOW',
-                        unit: 'day',
-                      },
-                    },
-                  ],
                 },
               ],
             },
@@ -852,21 +802,10 @@ export async function upvotePost(req: Request, res: Response) {
           {
             $set: {
               hot: {
-                $divide: [
+                $multiply: [
+                  100,
                   {
                     $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                  },
-                  {
-                    $add: [
-                      1,
-                      {
-                        $dateDiff: {
-                          startDate: '$publish_date',
-                          endDate: '$$NOW',
-                          unit: 'day',
-                        },
-                      },
-                    ],
                   },
                 ],
               },
@@ -974,21 +913,10 @@ export async function upvotePost(req: Request, res: Response) {
             {
               $set: {
                 hot: {
-                  $divide: [
+                  $multiply: [
+                    100,
                     {
                       $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                    },
-                    {
-                      $add: [
-                        1,
-                        {
-                          $dateDiff: {
-                            startDate: '$publish_date',
-                            endDate: '$$NOW',
-                            unit: 'day',
-                          },
-                        },
-                      ],
                     },
                   ],
                 },

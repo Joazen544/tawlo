@@ -9,7 +9,9 @@ import User, {
   getNotificationsFromDB,
   readNotificationsFromDB,
   addNotificationToUserDB,
-  getUserImageFromDB,
+  // getUserImageFromDB,
+  getUserInfoFromDB,
+  refuseRequestFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 import { getIO } from './socket';
@@ -122,30 +124,65 @@ export async function updateUserRead(req: Request, res: Response) {
   }
 }
 
-export async function getUserName(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    let user;
-    if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
+// export async function getUserName(
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ) {
+//   try {
+//     let user;
+//     if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
 
-    // console.log(user);
+//     // console.log(user);
 
-    const userInfo = await User.findOne({ _id: user }, { name: 1 });
+//     const userInfo = await User.findOne({ _id: user }, { name: 1 });
 
-    if (userInfo && userInfo.name) {
-      res.json({ name: userInfo.name });
-    } else {
-      throw Error('can not find user name');
-    }
-  } catch (err) {
-    next(err);
-  }
-}
+//     if (userInfo && userInfo.name) {
+//       res.json({ name: userInfo.name });
+//     } else {
+//       throw Error('can not find user name');
+//     }
+//   } catch (err) {
+//     next(err);
+//   }
+// }
 
-export async function getUserImage(
+// export async function getUserImage(
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ) {
+//   try {
+//     const { id } = req.query;
+//     if (!id) {
+//       res.status(400).json({ error: 'user id is not in req body' });
+//       return;
+//     }
+
+//     if (typeof id !== 'string') {
+//       res.status(400).json({ error: 'user id is not string' });
+//       return;
+//     }
+
+//     const userInfo = await getUserImageFromDB(id);
+
+//     if (!userInfo) {
+//       res.status(400).json({ error: 'user does not exist' });
+//       return;
+//     }
+
+//     if (userInfo.image === '') {
+//       res.json({ image: '' });
+//       return;
+//     }
+
+//     res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+
+export async function getUserInfo(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -162,19 +199,21 @@ export async function getUserImage(
       return;
     }
 
-    const userInfo = await getUserImageFromDB(id);
+    const userInfo = await getUserInfoFromDB(id);
 
     if (!userInfo) {
       res.status(400).json({ error: 'user does not exist' });
       return;
     }
 
+    let imageUrl;
     if (userInfo.image === '') {
-      res.json({ image: '' });
-      return;
+      imageUrl = '';
+    } else {
+      imageUrl = `${CDN_DOMAIN}/user-image/${userInfo.image}`;
     }
 
-    res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
+    res.json({ image: imageUrl, name: userInfo.name });
   } catch (err) {
     next(err);
   }
@@ -409,6 +448,70 @@ export async function getFriendsList(
     const returnArray = friendArray.map((el) => el.user);
 
     res.json(returnArray);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAllFriendsList(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+
+    const userInfo = await User.findOne({ _id: user });
+
+    if (!userInfo) {
+      res.status(400).json({ error: 'user does not exist' });
+      return;
+    }
+
+    const requestedFriendArray: ObjectId[] = [];
+    const receiveFriendArray: ObjectId[] = [];
+    const friendArray: ObjectId[] = [];
+
+    userInfo.friends.forEach((friend) => {
+      if (friend.status === 'requested') {
+        requestedFriendArray.push(friend.user);
+      } else if (friend.status === 'received') {
+        receiveFriendArray.push(friend.user);
+      } else if (friend.status === 'friends') {
+        friendArray.push(friend.user);
+      }
+    });
+
+    res.json({
+      friend: friendArray,
+      requested: requestedFriendArray,
+      receive: receiveFriendArray,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function refuseRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { user } = req.body;
+    const id = req.query.id as string;
+
+    if (!id) {
+      res.status(500).json({ error: 'target id is missing' });
+      return;
+    }
+
+    const result = await refuseRequestFromDB(user, id);
+    if (result) {
+      res.json({ status: 'refuse request success' });
+      return;
+    }
+    res.status(500).json({ error: 'refuse request fail' });
   } catch (err) {
     next(err);
   }

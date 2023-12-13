@@ -555,4 +555,46 @@ export async function getUserImageFromDB(user: string) {
   return userInfo;
 }
 
+export async function getUserInfoFromDB(user: string) {
+  const userInfo = await User.findOne({ _id: user });
+
+  return userInfo;
+}
+
+export async function refuseRequestFromDB(user: string, target: string) {
+  const session = await User.startSession();
+  let result;
+  try {
+    session.startTransaction();
+    const relation = await getUserRelationFromDB(user, target);
+    if (relation === null) {
+      throw Error('the relation does not exist');
+    } else if (relation !== 'received') {
+      throw Error('friends relation is not received');
+    }
+
+    await User.updateOne(
+      { _id: user },
+      { $pull: { friends: { user: target } } },
+      { session },
+    );
+
+    await User.updateOne(
+      { _id: target },
+      { $pull: { friends: { user } } },
+      { session },
+    );
+
+    await session.commitTransaction();
+    result = true;
+  } catch (err) {
+    console.log(err);
+    await session.abortTransaction();
+    result = false;
+  } finally {
+    await session.endSession();
+  }
+  return result;
+}
+
 export default User;
