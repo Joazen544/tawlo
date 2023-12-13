@@ -83,8 +83,8 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
         const creatorShouldShare = [];
         toAsk.forEach((ask) => {
             creatorShouldShare.push({
-                text: {
-                    query: `"${ask}"`,
+                phrase: {
+                    query: `${ask}`,
                     path: 'to_share',
                 },
             });
@@ -92,8 +92,8 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
         const creatorShouldAsk = [];
         toShare.forEach((share) => {
             creatorShouldAsk.push({
-                text: {
-                    query: `"${share}"`,
+                phrase: {
+                    query: `${share}`,
                     path: 'to_ask',
                 },
             });
@@ -130,8 +130,8 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
                         mustNot: mustNotArray,
                         filter: [
                             {
-                                text: {
-                                    query: '"pending"',
+                                phrase: {
+                                    query: 'pending',
                                     path: 'status',
                                 },
                             },

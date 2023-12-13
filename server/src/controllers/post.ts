@@ -1505,6 +1505,9 @@ export async function searchPost(
     const must = req.query.must as string;
     const tags = req.query.tags as string;
 
+    console.log(should);
+    console.log(must);
+
     let shouldArray: string[] = [];
     if (should !== undefined) {
       shouldArray = Array.isArray(should) ? should : [should].filter(Boolean);

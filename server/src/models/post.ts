@@ -4,7 +4,7 @@ import { AggregationInterface } from './meeting';
 
 const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
-const SEARCH_POST_PER_PAGE = 10;
+const SEARCH_POST_PER_PAGE = 20;
 
 interface PostDocument {
   is_delete: boolean;
@@ -425,6 +425,7 @@ export async function searchPostsFromDB(
     {
       $match: {
         is_delete: false,
+        category: { $ne: 'reply' },
       },
     },
     {

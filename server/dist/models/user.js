@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserImageFromDB = exports.readNotificationsFromDB = exports.getNotificationsFromDB = exports.addNotificationToUserDB = exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
+exports.refuseRequestFromDB = exports.getUserInfoFromDB = exports.getUserImageFromDB = exports.readNotificationsFromDB = exports.getNotificationsFromDB = exports.addNotificationToUserDB = exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const validator_1 = __importDefault(require("validator"));
@@ -468,4 +468,41 @@ function getUserImageFromDB(user) {
     });
 }
 exports.getUserImageFromDB = getUserImageFromDB;
+function getUserInfoFromDB(user) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userInfo = yield User.findOne({ _id: user });
+        return userInfo;
+    });
+}
+exports.getUserInfoFromDB = getUserInfoFromDB;
+function refuseRequestFromDB(user, target) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const session = yield User.startSession();
+        let result;
+        try {
+            session.startTransaction();
+            const relation = yield getUserRelationFromDB(user, target);
+            if (relation === null) {
+                throw Error('the relation does not exist');
+            }
+            else if (relation !== 'received') {
+                throw Error('friends relation is not received');
+            }
+            yield User.updateOne({ _id: user }, { $pull: { friends: { user: target } } }, { session });
+            yield User.updateOne({ _id: target }, { $pull: { friends: { user } } }, { session });
+            yield session.commitTransaction();
+            result = true;
+        }
+        catch (err) {
+            console.log(err);
+            yield session.abortTransaction();
+            result = false;
+        }
+        finally {
+            yield session.endSession();
+        }
+        return result;
+    });
+}
+exports.refuseRequestFromDB = refuseRequestFromDB;
 exports.default = User;

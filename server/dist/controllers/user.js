@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFriendsList = exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserImage = exports.getUserName = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
+exports.refuseRequest = exports.getAllFriendsList = exports.getFriendsList = exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserInfo = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
 const mongodb_1 = require("mongodb");
 const user_1 = __importStar(require("../models/user"));
 const JWT_1 = require("../utils/JWT");
@@ -140,28 +140,55 @@ function updateUserRead(req, res) {
     });
 }
 exports.updateUserRead = updateUserRead;
-function getUserName(req, res, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            let user;
-            if (req.query.id && typeof req.query.id === 'string')
-                user = req.query.id;
-            // console.log(user);
-            const userInfo = yield user_1.default.findOne({ _id: user }, { name: 1 });
-            if (userInfo && userInfo.name) {
-                res.json({ name: userInfo.name });
-            }
-            else {
-                throw Error('can not find user name');
-            }
-        }
-        catch (err) {
-            next(err);
-        }
-    });
-}
-exports.getUserName = getUserName;
-function getUserImage(req, res, next) {
+// export async function getUserName(
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ) {
+//   try {
+//     let user;
+//     if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
+//     // console.log(user);
+//     const userInfo = await User.findOne({ _id: user }, { name: 1 });
+//     if (userInfo && userInfo.name) {
+//       res.json({ name: userInfo.name });
+//     } else {
+//       throw Error('can not find user name');
+//     }
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+// export async function getUserImage(
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ) {
+//   try {
+//     const { id } = req.query;
+//     if (!id) {
+//       res.status(400).json({ error: 'user id is not in req body' });
+//       return;
+//     }
+//     if (typeof id !== 'string') {
+//       res.status(400).json({ error: 'user id is not string' });
+//       return;
+//     }
+//     const userInfo = await getUserImageFromDB(id);
+//     if (!userInfo) {
+//       res.status(400).json({ error: 'user does not exist' });
+//       return;
+//     }
+//     if (userInfo.image === '') {
+//       res.json({ image: '' });
+//       return;
+//     }
+//     res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+function getUserInfo(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const { id } = req.query;
@@ -173,23 +200,26 @@ function getUserImage(req, res, next) {
                 res.status(400).json({ error: 'user id is not string' });
                 return;
             }
-            const userInfo = yield (0, user_1.getUserImageFromDB)(id);
+            const userInfo = yield (0, user_1.getUserInfoFromDB)(id);
             if (!userInfo) {
                 res.status(400).json({ error: 'user does not exist' });
                 return;
             }
+            let imageUrl;
             if (userInfo.image === '') {
-                res.json({ image: '' });
-                return;
+                imageUrl = '';
             }
-            res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
+            else {
+                imageUrl = `${CDN_DOMAIN}/user-image/${userInfo.image}`;
+            }
+            res.json({ image: imageUrl, name: userInfo.name });
         }
         catch (err) {
             next(err);
         }
     });
 }
-exports.getUserImage = getUserImage;
+exports.getUserInfo = getUserInfo;
 function getUserRelation(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -394,3 +424,60 @@ function getFriendsList(req, res, next) {
     });
 }
 exports.getFriendsList = getFriendsList;
+function getAllFriendsList(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const userInfo = yield user_1.default.findOne({ _id: user });
+            if (!userInfo) {
+                res.status(400).json({ error: 'user does not exist' });
+                return;
+            }
+            const requestedFriendArray = [];
+            const receiveFriendArray = [];
+            const friendArray = [];
+            userInfo.friends.forEach((friend) => {
+                if (friend.status === 'requested') {
+                    requestedFriendArray.push(friend.user);
+                }
+                else if (friend.status === 'received') {
+                    receiveFriendArray.push(friend.user);
+                }
+                else if (friend.status === 'friends') {
+                    friendArray.push(friend.user);
+                }
+            });
+            res.json({
+                friend: friendArray,
+                requested: requestedFriendArray,
+                receive: receiveFriendArray,
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getAllFriendsList = getAllFriendsList;
+function refuseRequest(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const id = req.query.id;
+            if (!id) {
+                res.status(500).json({ error: 'target id is missing' });
+                return;
+            }
+            const result = yield (0, user_1.refuseRequestFromDB)(user, id);
+            if (result) {
+                res.json({ status: 'refuse request success' });
+                return;
+            }
+            res.status(500).json({ error: 'refuse request fail' });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.refuseRequest = refuseRequest;

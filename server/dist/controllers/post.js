@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRelevantTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
+exports.searchPost = exports.getRelevantTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post"));
 const user_1 = require("../models/user");
@@ -63,10 +63,6 @@ function calculateMotherPostHot(postId, increaseField, increase) {
         else {
             num = -1;
         }
-        // console.log('num is: ');
-        // console.log(num);
-        // console.log('post id is: ');
-        // console.log(postId);
         const calculateResult = yield post_1.default.updateOne({ _id: postId }, [
             {
                 $set: {
@@ -76,21 +72,10 @@ function calculateMotherPostHot(postId, increaseField, increase) {
             {
                 $set: {
                     hot: {
-                        $divide: [
+                        $multiply: [
+                            100,
                             {
                                 $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                            },
-                            {
-                                $add: [
-                                    1,
-                                    {
-                                        $dateDiff: {
-                                            startDate: '$publish_date',
-                                            endDate: '$$NOW',
-                                            unit: 'day',
-                                        },
-                                    },
-                                ],
                             },
                         ],
                     },
@@ -273,21 +258,10 @@ function commentPost(req, res, next) {
                     {
                         $set: {
                             hot: {
-                                $divide: [
+                                $multiply: [
+                                    100,
                                     {
                                         $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                                    },
-                                    {
-                                        $add: [
-                                            1,
-                                            {
-                                                $dateDiff: {
-                                                    startDate: '$publish_date',
-                                                    endDate: '$$NOW',
-                                                    unit: 'day',
-                                                },
-                                            },
-                                        ],
                                     },
                                 ],
                             },
@@ -527,21 +501,10 @@ function likePost(req, res) {
                     {
                         $set: {
                             hot: {
-                                $divide: [
+                                $multiply: [
+                                    100,
                                     {
                                         $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                                    },
-                                    {
-                                        $add: [
-                                            1,
-                                            {
-                                                $dateDiff: {
-                                                    startDate: '$publish_date',
-                                                    endDate: '$$NOW',
-                                                    unit: 'day',
-                                                },
-                                            },
-                                        ],
                                     },
                                 ],
                             },
@@ -687,21 +650,10 @@ function upvotePost(req, res) {
                     {
                         $set: {
                             hot: {
-                                $divide: [
+                                $multiply: [
+                                    100,
                                     {
                                         $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                                    },
-                                    {
-                                        $add: [
-                                            1,
-                                            {
-                                                $dateDiff: {
-                                                    startDate: '$publish_date',
-                                                    endDate: '$$NOW',
-                                                    unit: 'day',
-                                                },
-                                            },
-                                        ],
                                     },
                                 ],
                             },
@@ -741,21 +693,10 @@ function upvotePost(req, res) {
                         {
                             $set: {
                                 hot: {
-                                    $divide: [
+                                    $multiply: [
+                                        100,
                                         {
                                             $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                                        },
-                                        {
-                                            $add: [
-                                                1,
-                                                {
-                                                    $dateDiff: {
-                                                        startDate: '$publish_date',
-                                                        endDate: '$$NOW',
-                                                        unit: 'day',
-                                                    },
-                                                },
-                                            ],
                                         },
                                     ],
                                 },
@@ -833,21 +774,10 @@ function upvotePost(req, res) {
                         {
                             $set: {
                                 hot: {
-                                    $divide: [
+                                    $multiply: [
+                                        100,
                                         {
                                             $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                                        },
-                                        {
-                                            $add: [
-                                                1,
-                                                {
-                                                    $dateDiff: {
-                                                        startDate: '$publish_date',
-                                                        endDate: '$$NOW',
-                                                        unit: 'day',
-                                                    },
-                                                },
-                                            ],
                                         },
                                     ],
                                 },
@@ -1323,3 +1253,54 @@ function getRelevantTags(req, res, next) {
     });
 }
 exports.getRelevantTags = getRelevantTags;
+function searchPost(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            if (!req.query.should && !req.query.must) {
+                res.status(400).json({ error: 'search missing' });
+                return;
+            }
+            let paging;
+            if (req.query.paging && !Number.isNaN(req.query.paging)) {
+                paging = +req.query.paging;
+            }
+            else if (Number.isNaN(req.query.paging)) {
+                throw new errorHandler_1.ValidationError('paging must be type number');
+            }
+            else {
+                paging = 0;
+            }
+            const should = req.query.should;
+            const must = req.query.must;
+            const tags = req.query.tags;
+            console.log(should);
+            console.log(must);
+            let shouldArray = [];
+            if (should !== undefined) {
+                shouldArray = Array.isArray(should) ? should : [should].filter(Boolean);
+            }
+            let mustArray = [];
+            if (must !== undefined) {
+                mustArray = Array.isArray(must) ? must : [must].filter(Boolean);
+            }
+            let tagArray = [];
+            if (tags !== undefined) {
+                tagArray = Array.isArray(tags) ? tags : [tags].filter(Boolean);
+            }
+            if (!shouldArray.every((item) => typeof item === 'string') ||
+                !mustArray.every((item) => typeof item === 'string') ||
+                !tagArray.every((item) => typeof item === 'string')) {
+                res.status(400).json({
+                    error: '"should" and "must" "tags" must be strings or arrays of strings',
+                });
+                return;
+            }
+            const result = yield (0, post_1.searchPostsFromDB)(mustArray, shouldArray, tagArray, paging);
+            res.json({ posts: result.posts, nextPage: result.ifNextPage });
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.searchPost = searchPost;

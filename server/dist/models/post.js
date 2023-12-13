@@ -12,11 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPostFromDB = exports.getMotherAndReplyPostsFromDB = exports.getBoardPostsFromDB = exports.getAutoRecommendedPosts = void 0;
+exports.searchPostsFromDB = exports.getPostFromDB = exports.getMotherAndReplyPostsFromDB = exports.getBoardPostsFromDB = exports.getAutoRecommendedPosts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
+const SEARCH_POST_PER_PAGE = 20;
 const postSchema = new mongoose_1.default.Schema({
     is_delete: {
         type: Boolean,
@@ -291,4 +292,104 @@ function getPostFromDB(post) {
     });
 }
 exports.getPostFromDB = getPostFromDB;
+function searchPostsFromDB(mustArray, shouldArray, tagArray, paging) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const postTitleShouldArray = [];
+        const postContentMustArray = [];
+        const postContentShouldArray = [];
+        const tagShouldArray = [];
+        mustArray.forEach((must) => {
+            postContentMustArray.push({
+                phrase: {
+                    query: `${must}`,
+                    path: 'content',
+                },
+            });
+            postTitleShouldArray.push({
+                phrase: {
+                    query: `${must}`,
+                    path: 'title',
+                },
+            });
+        });
+        shouldArray.forEach((should) => {
+            postContentShouldArray.push({
+                phrase: {
+                    query: `${should}`,
+                    path: 'content',
+                },
+            });
+            postTitleShouldArray.push({
+                phrase: {
+                    query: `${should}`,
+                    path: 'title',
+                },
+            });
+        });
+        const shouldAllArray = [
+            ...postTitleShouldArray,
+            ...postContentShouldArray,
+            ...postTitleShouldArray,
+        ];
+        tagArray.forEach((tag) => {
+            tagShouldArray.push({
+                phrase: {
+                    query: `${tag}`,
+                    path: 'tags',
+                },
+            });
+        });
+        const mustAllArray = [];
+        if (tagShouldArray.length > 0) {
+            mustAllArray.push({
+                compound: {
+                    should: tagShouldArray,
+                },
+            });
+        }
+        if (postContentMustArray.length > 0) {
+            mustAllArray.push({
+                compound: {
+                    must: postContentMustArray,
+                },
+            });
+        }
+        const result = yield Post.aggregate([
+            {
+                $search: {
+                    index: 'postSearch',
+                    compound: {
+                        must: mustAllArray,
+                        should: shouldAllArray,
+                        mustNot: [],
+                    },
+                },
+            },
+            {
+                $match: {
+                    is_delete: false,
+                    category: { $ne: 'reply' },
+                },
+            },
+            {
+                $skip: SEARCH_POST_PER_PAGE * paging,
+            },
+            {
+                $limit: SEARCH_POST_PER_PAGE + 1,
+            },
+        ]);
+        let ifNextPage = false;
+        let returnPosts;
+        if (result.length > SEARCH_POST_PER_PAGE) {
+            // next page exist
+            ifNextPage = true;
+            returnPosts = result.slice(0, SEARCH_POST_PER_PAGE);
+        }
+        else {
+            returnPosts = result;
+        }
+        return { posts: returnPosts, ifNextPage };
+    });
+}
+exports.searchPostsFromDB = searchPostsFromDB;
 exports.default = Post;

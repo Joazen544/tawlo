@@ -13,15 +13,18 @@ const router = (0, express_1.Router)();
 router.route('/user/signup').post(uploadImage_1.default, uploadToS3_1.default, user_1.signUp);
 router.route('/user/signin').post(user_1.signIn);
 router.route('/user/read').post(verifyJWT_1.default, user_1.updateUserRead);
-router.route('/user/name').get(user_1.getUserName);
-router.route('/user/image').get(user_1.getUserImage);
+router.route('/user/info').get(user_1.getUserInfo);
+// router.route('/user/name').get(getUserName);
+// router.route('/user/image').get(getUserImage);
 router
     .route('/user/image')
     .post(uploadImage_1.default, uploadToS3_1.default, verifyJWT_1.default, user_1.changeImage);
 router.route('/user/relation').get(verifyJWT_1.default, user_1.getUserRelation);
 router.route('/user/request').post(verifyJWT_1.default, user_1.sendRequest);
-router.route('/user/cancelRequest').post(verifyJWT_1.default, user_1.cancelRequest);
+router.route('/user/request/refuse').post(verifyJWT_1.default, user_1.refuseRequest);
+router.route('/user/request/cancel').post(verifyJWT_1.default, user_1.cancelRequest);
 router.route('/user/notification').get(verifyJWT_1.default, user_1.getNotifications);
 router.route('/user/notification').post(verifyJWT_1.default, user_1.readAllNotifications);
 router.route('/user/friends').get(verifyJWT_1.default, user_1.getFriendsList);
+router.route('/user/friends/all').get(verifyJWT_1.default, user_1.getAllFriendsList);
 exports.default = router;
