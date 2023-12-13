@@ -1,6 +1,7 @@
 import Notification from './Notification';
 import { Link } from 'react-router-dom';
 import MessageDropdown from './MessageDropDown';
+import SearchBar from './SearchBar';
 import Cookies from 'js-cookie';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -41,17 +42,7 @@ const Header = ({ target }: Props) => {
               TAWLO
             </Link>
           </div>
-          <div id="search_bar" className="ml-3 flex items-center">
-            <input
-              type="text"
-              style={{
-                backgroundSize: '1.5rem',
-                backgroundOrigin: 'content-box',
-                paddingRight: '5px',
-              }}
-              className="w-52 h-9 border-solid border-slate-300 border-2 rounded-2xl bg-search-image bg-no-repeat bg-right bg-contain pl-3"
-            />
-          </div>
+          <SearchBar />
           <div
             id="meet"
             className="h-8 p-2 rounded-lg flex items-center ml-10 border-solid border-2 border-gray-500 hover:bg-gray-500 hover:text-white"

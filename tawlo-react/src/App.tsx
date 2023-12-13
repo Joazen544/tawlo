@@ -8,6 +8,7 @@ import PostPage from './PostPage';
 import Friends from './Friends';
 import { Routes, Route } from 'react-router-dom';
 import './socket';
+import SearchResult from './SearchResult';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <Route path="/board" element={<Board />}></Route>
       <Route path="/meeting" element={<Meeting />}></Route>
       <Route path="/post/:postId" element={<PostPage />}></Route>
+      <Route path="/post/search" element={<SearchResult />}></Route>
     </Routes>
   );
 }
