@@ -63,7 +63,7 @@ const Board = () => {
   return (
     <>
       <Header />
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center pt-28 bg-gray-50 min-h-screen">
         <h2 className="text-2xl font-bold mb-4">Board: {boardName}</h2>
         <button
           className="px-4 w-20 h-12 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-lg"
@@ -88,6 +88,7 @@ const Board = () => {
               board={post.board}
               publishDate={post.publish_date}
               updateDate={post.update_date}
+              lastReply={post.last_reply}
               author={post.author}
               content={post.content}
               hot={post.hot}

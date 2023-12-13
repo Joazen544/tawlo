@@ -38,7 +38,7 @@ const DisscussPost = ({
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
       })
@@ -121,9 +121,12 @@ const DisscussPost = ({
                   {/* Add user avatar or profile image here */}
                 </div>
                 <div className="ml-3 flex">
-                  <button className="text-lg font-medium text-gray-900 mr-5">
+                  <Link
+                    to={`/user/profile/${author}`}
+                    className="text-lg font-medium text-gray-900 mr-5"
+                  >
                     {authorName}
-                  </button>
+                  </Link>
                   <div className="text-gray-500">
                     {publishTime.toDateString()}
                   </div>

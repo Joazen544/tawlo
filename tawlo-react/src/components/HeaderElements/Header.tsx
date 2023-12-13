@@ -15,7 +15,7 @@ const Header = ({ target }: Props) => {
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/user/image?id=${id}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${id}`)
       .then((res) => {
         if (res.data.image) {
           setUserImage(res.data.image);
@@ -32,7 +32,8 @@ const Header = ({ target }: Props) => {
     <>
       <div
         id="container"
-        className="w-full h-12 bg-gray-200 flex justify-between"
+        style={{ boxShadow: '0 2px 3px -3px gray' }}
+        className="top-0 fixed w-full h-12 bg-white flex justify-between"
       >
         <div id="left_part_header" className="w-96 h-12 flex items-center">
           <div id="logo" className="flex items-center ml-2">

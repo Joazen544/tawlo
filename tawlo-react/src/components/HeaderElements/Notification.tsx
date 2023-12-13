@@ -24,8 +24,6 @@ const Notification = () => {
   const [notificationsName, setNotificationsName] = useState<string[][]>([]);
   const navigate = useNavigate();
 
-  //const [ifNotification, setIfNotification] = useState<number>(0);
-
   const token = Cookies.get('jwtToken');
 
   const fetchNotifications = async () => {
@@ -75,7 +73,7 @@ const Notification = () => {
       // 移除全域點擊事件監聽器
       document.removeEventListener('click', handleClickOutside);
     };
-  }, []); // 空的依賴陣列表示只在 component 被建立時設定一次
+  }, []);
 
   useEffect(() => {
     const fetchFunction = async () => {
@@ -83,7 +81,7 @@ const Notification = () => {
       for (let i = 0; i < notifications.length; i++) {
         for (let j = 0; j < notifications[i].action_users.length; j++) {
           const res = await axios.get(
-            `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${
+            `${import.meta.env.VITE_DOMAIN}/api/user/info?id=${
               notifications[i].action_users[j]
             }`,
           );
@@ -125,7 +123,7 @@ const Notification = () => {
           const message: string = data.message;
           axios
             .get(
-              `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${actionUser}`,
+              `${import.meta.env.VITE_DOMAIN}/api/user/info?id=${actionUser}`,
             )
             .then((res) => {
               const name = res.data.name;
@@ -185,7 +183,7 @@ const Notification = () => {
 
           axios
             .get(
-              `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${actionUser}`,
+              `${import.meta.env.VITE_DOMAIN}/api/user/info?id=${actionUser}`,
             )
             .then((res) => {
               const CustomToastWithLink = () => (

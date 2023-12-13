@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
+import axios from 'axios';
 
 export let socket: Socket | null;
 
@@ -14,11 +15,30 @@ export async function initSocket() {
     },
   });
 
-  // console.log('initting socket');
-
   socket.on('connect', () => {
-    if (socket) socket.emit('new-user', { userId: id, name: name });
     console.log('socket connected');
+
+    if (socket) {
+      axios
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/friends`, {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          const friendsArray = res.data;
+          if (socket) {
+            socket.emit('new-user', {
+              userId: id,
+              name: name,
+              friends: friendsArray,
+            });
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
   });
 
   if (socket) {
@@ -29,15 +49,3 @@ export async function initSocket() {
 }
 
 initSocket();
-
-// export function getSocket() {
-//   if (socket && socket.connected) {
-//     console.log('has socket');
-
-//     return socket;
-//   } else {
-//     console.log('no socket');
-
-//     return null;
-//   }
-// }

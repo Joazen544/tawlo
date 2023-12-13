@@ -7,6 +7,7 @@ interface Props {
   publishDate: Date;
   updateDate: Date;
   author: string;
+  lastReply: string;
   content: string;
   hot: number;
   board: string;
@@ -24,6 +25,7 @@ const BoardPost = ({
   publishDate,
   updateDate,
   author,
+  lastReply,
   tags,
   content,
   hot,
@@ -33,16 +35,29 @@ const BoardPost = ({
   title,
 }: Props) => {
   const [authorName, setAuthorName] = useState('');
+  const [lastReplyName, setlastReplyName] = useState('');
+
   const HOT_POST_SCORE = 50;
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
       })
       .catch((err) => console.log(err));
   }, [author]);
+
+  useEffect(() => {
+    if (lastReply) {
+      axios
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${lastReply}`)
+        .then((res) => {
+          setlastReplyName(res.data.name);
+        })
+        .catch((err) => console.log(err));
+    }
+  }, [lastReply]);
 
   return (
     <>
@@ -84,7 +99,7 @@ const BoardPost = ({
                 <div id="tags" className=" text-gray-500 flex">
                   {tags.map((tag, index) => (
                     <p
-                      className="mr-2 w-16 border-solid border-2 rounded-md p-0.5 text-center"
+                      className="mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center"
                       key={index}
                     >
                       {tag}
@@ -104,16 +119,24 @@ const BoardPost = ({
           <div id="timeInfo" className="w-56 text-sm">
             <div className="ml-3 flex flex-col justify-center">
               {new Date(publishDate).toDateString()}
-              <button className="text-md font-medium text-gray-900 mr-5">
+              <Link
+                to={`/user/profile/${author}`}
+                className="text-md font-medium text-blue-400 hover:text-blue-500 mr-5"
+              >
                 {authorName}
-              </button>
+              </Link>
             </div>
-            <div className="ml-3 flex flex-col justify-center mt-2">
-              {new Date(updateDate).toDateString()}
-              <button className="text-md font-medium text-gray-900 mr-5">
-                {authorName}
-              </button>
-            </div>
+            {lastReply && (
+              <div className="ml-3 flex flex-col justify-center mt-2">
+                {new Date(updateDate).toDateString()}
+                <Link
+                  to={`/user/profile/${lastReply}`}
+                  className="text-md font-medium text-blue-400 hover:text-blue-500 mr-5"
+                >
+                  {lastReplyName}
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

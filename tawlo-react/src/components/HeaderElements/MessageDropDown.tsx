@@ -189,7 +189,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
     messagesGroup.forEach((message, index) => {
       axios
         .get(
-          `${import.meta.env.VITE_DOMAIN}/api/user/name?id=${message.users[0]}`,
+          `${import.meta.env.VITE_DOMAIN}/api/user/info?id=${message.users[0]}`,
         )
         .then((res) => {
           const userName = res.data.name as string;

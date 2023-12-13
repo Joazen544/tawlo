@@ -17,6 +17,7 @@ export interface PostInterface {
   publish_date: Date;
   update_date: Date;
   author: string;
+  last_reply: string;
   content: string;
   board: string;
   hot: number;
@@ -191,7 +192,7 @@ const Home = () => {
             }}
             hasMore={postsRender.length < postsRecommend.length}
             loader={<p>Loading...</p>}
-            endMessage={<p>No more data to load</p>}
+            endMessage={<div className="h-6"></div>}
           >
             {postsRender.map((post, index) => {
               if (post.category === 'native') {

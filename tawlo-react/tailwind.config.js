@@ -11,6 +11,8 @@ export default {
       'down-arrow': 'url(/src/assets/down-arrow.png)',
       'message-image': 'url(/src/assets/message.png)',
       'more-image': 'url(/src/assets/more.png)',
+      'like-image': 'url(/src/assets/like.png)',
+      'liked-image': 'url(/src/assets/liked.png)',
     },
   },
   plugins: [],

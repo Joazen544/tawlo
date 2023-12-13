@@ -118,7 +118,7 @@ const Post = ({
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
       })
@@ -127,7 +127,7 @@ const Post = ({
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/user/image?id=${author}`)
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${author}`)
       .then((res) => {
         setAuthorImage(res.data.image);
       })
@@ -140,7 +140,7 @@ const Post = ({
     const nameArray: string[] = [];
     commentsData.forEach((comment, index) => {
       axios
-        .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${comment.user}`)
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${comment.user}`)
         .then((res) => {
           const userName = res.data.name as string;
           nameArray[index] = userName;
@@ -354,10 +354,10 @@ const Post = ({
           >
             <span className="text-2xl">#問題：{title}</span>
             <button
-              className="px-4 w-20 h-16 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+              className="px-2 w-20 h-16 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
               onClick={clickReply}
             >
-              Reply
+              回覆貼文
             </button>
           </div>
         )}
@@ -520,7 +520,7 @@ const Post = ({
               id="upvote"
               style={{ backgroundSize: '1rem' }}
               className={`w-10 h-10 bg-up-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
-                isUpvoted ? 'bg-blue-200' : 'bg-white'
+                isUpvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
               }`}
               onClick={handleUpvote}
             ></button>
@@ -528,14 +528,16 @@ const Post = ({
             <button
               id="downvote"
               style={{ backgroundSize: '1rem' }}
-              className={`w-10 h-10 bg-down-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
-                isDownvoted ? 'bg-blue-200' : 'bg-white'
+              className={`w-10 h-10 bg-down-arrow  bg-no-repeat hover:bg-gray-100 bg-center border-solid border-2 border-black rounded-full ${
+                isDownvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
               }`}
               onClick={handleDownvote}
             ></button>
           </div>
           <div id="content" className="ml-10">
-            <p className="text-gray-800">{content}</p>
+            <p style={{ whiteSpace: 'pre-line' }} className="text-gray-800">
+              {content}
+            </p>
           </div>
         </div>
         {category === 'native' && (
@@ -551,17 +553,15 @@ const Post = ({
               </div>
               <div className="flex items-center space-x-2">
                 <button
-                  className={`text-gray-600 cursor-pointer ${
-                    isLiked ? 'text-blue-500' : ''
+                  className={`text-gray-600 w-6 h-6 bg-contain bg-no-repeat cursor-pointer ${
+                    isLiked ? 'bg-liked-image' : 'bg-like-image'
                   }`}
                   onClick={handleLike}
-                >
-                  Like
-                </button>
+                ></button>
                 <span className="text-gray-900">{likeNumber}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="text-gray-600">Comments:</div>
+                <div className="text-gray-600">留言:</div>
                 <span className="text-gray-900">{commentNumber}</span>
               </div>
               {/* Add more details as needed */}
@@ -599,9 +599,9 @@ const Post = ({
           />
           <button
             onClick={handleCreateComment}
-            className=" h-10 px-4 mb-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+            className="w-20 h-10 px-1 mb-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
           >
-            Comment
+            留言
           </button>
         </div>
       </div>

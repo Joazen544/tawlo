@@ -116,7 +116,7 @@ const Meeting = () => {
   useEffect(() => {
     if (targetId) {
       axios
-        .get(`${import.meta.env.VITE_DOMAIN}/api/user/name?id=${targetId}`)
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${targetId}`)
         .then((res) => {
           setTargetName(res.data.name);
         })

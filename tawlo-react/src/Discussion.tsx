@@ -104,14 +104,21 @@ const Discussion = () => {
     }
   };
 
-  //const appendReplyArea = () => {};
+  const handleCreatePost = (postCreated: PostInterface) => {
+    setIfAppendReplyArea(false);
+    setPostsRender([...postsRender, postCreated]);
+  };
+
+  const removePost = (postId: string) => {
+    setPostsRender(postsRender.filter((post) => post._id !== postId));
+  };
 
   return (
     <div>
       <Header />
       <section
         id="postsBackground"
-        className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
+        className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-28"
       >
         <div
           id="postsContainer"
@@ -123,7 +130,7 @@ const Discussion = () => {
             next={() => renderNewPosts()}
             hasMore={isNextPage}
             loader={<p>Loading...</p>}
-            endMessage={<p>No more data to load</p>}
+            endMessage={<div className="h-6"></div>}
           >
             {postsRender[0] && (
               <Link
@@ -153,12 +160,14 @@ const Discussion = () => {
                 downvote={postsRender[0].downvote}
                 comments={postsRender[0].comments}
                 clickReply={() => setIfAppendReplyArea(!ifAppendReplyArea)}
-                clickDelete={() => {}}
+                clickDelete={(postId: string) => removePost(postId)}
               />
             )}
             {ifAppendReplyArea && (
               <CreatePost
-                onPostCreated={() => setIfAppendReplyArea(false)}
+                onPostCreated={(postCreated: PostInterface) =>
+                  handleCreatePost(postCreated)
+                }
                 category="reply"
                 motherPost={id}
                 board=""
@@ -186,7 +195,7 @@ const Discussion = () => {
                     downvote={post.downvote}
                     comments={post.comments}
                     clickReply={() => {}}
-                    clickDelete={() => {}}
+                    clickDelete={(postId: string) => removePost(postId)}
                   />
                 );
               }
