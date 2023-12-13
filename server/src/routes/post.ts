@@ -13,6 +13,7 @@ import {
   deletePost,
   getAutoTags,
   getRelevantTags,
+  searchPost,
 } from '../controllers/post';
 import verifyJWT from '../middleware/verifyJWT';
 
@@ -21,6 +22,7 @@ const router = Router();
 router.route('/post').post(verifyJWT, createPost);
 router.route('/post').get(getPost);
 router.route('/post').delete(verifyJWT, deletePost);
+router.route('/post/search').get(searchPost);
 router.route('/posts/recommendation').get(verifyJWT, getRecommendPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(getPostsOnBoard);

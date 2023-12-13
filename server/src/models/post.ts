@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
+import { AggregationInterface } from './meeting';
 
 const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
+const SEARCH_POST_PER_PAGE = 10;
 
 interface PostDocument {
   is_delete: boolean;
@@ -334,6 +336,116 @@ export async function getMotherAndReplyPostsFromDB(
 export async function getPostFromDB(post: string) {
   const postInfo = await Post.findOne({ _id: post });
   return postInfo;
+}
+
+export async function searchPostsFromDB(
+  mustArray: string[],
+  shouldArray: string[],
+  tagArray: string[],
+  paging: number,
+) {
+  const postTitleShouldArray: AggregationInterface[] = [];
+  const postContentMustArray: AggregationInterface[] = [];
+  const postContentShouldArray: AggregationInterface[] = [];
+  const tagShouldArray: AggregationInterface[] = [];
+
+  mustArray.forEach((must) => {
+    postContentMustArray.push({
+      phrase: {
+        query: `${must}`,
+        path: 'content',
+      },
+    });
+    postTitleShouldArray.push({
+      phrase: {
+        query: `${must}`,
+        path: 'title',
+      },
+    });
+  });
+
+  shouldArray.forEach((should) => {
+    postContentShouldArray.push({
+      phrase: {
+        query: `${should}`,
+        path: 'content',
+      },
+    });
+    postTitleShouldArray.push({
+      phrase: {
+        query: `${should}`,
+        path: 'title',
+      },
+    });
+  });
+
+  const shouldAllArray = [
+    ...postTitleShouldArray,
+    ...postContentShouldArray,
+    ...postTitleShouldArray,
+  ];
+
+  tagArray.forEach((tag) => {
+    tagShouldArray.push({
+      phrase: {
+        query: `${tag}`,
+        path: 'tags',
+      },
+    });
+  });
+
+  const mustAllArray = [];
+  if (tagShouldArray.length > 0) {
+    mustAllArray.push({
+      compound: {
+        should: tagShouldArray,
+      },
+    });
+  }
+
+  if (postContentMustArray.length > 0) {
+    mustAllArray.push({
+      compound: {
+        must: postContentMustArray,
+      },
+    });
+  }
+
+  const result = await Post.aggregate<PostDocument>([
+    {
+      $search: {
+        index: 'postSearch',
+        compound: {
+          must: mustAllArray,
+          should: shouldAllArray,
+          mustNot: [],
+        },
+      },
+    },
+    {
+      $match: {
+        is_delete: false,
+      },
+    },
+    {
+      $skip: SEARCH_POST_PER_PAGE * paging,
+    },
+    {
+      $limit: SEARCH_POST_PER_PAGE + 1,
+    },
+  ]);
+
+  let ifNextPage = false;
+  let returnPosts;
+  if (result.length > SEARCH_POST_PER_PAGE) {
+    // next page exist
+    ifNextPage = true;
+    returnPosts = result.slice(0, SEARCH_POST_PER_PAGE);
+  } else {
+    returnPosts = result;
+  }
+
+  return { posts: returnPosts, ifNextPage };
 }
 
 export default Post;

@@ -14,8 +14,8 @@ export interface MeetingDocument {
   accept: string[][];
 }
 
-interface AggregationShould {
-  text: {
+export interface AggregationInterface {
+  phrase: {
     query: string;
     path: string;
   };
@@ -110,21 +110,21 @@ export async function joinMeeting(
   toShare: string[],
   toAsk: string[],
 ) {
-  const creatorShouldShare: AggregationShould[] = [];
+  const creatorShouldShare: AggregationInterface[] = [];
   toAsk.forEach((ask) => {
     creatorShouldShare.push({
-      text: {
-        query: `"${ask}"`,
+      phrase: {
+        query: `${ask}`,
         path: 'to_share',
       },
     });
   });
 
-  const creatorShouldAsk: AggregationShould[] = [];
+  const creatorShouldAsk: AggregationInterface[] = [];
   toShare.forEach((share) => {
     creatorShouldAsk.push({
-      text: {
-        query: `"${share}"`,
+      phrase: {
+        query: `${share}`,
         path: 'to_ask',
       },
     });
@@ -164,8 +164,8 @@ export async function joinMeeting(
           mustNot: mustNotArray,
           filter: [
             {
-              text: {
-                query: '"pending"',
+              phrase: {
+                query: 'pending',
                 path: 'status',
               },
             },

@@ -5,6 +5,7 @@ import Post, {
   getBoardPostsFromDB,
   getMotherAndReplyPostsFromDB,
   getPostFromDB,
+  searchPostsFromDB,
 } from '../models/post';
 import {
   updateUserAction,
@@ -1474,6 +1475,71 @@ export async function getRelevantTags(
       }
     });
     res.json(returnArray);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function searchPost(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    if (!req.query.should && !req.query.must) {
+      res.status(400).json({ error: 'search missing' });
+      return;
+    }
+
+    let paging;
+
+    if (req.query.paging && !Number.isNaN(req.query.paging)) {
+      paging = +req.query.paging as number;
+    } else if (Number.isNaN(req.query.paging)) {
+      throw new ValidationError('paging must be type number');
+    } else {
+      paging = 0;
+    }
+
+    const should = req.query.should as string;
+    const must = req.query.must as string;
+    const tags = req.query.tags as string;
+
+    let shouldArray: string[] = [];
+    if (should !== undefined) {
+      shouldArray = Array.isArray(should) ? should : [should].filter(Boolean);
+    }
+
+    let mustArray: string[] = [];
+    if (must !== undefined) {
+      mustArray = Array.isArray(must) ? must : [must].filter(Boolean);
+    }
+
+    let tagArray: string[] = [];
+    if (tags !== undefined) {
+      tagArray = Array.isArray(tags) ? tags : [tags].filter(Boolean);
+    }
+
+    if (
+      !shouldArray.every((item) => typeof item === 'string') ||
+      !mustArray.every((item) => typeof item === 'string') ||
+      !tagArray.every((item) => typeof item === 'string')
+    ) {
+      res.status(400).json({
+        error:
+          '"should" and "must" "tags" must be strings or arrays of strings',
+      });
+      return;
+    }
+
+    const result = await searchPostsFromDB(
+      mustArray,
+      shouldArray,
+      tagArray,
+      paging,
+    );
+
+    res.json({ posts: result.posts, nextPage: result.ifNextPage });
   } catch (err) {
     next(err);
   }
