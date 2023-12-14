@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
+import fs from 'fs';
 import User, {
   UserDocument,
   updateUserReadPosts,
@@ -25,6 +26,10 @@ export async function signUp(req: Request, res: Response) {
     let image;
     if (req.file) {
       image = req.file.filename;
+    }
+
+    if (image) {
+      fs.unlink(`${__dirname}/../../public/userImage/${image}`, () => {});
     }
 
     const userData = await User.create({
@@ -123,64 +128,6 @@ export async function updateUserRead(req: Request, res: Response) {
     res.status(500).json({ errors: 'sign in failed' });
   }
 }
-
-// export async function getUserName(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) {
-//   try {
-//     let user;
-//     if (req.query.id && typeof req.query.id === 'string') user = req.query.id;
-
-//     // console.log(user);
-
-//     const userInfo = await User.findOne({ _id: user }, { name: 1 });
-
-//     if (userInfo && userInfo.name) {
-//       res.json({ name: userInfo.name });
-//     } else {
-//       throw Error('can not find user name');
-//     }
-//   } catch (err) {
-//     next(err);
-//   }
-// }
-
-// export async function getUserImage(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction,
-// ) {
-//   try {
-//     const { id } = req.query;
-//     if (!id) {
-//       res.status(400).json({ error: 'user id is not in req body' });
-//       return;
-//     }
-
-//     if (typeof id !== 'string') {
-//       res.status(400).json({ error: 'user id is not string' });
-//       return;
-//     }
-
-//     const userInfo = await getUserImageFromDB(id);
-
-//     if (!userInfo) {
-//       res.status(400).json({ error: 'user does not exist' });
-//       return;
-//     }
-
-//     if (userInfo.image === '') {
-//       res.json({ image: '' });
-//       return;
-//     }
-
-//     res.json({ image: `${CDN_DOMAIN}/user-image/${userInfo.image}` });
-//   } catch (err) {
-//     next(err);
-//   }
-// }
 
 export async function getUserInfo(
   req: Request,
@@ -419,6 +366,10 @@ export async function changeImage(
     console.log(user);
 
     await User.updateOne({ _id: user }, { $set: { image: imageName } });
+
+    if (imageName) {
+      fs.unlink(`${__dirname}/../../public/userImage/${imageName}`, () => {});
+    }
 
     res.json({ image: `${CDN_DOMAIN}/user-image/${imageName}` });
   } catch (err) {
