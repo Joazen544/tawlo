@@ -183,7 +183,7 @@ const Friends = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-50">
+    <div className=" bg-gray-50">
       {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header />
       <div className="flex justify-center  pt-40">

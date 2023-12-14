@@ -13,7 +13,7 @@ interface TagAuto {
   name: string;
 }
 
-interface SearchResultInterface {
+export interface SearchResultInterface {
   posts: PostInterface[];
   nextPage: boolean;
 }
@@ -225,6 +225,7 @@ const SearchBar = ({ handleSearchResult }: Props) => {
                 className="w-36 mt-4 p-2 border border-gray-300 rounded-md"
                 placeholder="輸入標籤"
                 list="tagAuto"
+                maxLength={15}
               />
               <datalist id="tagAuto">
                 {autoCompleteTags &&

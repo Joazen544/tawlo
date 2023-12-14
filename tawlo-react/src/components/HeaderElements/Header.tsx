@@ -5,12 +5,14 @@ import SearchBar from './SearchBar';
 import Cookies from 'js-cookie';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { SearchResultInterface } from './SearchBar';
 
 interface Props {
   target?: { id: string; name: string; targetId: string } | null;
+  handleSearch?: (searchResult: SearchResultInterface) => void;
 }
 
-const Header = ({ target }: Props) => {
+const Header = ({ target, handleSearch }: Props) => {
   const [userImage, setUserImage] = useState<string>('');
   const id = Cookies.get('userId');
 
@@ -42,7 +44,11 @@ const Header = ({ target }: Props) => {
               TAWLO
             </Link>
           </div>
-          <SearchBar />
+          <SearchBar
+            handleSearchResult={(searchResult) => {
+              if (handleSearch) handleSearch(searchResult);
+            }}
+          />
           <div
             id="meet"
             className="h-8 p-2 rounded-lg flex items-center ml-10 border-solid border-2 border-gray-500 hover:bg-gray-500 hover:text-white"

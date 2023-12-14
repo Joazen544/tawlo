@@ -231,7 +231,8 @@ const CreatePost: React.FC<CreatePostProps> = ({
             value={title}
             onChange={handleTitleChange}
             className="w-full mt-4 p-2 border border-gray-300 rounded-md mb-3"
-            placeholder="這篇貼文的標題是什麼"
+            placeholder="這篇貼文的標題是什麼 （最多 40 個字符）"
+            maxLength={40}
           />
         )}
         <textarea
@@ -242,7 +243,8 @@ const CreatePost: React.FC<CreatePostProps> = ({
         />
         {category !== 'reply' && (
           <>
-            <div className="pl-2 flex items-center h-10 rounded-lg bg-gray-200 mt-2 mb-2">
+            <div className="pl-2 flex items-center h-10 rounded-lg mt-2 mb-2">
+              <div>標籤：</div>
               {tags.map((tag) => (
                 <div
                   key={tag.id}
@@ -265,6 +267,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
               className="w-48 mt-4 p-2 border border-gray-300 rounded-md"
               placeholder="這篇貼文跟什麼相關"
               list="tagAuto"
+              maxLength={15}
             />
             <datalist id="tagAuto">
               {autoCompleteTags &&

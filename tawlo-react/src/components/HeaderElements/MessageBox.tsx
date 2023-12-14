@@ -149,14 +149,14 @@ Props) => {
     setMessageInput(event.target.value);
   };
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
-    // 'keypress' event misbehaves on mobile so we track 'Enter' key via 'keydown' event
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      event.stopPropagation();
-      handleMessageSend();
-    }
-  };
+  // const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+  //   // 'keypress' event misbehaves on mobile so we track 'Enter' key via 'keydown' event
+  //   if (event.key === 'Enter') {
+  //     event.preventDefault();
+  //     event.stopPropagation();
+  //     handleMessageSend();
+  //   }
+  // };
 
   const messagesAreaRef = useRef<HTMLDivElement>(null);
 
@@ -267,7 +267,7 @@ Props) => {
           ? { width: '20rem', height: '25rem' }
           : { width: '20rem', height: '2.5rem' }
       }
-      className="fixed bottom-0 right-16 border-solid border-2 border-black bg-white"
+      className="fixed bottom-0 right-16 border-solid border-2 border-black bg-white z-20"
     >
       <div
         id="infoBar"
@@ -326,7 +326,7 @@ Props) => {
               value={messageInput}
               type="text"
               className="ml-1 pl-2 w-full h-10 rounded-mdp-2 border border-gray-300 rounded-md"
-              onKeyDown={onKeyDown}
+              //onKeyUp={onKeyDown}
             />
             <button
               onClick={handleMessageSend}

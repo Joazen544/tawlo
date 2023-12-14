@@ -28,7 +28,7 @@ const BoardPost = ({
   lastReply,
   tags,
   content,
-  hot,
+  // hot,
   sumLikes,
   sumUpvotes,
   sumReply,
@@ -85,18 +85,18 @@ const BoardPost = ({
             <div id="info" className="flex justify-between">
               <div id="left" className="flex">
                 <div className="flex items-center space-x-2 mr-6">
-                  <span className="text-gray-600">Sum Likes:</span>
+                  <span className="text-gray-600">總喜歡:</span>
                   <span className="text-gray-900">{sumLikes}</span>
                 </div>
                 <div className="flex items-center space-x-2 mr-4">
-                  <span className="text-gray-600">Replies:</span>
+                  <span className="text-gray-600">總回覆:</span>
                   <span className="text-gray-900">{sumReply}</span>
                 </div>
-                <div className="flex items-center space-x-2 mr-4">
+                {/* <div className="flex items-center space-x-2 mr-4">
                   <span className="text-gray-600">Hot:</span>
                   <span className="text-gray-900">{Math.round(hot)}</span>
-                </div>
-                <div id="tags" className=" text-gray-500 flex">
+                </div> */}
+                <div id="tags" className=" text-gray-500 flex flex-wrap">
                   {tags.map((tag, index) => (
                     <p
                       className="mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center"
@@ -113,7 +113,9 @@ const BoardPost = ({
               <div className="text-2xl mt-1 text-gray-500">
                 <Link to={`/board/discussion?id=${_id}`}>{title}</Link>
               </div>
-              <p className="text-gray-500 text-sm mt-1 w-96">{content}</p>
+              <p className="text-gray-500 text-sm mt-3 w-96 h-16 truncate">
+                {content}
+              </p>
             </div>
           </div>
           <div id="timeInfo" className="w-56 text-sm">

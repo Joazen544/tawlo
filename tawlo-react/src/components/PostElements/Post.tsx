@@ -64,8 +64,8 @@ const Post = ({
   floor,
   tags,
   content,
-  hot,
-  score,
+  // hot,
+  // score,
   board,
   liked,
   upvote,
@@ -90,6 +90,8 @@ const Post = ({
   const [commentCreate, setCommentCreate] = useState('');
   const [authorImage, setAuthorImage] = useState();
   const [isSettingAppend, setIsSettingAppend] = useState(false);
+  const [isFolded, setIsFolded] = useState<boolean>(true);
+  const [isPostLong, setIsPostLong] = useState<boolean>(false);
 
   const token = Cookies.get('jwtToken');
   const userId = Cookies.get('userId');
@@ -290,6 +292,18 @@ const Post = ({
   };
 
   const settingRef = useRef<HTMLButtonElement | null>(null);
+  const contentPageRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (contentPageRef.current) {
+      if (contentPageRef.current.offsetHeight >= 384) {
+        setIsFolded(true);
+        setIsPostLong(true);
+      } else {
+        setIsFolded(false);
+      }
+    }
+  }, [content]);
 
   const handleClickOutside = (event: MouseEvent) => {
     if (
@@ -364,28 +378,25 @@ const Post = ({
         {category === 'reply' && (
           <>
             {author === userId && (
-              <div
-                id="settings"
-                className="relative ml-2 flex justify-end mt-10"
-              >
-                <button
-                  onClick={handleSettingAppend}
-                  ref={settingRef}
-                  className="w-8 h-8 bg-more-image bg-no-repeat bg-contain mr-5 mb-5"
-                ></button>
+              <div id="settings" className="ml-2 flex justify-end mt-10">
                 {isSettingAppend && (
-                  <div className="absolute w-14 rounded-lg top-7 right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
-                    <button className="hover:bg-blue-400 h-full w-full">
+                  <div className="z-0 w-14 rounded-lg top-7 right-0 border-2 bg-white border-gray-400 border-solid">
+                    <button className="hover:bg-blue-400 h-1/2 w-full">
                       編輯
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="hover:bg-red-400 h-full w-full"
+                      className="hover:bg-red-400 h-1/2 w-full"
                     >
                       刪除
                     </button>
                   </div>
                 )}
+                <button
+                  onClick={handleSettingAppend}
+                  ref={settingRef}
+                  className="w-8 h-8 bg-more-image bg-no-repeat bg-contain mr-5 mb-5"
+                ></button>
               </div>
             )}
             <div
@@ -488,14 +499,9 @@ const Post = ({
               </div>
             </div>
             {author === userId && (
-              <div id="settings" className="relative">
-                <button
-                  onClick={handleSettingAppend}
-                  ref={settingRef}
-                  className="w-8 h-8 bg-more-image bg-no-repeat bg-contain"
-                ></button>
+              <div id="settings" className="flex items-center">
                 {isSettingAppend && (
-                  <div className="absolute w-14 rounded-lg right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
+                  <div className="w-14 rounded-lg right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
                     <button className="hover:bg-blue-400 h-full w-full">
                       編輯
                     </button>
@@ -507,6 +513,11 @@ const Post = ({
                     </button>
                   </div>
                 )}
+                <button
+                  onClick={handleSettingAppend}
+                  ref={settingRef}
+                  className="w-8 h-10 bg-more-image bg-no-repeat bg-contain"
+                ></button>
               </div>
             )}
           </div>
@@ -534,23 +545,42 @@ const Post = ({
               onClick={handleDownvote}
             ></button>
           </div>
-          <div id="content" className="ml-10">
-            <p style={{ whiteSpace: 'pre-line' }} className="text-gray-800">
+          <div
+            ref={contentPageRef}
+            id="content"
+            // className={`ml-10 ${
+            //   isFolded ? 'bg-gray-400 max-h-96 overflow-hidden' : null
+            // }`}
+          >
+            <p
+              style={{ whiteSpace: 'pre-line' }}
+              className={`ml-10 ${
+                isFolded ? 'max-h-96 overflow-hidden' : null
+              }`}
+            >
               {content}
             </p>
+            {isPostLong && (
+              <div
+                className="ml-10 text-blue-400 cursor-pointer"
+                onClick={() => setIsFolded(!isFolded)}
+              >
+                {isFolded ? '顯示更多' : '收起'}
+              </div>
+            )}
           </div>
         </div>
         {category === 'native' && (
           <div id="postInfo" className="p-4 border-t border-gray-200">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <span className="text-gray-600">Score:</span>
                 <span className="text-gray-900">{score}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-gray-600">Hot:</span>
                 <span className="text-gray-900">{Math.round(hot)}</span>
-              </div>
+              </div> */}
               <div className="flex items-center space-x-2">
                 <button
                   className={`text-gray-600 w-6 h-6 bg-contain bg-no-repeat cursor-pointer ${

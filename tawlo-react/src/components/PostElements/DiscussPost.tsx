@@ -25,8 +25,8 @@ const DisscussPost = ({
   author,
   tags,
   content,
-  hot,
-  score,
+  // hot,
+  // score,
   sumLikes,
   sumUpvotes,
   sumReply,
@@ -70,20 +70,20 @@ const DisscussPost = ({
             className="w-40 h-32 mr-1 box-content flex flex-col justify-center items-left border-r border-gray-200"
           >
             <span className="text-gray-900">有用 {sumUpvotes}</span>
-            <div className="flex items-center space-x-2">
+            {/* <div className="flex items-center space-x-2">
               <span className="text-gray-600">Score:</span>
               <span className="text-gray-900">{score}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-gray-600">Hot:</span>
               <span className="text-gray-900">{Math.round(hot)}</span>
-            </div>
+            </div> */}
             <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Sum Likes:</span>
+              <span className="text-gray-600">總喜歡:</span>
               <span className="text-gray-900">{sumLikes}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <button className="text-gray-600">Replies:</button>
+              <button className="text-gray-600">回覆篇數:</button>
               <span className="text-gray-900">{sumReply}</span>
             </div>
           </div>
@@ -95,7 +95,9 @@ const DisscussPost = ({
               <div className="text-2xl text-gray-500">
                 <Link to={`/board/discussion?id=${_id}`}>{title}</Link>
               </div>
-              <p className="text-gray-500 text-sm mt-3">{content}</p>
+              <p className="text-gray-500 text-sm mt-3 truncate h-16 w-96">
+                {content}
+              </p>
             </div>
             <div id="posterInfo" className="flex justify-between">
               <div id="leftPart" className="flex items-center">
@@ -104,7 +106,7 @@ const DisscussPost = ({
                     {boardName}
                   </button>
                 </div>
-                <div id="tags" className="ml-10 text-gray-500 flex">
+                <div id="tags" className="ml-5 text-gray-500 flex flex-wrap">
                   {tags.map((tag, index) => (
                     <p
                       className="border-solid border-2 rounded-md p-0.5 mr-3"
@@ -120,7 +122,7 @@ const DisscussPost = ({
                 <div className="flex-shrink-0">
                   {/* Add user avatar or profile image here */}
                 </div>
-                <div className="ml-3 flex">
+                <div className="ml-3">
                   <Link
                     to={`/user/profile/${author}`}
                     className="text-lg font-medium text-gray-900 mr-5"

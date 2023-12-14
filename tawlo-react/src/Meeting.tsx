@@ -136,6 +136,13 @@ const Meeting = () => {
 
   const handleAddToAskItem = () => {
     if (toAskInputText.trim() !== '') {
+      if (toAskItems.length > 4) {
+        return;
+      }
+      const array = toAskItems.map((item) => item.text);
+      if (array.includes(toAskInputText)) {
+        return;
+      }
       const newItem: Item = {
         id: new Date().getTime(),
         text: toAskInputText,
@@ -156,6 +163,13 @@ const Meeting = () => {
 
   const handleAddToShareItem = () => {
     if (toShareInputText.trim() !== '') {
+      if (toShareItems.length > 4) {
+        return;
+      }
+      const array = toShareItems.map((item) => item.text);
+      if (array.includes(toShareInputText)) {
+        return;
+      }
       const newItem: Item = {
         id: new Date().getTime(),
         text: toShareInputText,
@@ -247,18 +261,25 @@ const Meeting = () => {
   };
 
   const handleRefuseMeeting = () => {
-    axios.post(
-      `${import.meta.env.VITE_DOMAIN}/api/meeting/${meetingId}`,
-      {
-        reply: 'deny',
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          authorization: `Bearer ${token}`,
+    axios
+      .post(
+        `${import.meta.env.VITE_DOMAIN}/api/meeting/${meetingId}`,
+        {
+          reply: 'deny',
         },
-      },
-    );
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      .then(() => {
+        setMeetingStatus('pending');
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   const handleAcceptMeeting = () => {
@@ -355,11 +376,15 @@ const Meeting = () => {
                     onChange={handleJobTitleChange}
                     className="pl-2"
                     placeholder="輸入職稱..."
+                    maxLength={14}
                   />
                 </div>
                 <div id="to_ask" className="mt-8">
-                  <span>你想了解哪些領域？</span>
-                  <div className="pl-2 flex items-center h-10 border-solid border-gray-400 border-2 rounded-lg bg-gray-200 mt-2 mb-2">
+                  <span>你想了解哪些領域？（最多五項）</span>
+                  <div
+                    style={{ minHeight: '3rem' }}
+                    className="pl-2 flex items-center border-solid border-gray-400 border-b-2 bg-gray-200 mt-2 mb-2"
+                  >
                     {toAskItems.map((item) => (
                       <div
                         key={item.id}
@@ -381,17 +406,21 @@ const Meeting = () => {
                     onChange={handleToAskInputChange}
                     className="pl-2"
                     placeholder="想分享..."
+                    maxLength={14}
                   />
                   <button
-                    className="ml-2 border-2 border-solid border-black rounded-md bg-white p-1"
+                    className="ml-2 border-2 border-solid border-gray-300 rounded-md bg-white p-1"
                     onClick={handleAddToAskItem}
                   >
                     新增
                   </button>
                 </div>
                 <div id="to_share" className="mt-8">
-                  <span>你想分享哪些領域？</span>
-                  <div className="pl-2 flex items-center h-10 border-solid border-gray-400 border-2 rounded-lg bg-gray-200 mt-2 mb-2">
+                  <span>你想分享哪些領域？（最多五項）</span>
+                  <div
+                    style={{ minHeight: '3rem' }}
+                    className="pl-2 flex items-center border-solid border-gray-400 border-b-2 bg-gray-200 mt-2 mb-2"
+                  >
                     {toShareItems.map((item) => (
                       <div
                         key={item.id}
@@ -413,9 +442,10 @@ const Meeting = () => {
                     onChange={handleToShareInputChange}
                     className="pl-2"
                     placeholder="想了解..."
+                    maxLength={14}
                   />
                   <button
-                    className="ml-2 border-2 border-solid border-black rounded-md bg-white p-1"
+                    className="ml-2 border-2 border-solid border-gray-300 rounded-md bg-white p-1"
                     onClick={handleAddToShareItem}
                   >
                     新增
@@ -497,7 +527,7 @@ const Meeting = () => {
           )}
           {meetingStatus === 'checking' && (
             <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
-              <h1 className="text-2xl">這裡是你的配對對象 （對對...）</h1>
+              <h1 className="text-2xl">配對到了！</h1>
               <div id="userInfoContainer" className="w-full h-full  m-10">
                 <div id="role">
                   <div>他的職稱</div>
@@ -547,7 +577,7 @@ const Meeting = () => {
                 <div id="userIntro" className="mt-5">
                   <div>他的自我介紹</div>
                   <div className="bg-gray-300 p-2 rounded-md mt-2 min-h-10 flex items-center">
-                    <p>{targetIntro}</p>
+                    <p style={{ whiteSpace: 'pre-line' }}>{targetIntro}</p>
                   </div>
                 </div>
 
