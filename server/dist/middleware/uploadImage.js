@@ -17,6 +17,6 @@ const store = multer_1.default.diskStorage({
 });
 const upload = (0, multer_1.default)({
     storage: store,
-    limits: { fileSize: 104857 },
+    limits: { fileSize: 504857 },
 }).single('image');
 exports.default = upload;
