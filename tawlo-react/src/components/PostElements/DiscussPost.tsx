@@ -64,7 +64,27 @@ const DisscussPost = ({
         style={{ width: '50rem' }}
         className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
       >
-        <div id="postContent" className="p-4 flex">
+        <div className="ml-6 mt-6 flex text-lg items-center justify-between">
+          <div id="boardName" className="text-blue-400">
+            <Link to={`/board?id=${board}`} className=" p-1.5 text-xl">
+              討論版： {boardName}
+            </Link>
+          </div>
+          <div className="ml-5 flex text-base items-center mr-5">
+            <div id="tags" className=" text-gray-500 flex flex-wrap">
+              {tags.map((tag, index) => (
+                <p
+                  style={{ maxWidth: '7rem' }}
+                  className="overflow-hidden mr-2 pr-2 border-solid border-2 rounded-md p-1.5 text-center"
+                  key={index}
+                >
+                  {tag}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div id="postContent" className="p-4 flex items-center">
           <div
             id="interactionInfo"
             className="w-40 h-32 mr-1 box-content flex flex-col justify-center items-left border-r border-gray-200"
@@ -91,31 +111,34 @@ const DisscussPost = ({
             id="content"
             className="ml-10 flex flex-col justify-between w-full"
           >
-            <div>
-              <div className="text-2xl text-gray-500">
-                <Link to={`/board/discussion?id=${_id}`}>{title}</Link>
+            <Link to={`/board/discussion?id=${_id}`} className="max-w-lg">
+              <div className="overflow-hidden text-2xl text-black mt-5">
+                <div className="font-medium">{title}</div>
               </div>
-              <p className="text-gray-500 text-sm mt-3 truncate h-16 w-96">
+              <p className="text-gray-500 text-sm mt-3 truncate h-10 w-96">
                 {content}
               </p>
-            </div>
+            </Link>
             <div id="posterInfo" className="flex justify-between">
               <div id="leftPart" className="flex items-center">
-                <div id="boardName" className="text-blue-400">
-                  <button className="border-solid border-2 border-blue-400 rounded-md p-0.5">
+                {/* <div id="boardName" className="text-blue-400 w-36">
+                  <Link
+                    to={`/board?id=${board}`}
+                    className=" border-solid border-2 border-blue-400 rounded-md p-1.5"
+                  >
                     {boardName}
-                  </button>
+                  </Link>
                 </div>
                 <div id="tags" className="ml-5 text-gray-500 flex flex-wrap">
                   {tags.map((tag, index) => (
                     <p
-                      className="border-solid border-2 rounded-md p-0.5 mr-3"
+                      className="w-24 overflow-hidden mr-2 mt-1 pr-2 border-solid border-2 rounded-md p-1.5 text-center"
                       key={index}
                     >
                       {tag}
                     </p>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               <div className="flex items-center">
@@ -127,7 +150,7 @@ const DisscussPost = ({
                     to={`/user/profile/${author}`}
                     className="text-lg font-medium text-gray-900 mr-5"
                   >
-                    {authorName}
+                    發文者：{authorName}
                   </Link>
                   <div className="text-gray-500">
                     {publishTime.toDateString()}

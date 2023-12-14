@@ -80,42 +80,45 @@ const BoardPost = ({
           </div>
           <div
             id="content"
-            className="ml-10 flex flex-col justify-between w-full"
+            style={{ width: '40rem' }}
+            className="ml-10 flex flex-col"
           >
-            <div id="info" className="flex justify-between">
-              <div id="left" className="flex">
-                <div className="flex items-center space-x-2 mr-6">
-                  <span className="text-gray-600">總喜歡:</span>
-                  <span className="text-gray-900">{sumLikes}</span>
-                </div>
-                <div className="flex items-center space-x-2 mr-4">
-                  <span className="text-gray-600">總回覆:</span>
-                  <span className="text-gray-900">{sumReply}</span>
-                </div>
-                {/* <div className="flex items-center space-x-2 mr-4">
+            <div id="info" className="flex">
+              <div className="flex w-20 mr-5 items-center">
+                <span className="text-gray-600">總喜歡:</span>
+                <span className="text-gray-900">{sumLikes}</span>
+              </div>
+              <div className="flex w-20 items-center mr-8">
+                <span className="text-gray-600">總回覆:</span>
+                <span className="text-gray-900">{sumReply}</span>
+              </div>
+              {/* <div className="flex items-center space-x-2 mr-4">
                   <span className="text-gray-600">Hot:</span>
                   <span className="text-gray-900">{Math.round(hot)}</span>
                 </div> */}
-                <div id="tags" className=" text-gray-500 flex flex-wrap">
-                  {tags.map((tag, index) => (
-                    <p
-                      className="mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center"
-                      key={index}
-                    >
-                      {tag}
-                    </p>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            <div id="postContent" className="max-w-md">
-              <div className="text-2xl mt-1 text-gray-500">
-                <Link to={`/board/discussion?id=${_id}`}>{title}</Link>
+            <Link
+              to={`/board/discussion?id=${_id}`}
+              id="postContent"
+              className="max-w-md mt-5"
+            >
+              <div className="text-2xl mt-1 text-gray-500 overflow-hidden">
+                <div>{title}</div>
               </div>
-              <p className="text-gray-500 text-sm mt-3 w-96 h-16 truncate">
+              <p className="text-gray-500 text-sm mt-3 w-96 h-12 truncate">
                 {content}
               </p>
+            </Link>
+            <div id="tags" className=" text-gray-500 flex flex-wrap">
+              {tags.map((tag, index) => (
+                <p
+                  className="w-24 overflow-hidden mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center"
+                  key={index}
+                >
+                  {tag}
+                </p>
+              ))}
             </div>
           </div>
           <div id="timeInfo" className="w-56 text-sm">

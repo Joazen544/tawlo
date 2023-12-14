@@ -422,7 +422,7 @@ const Post = ({
                     {category !== 'reply' &&
                       tags.map((tag, index) => (
                         <p
-                          className="border-solid border-2 rounded-md p-0.5 mr-3"
+                          className="border-solid border-2 rounded-md p-1.5 mr-3"
                           key={index}
                         >
                           {tag}
@@ -490,7 +490,7 @@ const Post = ({
                 {category !== 'reply' &&
                   tags.map((tag, index) => (
                     <p
-                      className="border-solid border-2 rounded-md p-0.5 mr-3"
+                      className="border-solid border-2 rounded-md p-1.5 mr-3"
                       key={index}
                     >
                       {tag}
@@ -525,7 +525,7 @@ const Post = ({
         <div id="postContent" className="p-4 flex mt-3 mb-3">
           <div
             id="useful"
-            className="w-10 h-25 flex flex-col justify-center items-center"
+            className="pl-14 w-10 h-25 flex flex-col justify-center items-center"
           >
             <button
               id="upvote"
@@ -545,16 +545,10 @@ const Post = ({
               onClick={handleDownvote}
             ></button>
           </div>
-          <div
-            ref={contentPageRef}
-            id="content"
-            // className={`ml-10 ${
-            //   isFolded ? 'bg-gray-400 max-h-96 overflow-hidden' : null
-            // }`}
-          >
+          <div ref={contentPageRef} id="content" className="ml-4">
             <p
               style={{ whiteSpace: 'pre-line' }}
-              className={`ml-10 ${
+              className={`ml-10 pr-8 pl-3 ${
                 isFolded ? 'max-h-96 overflow-hidden' : null
               }`}
             >

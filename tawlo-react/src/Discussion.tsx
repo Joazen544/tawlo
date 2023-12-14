@@ -123,7 +123,7 @@ const Discussion = () => {
         <div
           id="postsContainer"
           style={{ width: '60rem' }}
-          className="border-solid border-l-2 border-r-2 bg-white"
+          className="border-solid border-l-2 mb-14 border-r-2 bg-white"
         >
           <InfiniteScroll
             dataLength={postsRender.length}
