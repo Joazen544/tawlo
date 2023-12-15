@@ -362,9 +362,6 @@ export async function changeImage(
       res.status(400).json({ error: 'no image in req' });
     }
 
-    console.log(`image is ${imageName}`);
-    console.log(user);
-
     await User.updateOne({ _id: user }, { $set: { image: imageName } });
 
     if (imageName) {
