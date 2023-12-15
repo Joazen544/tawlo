@@ -1,4 +1,5 @@
 import './dotenv';
+import './utils/redis';
 import './models/mongodb';
 
 import express from 'express';

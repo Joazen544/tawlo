@@ -17,6 +17,7 @@ import User, {
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 import { getIO } from './socket';
 import 'dotenv';
+import redisClient from '../utils/redis';
 
 const CDN_DOMAIN = process.env.DISTRIBUTION_DOMAIN;
 
@@ -146,6 +147,26 @@ export async function getUserInfo(
       return;
     }
 
+    try {
+      const result = await redisClient.hGetAll(`${id}info`);
+      if (result.name && result.image !== undefined) {
+        // is saved in redis
+        let imageUrl;
+        if (result.image === '') {
+          imageUrl = '';
+        } else {
+          imageUrl = `${CDN_DOMAIN}/user-image/${result.image}`;
+        }
+        console.log('get user info from redis');
+
+        res.json({ image: imageUrl, name: result.name });
+        return;
+      }
+    } catch (err) {
+      console.log(err);
+      console.log('something is wrong getting user info from redis');
+    }
+
     const userInfo = await getUserInfoFromDB(id);
 
     if (!userInfo) {
@@ -158,6 +179,15 @@ export async function getUserInfo(
       imageUrl = '';
     } else {
       imageUrl = `${CDN_DOMAIN}/user-image/${userInfo.image}`;
+    }
+
+    try {
+      await redisClient.hSet(`${id}info`, 'name', userInfo.name);
+      await redisClient.hSet(`${id}info`, 'image', userInfo.image);
+      await redisClient.expire(`${id}info`, 21600);
+      console.log('set user name and image to redis');
+    } catch (err) {
+      console.log(err);
     }
 
     res.json({ image: imageUrl, name: userInfo.name });
