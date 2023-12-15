@@ -20,6 +20,7 @@ import 'dotenv';
 import redisClient from '../utils/redis';
 
 const CDN_DOMAIN = process.env.DISTRIBUTION_DOMAIN;
+const USER_INFO_EXPIRE_SECONDS = 21600;
 
 export async function signUp(req: Request, res: Response) {
   try {
@@ -184,7 +185,7 @@ export async function getUserInfo(
     try {
       await redisClient.hSet(`${id}info`, 'name', userInfo.name);
       await redisClient.hSet(`${id}info`, 'image', userInfo.image);
-      await redisClient.expire(`${id}info`, 21600);
+      await redisClient.expire(`${id}info`, USER_INFO_EXPIRE_SECONDS);
       console.log('set user name and image to redis');
     } catch (err) {
       console.log(err);
@@ -393,6 +394,13 @@ export async function changeImage(
     }
 
     await User.updateOne({ _id: user }, { $set: { image: imageName } });
+
+    try {
+      await redisClient.del(`${user}info`);
+      console.log('delete user info from redis');
+    } catch (err) {
+      console.log(err);
+    }
 
     if (imageName) {
       fs.unlink(`${__dirname}/../../public/userImage/${imageName}`, () => {});
