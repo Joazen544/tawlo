@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refuseRequestFromDB = exports.getUserInfoFromDB = exports.getUserImageFromDB = exports.readNotificationsFromDB = exports.getNotificationsFromDB = exports.addNotificationToUserDB = exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
+exports.getUserFriendsFromDB = exports.refuseRequestFromDB = exports.getUserInfoFromDB = exports.getUserImageFromDB = exports.readNotificationsFromDB = exports.getNotificationsFromDB = exports.addNotificationToUserDB = exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const validator_1 = __importDefault(require("validator"));
@@ -505,4 +505,16 @@ function refuseRequestFromDB(user, target) {
     });
 }
 exports.refuseRequestFromDB = refuseRequestFromDB;
+function getUserFriendsFromDB(user) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userInfo = yield User.findOne({ _id: user });
+        if (!userInfo) {
+            return [];
+        }
+        const friendArray = userInfo.friends.filter((friend) => friend.status === 'friends');
+        const returnArray = friendArray.map((el) => el.user);
+        return returnArray;
+    });
+}
+exports.getUserFriendsFromDB = getUserFriendsFromDB;
 exports.default = User;

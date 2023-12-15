@@ -8,11 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getIO = exports.initSocket = void 0;
 const socket_io_1 = require("socket.io");
-// import { createMessage } from './message';
 const JWT_1 = require("../utils/JWT");
+const user_1 = require("../models/user");
+const redis_1 = __importDefault(require("../utils/redis"));
 const usersConnected = {};
 const socketsConnected = {};
 let usersId = [];
@@ -45,7 +49,7 @@ function initSocket(server) {
         console.log('a user connected');
         if (usersId)
             socket.emit('now-users', `These users are online: ${usersId}`);
-        socket.on('new-user', (data) => {
+        socket.on('new-user', (data) => __awaiter(this, void 0, void 0, function* () {
             if (usersConnected[data.userId]) {
                 usersConnected[data.userId].socketId.push(socket.id);
             }
@@ -57,14 +61,30 @@ function initSocket(server) {
                 socket.broadcast.emit('new-user', data.userId);
             }
             socketsConnected[socket.id] = { userId: data.userId, name: data.name };
-            socket.join(data.userId);
+            yield socket.join(data.userId);
             // give the new user the whole online list
             socket.emit('all-users-online', usersId);
             console.log(`User connected now: ${usersId}`);
-        });
+            // get user friends and notify them
+            try {
+                const friendsArray = yield (0, user_1.getUserFriendsFromDB)(data.userId);
+                redis_1.default.set(`${data.userId}friends`, JSON.stringify(friendsArray));
+                const onlineFriends = [];
+                friendsArray.forEach((friendId) => {
+                    socket.to(friendId.toString()).emit('friend-online', data.userId);
+                    if (usersConnected[friendId.toString()]) {
+                        onlineFriends.push(friendId.toString());
+                    }
+                });
+                io.to(data.userId).emit('friends', onlineFriends);
+            }
+            catch (err) {
+                console.log(err);
+                console.log('something wrong getting friends from DB and notify them');
+            }
+        }));
         socket.on('chat message', (messageData) => __awaiter(this, void 0, void 0, function* () {
             console.log('receiving message!!');
-            // console.log(messageData.to);
             try {
                 socket.broadcast.to(messageData.from).emit('myself', {
                     message: messageData.content,
@@ -83,7 +103,7 @@ function initSocket(server) {
                 console.log('something wrong sending message');
             }
         }));
-        socket.on('disconnect', () => {
+        socket.on('disconnect', () => __awaiter(this, void 0, void 0, function* () {
             try {
                 if (usersConnected[socketsConnected[socket.id].userId] &&
                     usersConnected[socketsConnected[socket.id].userId].socketId.length > 1) {
@@ -95,7 +115,20 @@ function initSocket(server) {
                 else {
                     delete usersConnected[socketsConnected[socket.id].userId];
                     usersId = usersId.filter((id) => id !== socketsConnected[socket.id].userId);
-                    socket.broadcast.emit('user-disconnected', socketsConnected[socket.id].userId);
+                    const friendsArrayString = yield redis_1.default.get(`${socketsConnected[socket.id].userId}friends`);
+                    if (!friendsArrayString) {
+                        return;
+                    }
+                    const friendsArray = JSON.parse(friendsArrayString);
+                    friendsArray.forEach((friendId) => {
+                        socket
+                            .to(friendId)
+                            .emit('friend-offline', socketsConnected[socket.id].userId);
+                    });
+                    // socket.broadcast.emit(
+                    //   'user-disconnected',
+                    //   socketsConnected[socket.id].userId,
+                    // );
                     console.log(`someone disconnected, the users remain now: ${usersId || null}`);
                 }
                 // tell every other user who disconnected
@@ -104,7 +137,7 @@ function initSocket(server) {
             catch (err) {
                 console.log(err);
             }
-        });
+        }));
     });
 }
 exports.initSocket = initSocket;

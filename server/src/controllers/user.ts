@@ -13,6 +13,7 @@ import User, {
   // getUserImageFromDB,
   getUserInfoFromDB,
   refuseRequestFromDB,
+  getUserFriendsFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 import { getIO } from './socket';
@@ -158,7 +159,7 @@ export async function getUserInfo(
         } else {
           imageUrl = `${CDN_DOMAIN}/user-image/${result.image}`;
         }
-        console.log('get user info from redis');
+        // console.log('get user info from redis');
 
         res.json({ image: imageUrl, name: result.name });
         return;
@@ -397,7 +398,7 @@ export async function changeImage(
 
     try {
       await redisClient.del(`${user}info`);
-      console.log('delete user info from redis');
+      // console.log('delete user info from redis');
     } catch (err) {
       console.log(err);
     }
@@ -420,20 +421,14 @@ export async function getFriendsList(
   try {
     const { user } = req.body;
 
-    const userInfo = await User.findOne({ _id: user });
-
-    if (!userInfo) {
-      res.status(400).json({ error: 'user does not exist' });
+    if (!user) {
+      res.status(400).json({ error: 'no user info' });
       return;
     }
 
-    const friendArray = userInfo.friends.filter(
-      (friend) => friend.status === 'friends',
-    );
+    const userFriends = await getUserFriendsFromDB(user);
 
-    const returnArray = friendArray.map((el) => el.user);
-
-    res.json(returnArray);
+    res.json(userFriends);
   } catch (err) {
     next(err);
   }

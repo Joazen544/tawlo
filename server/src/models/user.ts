@@ -597,4 +597,20 @@ export async function refuseRequestFromDB(user: string, target: string) {
   return result;
 }
 
+export async function getUserFriendsFromDB(user: string) {
+  const userInfo = await User.findOne({ _id: user });
+
+  if (!userInfo) {
+    return [];
+  }
+
+  const friendArray = userInfo.friends.filter(
+    (friend) => friend.status === 'friends',
+  );
+
+  const returnArray = friendArray.map((el) => el.user);
+
+  return returnArray;
+}
+
 export default User;

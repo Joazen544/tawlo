@@ -14,8 +14,6 @@ router.route('/user/signup').post(uploadImage_1.default, uploadToS3_1.default, u
 router.route('/user/signin').post(user_1.signIn);
 router.route('/user/read').post(verifyJWT_1.default, user_1.updateUserRead);
 router.route('/user/info').get(user_1.getUserInfo);
-// router.route('/user/name').get(getUserName);
-// router.route('/user/image').get(getUserImage);
 router
     .route('/user/image')
     .post(uploadImage_1.default, uploadToS3_1.default, verifyJWT_1.default, user_1.changeImage);
