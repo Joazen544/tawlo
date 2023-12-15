@@ -334,11 +334,7 @@ const Post = ({
       })
       .then(() => {
         if (category === 'mother') {
-          console.log('board is');
-          console.log(board);
-
           navigate(`/board?id=${board}`);
-          console.log('123');
         }
         clickDelete(_id);
       })
@@ -441,7 +437,7 @@ const Post = ({
                           style={{ objectFit: 'cover' }}
                           src={authorImage}
                           alt="user-image"
-                          className="h-full w-full"
+                          className="h-full w-full rounded-full"
                         />
                       )}
                     </div>{' '}
@@ -460,7 +456,7 @@ const Post = ({
               <div className="flex-shrink-0">
                 <div
                   id="userImage"
-                  className={`h-12 w-12 border-2 border-solid border-gray-400 ${
+                  className={`h-12 w-12  ${
                     !authorImage && 'bg-user-image'
                   } bg-contain bg-no-repeat`}
                 >
@@ -469,7 +465,7 @@ const Post = ({
                       style={{ objectFit: 'cover' }}
                       src={authorImage}
                       alt="user-image"
-                      className="h-full w-full"
+                      className="h-full w-full rounded-full"
                     />
                   )}
                 </div>
@@ -539,7 +535,7 @@ const Post = ({
             <button
               id="downvote"
               style={{ backgroundSize: '1rem' }}
-              className={`w-10 h-10 bg-down-arrow  bg-no-repeat hover:bg-gray-100 bg-center border-solid border-2 border-black rounded-full ${
+              className={`w-10 h-10 bg-down-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
                 isDownvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
               }`}
               onClick={handleDownvote}

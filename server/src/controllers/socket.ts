@@ -148,6 +148,10 @@ export function initSocket(server: http.Server) {
               .to(friendId)
               .emit('friend-offline', socketsConnected[socket.id].userId);
           });
+          console.log(`socket connected 1: ${socketsConnected[socket.id]}`);
+          console.log(
+            `socket connected 2: ${socketsConnected[socket.id].userId}`,
+          );
 
           // socket.broadcast.emit(
           //   'user-disconnected',

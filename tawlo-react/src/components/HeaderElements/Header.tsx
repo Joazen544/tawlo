@@ -6,15 +6,95 @@ import Cookies from 'js-cookie';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { SearchResultInterface } from './SearchBar';
+import { socket } from '../../socket';
+
+export interface FriendInterface {
+  id: string;
+  name: string;
+  image: string;
+}
 
 interface Props {
   target?: { id: string; name: string; targetId: string } | null;
   handleSearch?: (searchResult: SearchResultInterface) => void;
+  handleFriends?: (friends: FriendInterface[]) => void;
 }
 
-const Header = ({ target, handleSearch }: Props) => {
+const Header = ({ target, handleSearch, handleFriends }: Props) => {
   const [userImage, setUserImage] = useState<string>('');
+  const [onlineFriends, setOnlineFriends] = useState<FriendInterface[]>([]);
+  const [ifNewFriend, setIfNewFriend] = useState<number>(0);
+  const [ifFriendOffline, setIfFriendOffline] = useState<number>(0);
+
   const id = Cookies.get('userId');
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('friends', async (usersArray: string[]) => {
+        console.log('friends');
+        console.log(usersArray);
+
+        const friendsArray: FriendInterface[] = [];
+        for (let i = 0; i < usersArray.length; i++) {
+          const userInfoRes = await axios.get(
+            `${import.meta.env.VITE_DOMAIN}/api/user/info?id=${usersArray[i]}`,
+          );
+          friendsArray[i] = {
+            id: usersArray[i],
+            image: userInfoRes.data.image,
+            name: userInfoRes.data.name,
+          };
+        }
+        setOnlineFriends(friendsArray);
+      });
+    }
+
+    return () => {
+      if (socket) socket.off('friends');
+    };
+  }, []);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('friend-online', async (user) => {
+        const userInfoRes = await axios.get(
+          `${import.meta.env.VITE_DOMAIN}/api/user/info?id=${user}`,
+        );
+
+        setOnlineFriends((pre) => [
+          ...pre,
+          {
+            id: user,
+            image: userInfoRes.data.image,
+            name: userInfoRes.data.name,
+          },
+        ]);
+        setIfNewFriend((pre) => pre + 1);
+      });
+    }
+
+    return () => {
+      if (socket) socket.off('friend-online');
+    };
+  }, [ifNewFriend]);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('friend-offline', (message) => {
+        const newArray = onlineFriends.filter((el) => el.id !== message);
+        console.log('newArray: ' + newArray);
+
+        console.log('friend offline: ' + message);
+
+        setOnlineFriends((pre) => pre.filter((el) => el.id !== message));
+        setIfFriendOffline((pre) => pre + 1);
+      });
+    }
+
+    return () => {
+      if (socket) socket.off('friend-offline');
+    };
+  }, [ifFriendOffline]);
 
   useEffect(() => {
     axios
@@ -30,6 +110,12 @@ const Header = ({ target, handleSearch }: Props) => {
         console.log(err);
       });
   }, []);
+
+  useEffect(() => {
+    if (handleFriends) {
+      handleFriends(onlineFriends);
+    }
+  }, [onlineFriends]);
 
   return (
     <>
@@ -75,7 +161,7 @@ const Header = ({ target, handleSearch }: Props) => {
                 style={{ objectFit: 'cover' }}
                 src={userImage}
                 alt="user-image"
-                className="h-8 w-8"
+                className="h-8 w-8 rounded-full"
               />
             )}
           </Link>

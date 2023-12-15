@@ -26,6 +26,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
   const [ifChatBoxOpen, setIfChatBoxOpen] = useState(false);
   const [chatGroupId, setChatGroupId] = useState<string>('');
   const [chatName, setChatName] = useState('');
+  const [messagesImage, setMessagesImage] = useState<string[]>([]);
   const [messageTargetId, setMessageTargetId] = useState<string>('');
   const [unreadNum, setUnreadNum] = useState(0);
   const [messageFromOthers, setMessageFromOthers] = useState(0);
@@ -186,6 +187,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
 
   useEffect(() => {
     const nameArray: string[] = [];
+    const imageArray: string[] = [];
     messagesGroup.forEach((message, index) => {
       axios
         .get(
@@ -193,8 +195,11 @@ const MessageDropdown = ({ messageTarget }: Props) => {
         )
         .then((res) => {
           const userName = res.data.name as string;
+          const userImage = res.data.image as string;
           nameArray[index] = userName;
+          imageArray[index] = userImage;
           setMessagesName([...nameArray]);
+          setMessagesImage([...imageArray]);
         })
         .catch((err) => {
           console.log(err);
@@ -242,13 +247,13 @@ const MessageDropdown = ({ messageTarget }: Props) => {
           </div>
         </button>
         {isDropdownOpen && messagesGroup.length > 0 && (
-          <div className="absolute h-64 overflow-y-auto right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md">
+          <div className="absolute h-64 overflow-y-auto right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-md">
             <ul>
               {messagesGroup.map((message, index) => {
                 return (
                   <li
                     key={message._id}
-                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                    className="p-2 hover:bg-gray-100 cursor-pointer flex items-center mb-1 mt-1 border-b-2 border-gray-300 border-solid"
                     onClick={() =>
                       openChatGroup(
                         message._id,
@@ -257,22 +262,37 @@ const MessageDropdown = ({ messageTarget }: Props) => {
                       )
                     }
                   >
-                    <div className="flex items-center w-full justify-left">
-                      <span className="font-bold mr-2">
-                        {messagesName[index]}
-                      </span>
-                      <span className="text-gray-500 text-sm mr-2">
-                        {new Date(message.update_time).toLocaleTimeString()}
-                      </span>
-                      {message.last_sender !== user ? (
-                        message.unread > 0 && (
-                          <span className="ml-3">{message.unread}</span>
-                        )
+                    <div className="h-16 w-16 ">
+                      {messagesImage[index] ? (
+                        <img
+                          src={messagesImage[index]}
+                          alt="user image"
+                          className=" h-14 w-14 rounded-full"
+                        />
                       ) : (
-                        <></>
+                        <div className="bg-user-image h-12 w-12 bg-contain bg-no-repeat"></div>
                       )}
                     </div>
-                    <p>{message.last_message}</p>
+                    <div className="w-full pl-3">
+                      <div className="flex items-center w-full justify-left">
+                        <span className="font-bold mr-2">
+                          {messagesName[index]}
+                        </span>
+                        <span className="text-gray-500 text-sm mr-2">
+                          {new Date(message.update_time).toLocaleTimeString()}
+                        </span>
+                        {message.last_sender !== user ? (
+                          message.unread > 0 && (
+                            <span className="ml-3">{message.unread}</span>
+                          )
+                        ) : (
+                          <></>
+                        )}
+                      </div>
+                      <p className="overflow-hidden h-12">
+                        {message.last_message}
+                      </p>
+                    </div>
                   </li>
                 );
               })}

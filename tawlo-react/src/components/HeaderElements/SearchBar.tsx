@@ -41,8 +41,6 @@ const SearchBar = ({ handleSearchResult }: Props) => {
       event.target instanceof Node &&
       !dropdownRef.current.contains(event.target)
     ) {
-      console.log('123');
-
       setIfSelected(false);
     }
   };

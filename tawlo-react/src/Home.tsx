@@ -8,6 +8,9 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import 'dotenv';
 import { Link, Navigate } from 'react-router-dom';
+import FriendsTable from './components/FriendsTable';
+import { FriendInterface } from './components/HeaderElements/Header';
+import { MessageTarget } from './Profile';
 
 export interface PostInterface {
   _id: string;
@@ -66,6 +69,8 @@ const Home = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [postsRecommend, setPostsRecommend] = useState<PostArray>([]);
   const [postsRender, setPostsRender] = useState<PostArray>([]);
+  const [friendsOnline, setFriendsOnline] = useState<FriendInterface[]>([]);
+  const [messageTarget, setMessageTarget] = useState<MessageTarget>();
 
   const token = Cookies.get('jwtToken');
 
@@ -146,10 +151,17 @@ const Home = () => {
     setPostsRender(postsRender.filter((post) => post._id !== postId));
   };
 
+  const updateFriends = (friends: FriendInterface[]) => {
+    setFriendsOnline(friends);
+  };
+
   return (
     <div>
       {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
-      <Header />
+      <Header
+        handleFriends={(friends) => updateFriends(friends)}
+        target={messageTarget}
+      />
       <section
         id="posts_container"
         className="w-full bg-gray-50 min-h-screen flex flex-row"
@@ -157,7 +169,7 @@ const Home = () => {
         <div
           id="sideBar"
           style={{ height: '20rem' }}
-          className="flex-shrink-0 fixed left-0 top-96 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
+          className="flex-shrink-0 fixed left-0 top-32 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
         >
           <div className="mb-4 font-bold text-xl">Boards</div>
           <ul>
@@ -173,6 +185,10 @@ const Home = () => {
             ))}
           </ul>
         </div>
+        <FriendsTable
+          friends={friendsOnline}
+          handleMessageTarget={(target) => setMessageTarget(target)}
+        />
         <div
           id="postsContainer"
           className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"

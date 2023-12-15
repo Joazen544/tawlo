@@ -46,8 +46,6 @@ const DisscussPost = ({
   }, [author]);
 
   useEffect(() => {
-    console.log(board);
-
     axios
       .get(`${import.meta.env.VITE_DOMAIN}/api/board/name?id=${board}`)
       .then((res) => {

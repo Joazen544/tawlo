@@ -6,7 +6,7 @@ import axios from 'axios';
 import { socket } from './socket';
 import ProfileSideBar from './ProfileSideBar';
 
-interface MessageTarget {
+export interface MessageTarget {
   id: string;
   name: string;
   targetId: string;
