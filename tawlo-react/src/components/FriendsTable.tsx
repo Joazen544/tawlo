@@ -59,7 +59,7 @@ const FriendsTable = ({ friends, handleMessageTarget }: Props) => {
       className="flex-shrink-0 fixed left-0 top-96 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
     >
       <div>好友上線</div>
-      <div>
+      <div className="overflow-y-auto">
         {friends &&
           friends.map((friend) => (
             <div

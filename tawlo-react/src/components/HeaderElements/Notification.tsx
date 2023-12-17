@@ -291,8 +291,7 @@ const Notification = () => {
           <div className="absolute h-64 overflow-y-auto right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-md">
             <ul>
               {notifications.map((notification, index) => {
-                // console.log(index);
-                // console.log(notificationsName);
+                const date = new Date(notification.time);
 
                 return (
                   <li
@@ -308,7 +307,10 @@ const Notification = () => {
                   >
                     <div className="flex items-center w-full justify-left">
                       <span className="text-gray-500 text-sm mr-2">
-                        {new Date(notification.time).toLocaleTimeString()}
+                        {`${date.toLocaleDateString()}`}
+                      </span>
+                      <span className="text-gray-500 text-sm mr-2">
+                        {`${date.toLocaleTimeString()}`}
                       </span>
                     </div>
                     {notificationsName[index] && (

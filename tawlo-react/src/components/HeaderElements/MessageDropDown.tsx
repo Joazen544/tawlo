@@ -250,6 +250,7 @@ const MessageDropdown = ({ messageTarget }: Props) => {
           <div className="absolute h-64 overflow-y-auto right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-md">
             <ul>
               {messagesGroup.map((message, index) => {
+                const date = new Date(message.update_time);
                 return (
                   <li
                     key={message._id}
@@ -274,20 +275,25 @@ const MessageDropdown = ({ messageTarget }: Props) => {
                       )}
                     </div>
                     <div className="w-full pl-3">
-                      <div className="flex items-center w-full justify-left">
+                      <div className="flex items-center w-full justify-between">
                         <span className="font-bold mr-2">
                           {messagesName[index]}
                         </span>
-                        <span className="text-gray-500 text-sm mr-2">
-                          {new Date(message.update_time).toLocaleTimeString()}
-                        </span>
-                        {message.last_sender !== user ? (
-                          message.unread > 0 && (
-                            <span className="ml-3">{message.unread}</span>
-                          )
-                        ) : (
-                          <></>
-                        )}
+                        <div>
+                          <div className="text-gray-500 text-sm mr-2">
+                            {`${date.toLocaleDateString()}`}
+                          </div>
+                          <div className="text-gray-500 text-sm mr-2">
+                            {`${date.toLocaleTimeString()}`}
+                          </div>
+                          {message.last_sender !== user ? (
+                            message.unread > 0 && (
+                              <span className="ml-3">{message.unread}</span>
+                            )
+                          ) : (
+                            <></>
+                          )}
+                        </div>
                       </div>
                       <p className="overflow-hidden h-12">
                         {message.last_message}

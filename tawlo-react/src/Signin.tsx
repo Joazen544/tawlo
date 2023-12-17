@@ -183,12 +183,6 @@ const Signin = () => {
           // access file here
           setUploadImage(file);
         });
-
-        // const file = {
-        //   uri: res.data.message,
-        //   name: 'image',
-        //   type: 'image/jpg', // if you can get image type from cropping replace here
-        // } as File;
       }
     } catch (err) {
       console.log(err);
@@ -199,7 +193,7 @@ const Signin = () => {
     <>
       {ifSignIn && <Navigate to="/" replace={true}></Navigate>}
       {/* <Header /> */}
-      <div className="max-w-3xl mx-auto mt-8">
+      <div className="max-w-3xl mx-auto mt-8 mb-8">
         <h2 className="text-2xl font-bold mb-4">註冊</h2>
         <form onSubmit={handleSignupSubmit}>
           <div className="mb-4">
