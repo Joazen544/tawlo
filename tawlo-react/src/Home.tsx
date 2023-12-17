@@ -169,7 +169,7 @@ const Home = () => {
         <div
           id="sideBar"
           style={{ height: '20rem' }}
-          className="flex-shrink-0 fixed left-0 top-32 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
+          className="flex-shrink-0 z-0 fixed left-0 top-32 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
         >
           <div className="mb-4 font-bold text-xl">Boards</div>
           <ul>

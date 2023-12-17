@@ -122,7 +122,7 @@ const Header = ({ target, handleSearch, handleFriends }: Props) => {
       <div
         id="container"
         style={{ boxShadow: '0 2px 3px -3px gray' }}
-        className="top-0 fixed w-full h-12 bg-white flex justify-between"
+        className="top-0 fixed z-10 w-full h-12 bg-white flex justify-between"
       >
         <div id="left_part_header" className="w-96 h-12 flex items-center">
           <div id="logo" className="flex items-center ml-2">
