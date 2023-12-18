@@ -124,11 +124,8 @@ const Post = mongoose.model('Post', postSchema);
 
 export async function getAutoRecommendedPosts(
   preferenceTags: string[],
-  boards: ObjectId[],
   read_posts: ObjectId[],
 ) {
-  if (!boards) console.log(boards);
-
   const aggregateArray = [];
   aggregateArray.push(
     {
@@ -195,6 +192,7 @@ export async function getAutoRecommendedPosts(
             {
               $add: [
                 '$score',
+                '$hot',
                 {
                   $multiply: [
                     -300,
@@ -226,6 +224,172 @@ export async function getAutoRecommendedPosts(
             {
               $add: [
                 '$score',
+                '$hot',
+                {
+                  $multiply: [
+                    200,
+                    {
+                      $dateDiff: {
+                        startDate: '$$NOW',
+                        endDate: '$update_date',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $sort: {
+        score: -1,
+      },
+    },
+    {
+      $limit: 50,
+    },
+    {
+      $project: {
+        _id: 1,
+        category: 1,
+        board: 1,
+        hot: 1,
+        score: 1,
+        tags: 1,
+        time: 1,
+        title: 1,
+        author: 1,
+        publish_date: 1,
+        update_date: 1,
+        content: 1,
+        edit: 1,
+        liked: 1,
+        sum_likes: 1,
+        sum_upvotes: 1,
+        sum_comments: 1,
+        sum_reply: 1,
+        last_reply: 1,
+        upvote: 1,
+        downvote: 1,
+        comments: 1,
+      },
+    },
+  );
+
+  // @ts-ignore
+  const posts = await Post.aggregate(aggregateArray);
+
+  return posts;
+}
+
+export async function getCustomizedPostsFromDB(
+  tags: string[],
+  preferenceTags: string[],
+  read_posts: ObjectId[],
+) {
+  const aggregateArray = [];
+  aggregateArray.push(
+    {
+      $match: {
+        is_delete: false,
+      },
+    },
+    {
+      $match: {
+        $or: [
+          {
+            category: 'mother',
+          },
+          {
+            category: 'native',
+          },
+        ],
+        tags: { $in: tags },
+      },
+    },
+    {
+      $addFields: {
+        score: 0,
+        time: {
+          $dateDiff: {
+            startDate: '$$NOW',
+            endDate: '$publish_date',
+            unit: 'hour',
+          },
+        },
+      },
+    },
+  );
+
+  let scoring = 100;
+
+  preferenceTags.forEach((tag) => {
+    aggregateArray.push({
+      $set: {
+        score: {
+          $cond: [
+            {
+              $in: [tag, '$tags'],
+            },
+            {
+              $add: ['$score', scoring * 5],
+            },
+            {
+              $add: ['$score', 0],
+            },
+          ],
+        },
+      },
+    });
+
+    scoring -= 10;
+  });
+
+  aggregateArray.push(
+    {
+      $set: {
+        score: {
+          $cond: [
+            { $in: ['$_id', read_posts] },
+            {
+              $add: [
+                '$score',
+                '$hot',
+                {
+                  $multiply: [
+                    -300,
+                    {
+                      $size: {
+                        $filter: {
+                          input: read_posts,
+                          as: 'post',
+                          cond: { $eq: ['$$post', '$_id'] },
+                        },
+                      },
+                    },
+                  ],
+                },
+                {
+                  $multiply: [
+                    200,
+                    {
+                      $dateDiff: {
+                        startDate: '$$NOW',
+                        endDate: '$update_date',
+                        unit: 'day',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              $add: [
+                '$score',
+                '$hot',
                 {
                   $multiply: [
                     200,

@@ -18,6 +18,7 @@ interface Props {
   sumComments: number;
   sumReply: number;
   title: string;
+  sequence: number;
 }
 
 const BoardPost = ({
@@ -28,8 +29,8 @@ const BoardPost = ({
   lastReply,
   tags,
   content,
-  // hot,
-  sumLikes,
+  sequence,
+  // sumLikes,
   sumUpvotes,
   sumReply,
   title,
@@ -62,86 +63,155 @@ const BoardPost = ({
   return (
     <>
       <div
-        style={{ width: '50rem' }}
-        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
+        style={{ width: '60rem' }}
+        className=" mx-auto mt-16 z-10 relative bg-gray-50 "
       >
-        <div id="postContent" className="p-4 flex items-center">
-          <div
-            id="interactionInfo"
-            className="w-20 h-20 box-content flex justify-center items-center border-r border-gray-200"
-          >
-            <span
-              className={`${
-                sumUpvotes > HOT_POST_SCORE ? 'text-red-500' : 'text-gray-900'
-              } text-3xl `}
+        <div
+          style={{
+            backgroundColor: `${
+              sequence === 0
+                ? import.meta.env.VITE_MAIN_COLOR
+                : import.meta.env.VITE_MAIN_STRING_COLOR
+            }`,
+            color: `${
+              sequence === 0
+                ? import.meta.env.VITE_MAIN_STRING_COLOR
+                : import.meta.env.VITE_MAIN_COLOR
+            }`,
+          }}
+          className="absolute left-16 -top-4 z-10 px-8 rounded-2xl border-solid border-gray-400 border-2"
+        >
+          <div id="info" className="flex">
+            <div
+              id="interactionInfo"
+              className=" mr-12 flex justify-center items-center "
             >
-              {sumUpvotes}
-            </span>
+              <span
+                className={`${
+                  sumUpvotes > HOT_POST_SCORE ? 'text-red-500' : ''
+                } text-3xl `}
+              >
+                {sumUpvotes}
+              </span>
+            </div>
+            <div className="flex w-20 items-center">
+              <span className="">總回覆:</span>
+              <span className="ml-1">{sumReply}</span>
+            </div>
           </div>
+        </div>
+        <div
+          id="postContent"
+          className="px-4 pt-6 pb-6 flex justify-between items-center shadow-lg rounded-2xl border-solid border-gray-400 border-2"
+          style={{
+            backgroundColor: `${
+              sequence === 0
+                ? import.meta.env.VITE_MAIN_STRING_COLOR
+                : import.meta.env.VITE_MAIN_COLOR
+            }`,
+          }}
+        >
           <div
             id="content"
-            style={{ width: '40rem' }}
+            // style={{ width: '40rem' }}
             className="ml-10 flex flex-col"
           >
-            <div id="info" className="flex">
-              <div className="flex w-20 mr-5 items-center">
-                <span className="text-gray-600">總喜歡:</span>
-                <span className="text-gray-900">{sumLikes}</span>
-              </div>
-              <div className="flex w-20 items-center mr-8">
-                <span className="text-gray-600">總回覆:</span>
-                <span className="text-gray-900">{sumReply}</span>
-              </div>
-              {/* <div className="flex items-center space-x-2 mr-4">
-                  <span className="text-gray-600">Hot:</span>
-                  <span className="text-gray-900">{Math.round(hot)}</span>
-                </div> */}
-            </div>
-
             <Link
               to={`/board/discussion?id=${_id}`}
               id="postContent"
-              className="max-w-md mt-5"
+              style={{
+                textDecorationColor: `${
+                  sequence === 0
+                    ? import.meta.env.VITE_MAIN_COLOR
+                    : import.meta.env.VITE_MAIN_STRING_COLOR
+                }`,
+              }}
+              className="mt-2 hover:underline flex items-center"
             >
-              <div className="text-2xl mt-1 text-gray-500 overflow-hidden">
-                <div>{title}</div>
+              <div className="text-2xl font-medium w-72 mr-5 mt-1 overflow-hidden">
+                <div
+                  style={{
+                    color: `${
+                      sequence === 0
+                        ? import.meta.env.VITE_MAIN_COLOR
+                        : import.meta.env.VITE_MAIN_STRING_COLOR
+                    }`,
+                  }}
+                >
+                  {title}
+                </div>
               </div>
-              <p className="text-gray-500 text-sm mt-3 w-96 h-12 truncate">
-                {content}
-              </p>
+              <div
+                //style={{ height: '3.5rem' }}
+                className="w-60  flex items-start overflow-hidden"
+              >
+                <p
+                  style={{ maxHeight: '3.6rem' }}
+                  className="text-gray-400 text-sm"
+                >
+                  {content}
+                </p>
+              </div>
             </Link>
-            <div id="tags" className=" text-gray-500 flex flex-wrap">
+          </div>
+          <div id="right-part" className=" w-56">
+            <div id="tags" className=" flex flex-wrap">
               {tags.map((tag, index) => (
                 <p
-                  className="w-24 overflow-hidden mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center"
+                  style={{
+                    color: `${
+                      sequence === 0
+                        ? import.meta.env.VITE_MAIN_COLOR
+                        : import.meta.env.VITE_MAIN_STRING_COLOR
+                    }`,
+                  }}
+                  className={`w-24 mb-2 overflow-hidden mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center`}
                   key={index}
                 >
                   {tag}
                 </p>
               ))}
             </div>
-          </div>
-          <div id="timeInfo" className="w-56 text-sm">
-            <div className="ml-3 flex flex-col justify-center">
-              {new Date(publishDate).toDateString()}
-              <Link
-                to={`/user/profile/${author}`}
-                className="text-md font-medium text-blue-400 hover:text-blue-500 mr-5"
+            <div id="timeInfo" className="w-56 text-sm mt-2">
+              <div
+                className=" flex justify-between"
+                style={{
+                  color: `${
+                    sequence === 0
+                      ? import.meta.env.VITE_MAIN_COLOR
+                      : import.meta.env.VITE_MAIN_STRING_COLOR
+                  }`,
+                }}
               >
-                {authorName}
-              </Link>
-            </div>
-            {lastReply && (
-              <div className="ml-3 flex flex-col justify-center mt-2">
-                {new Date(updateDate).toDateString()}
                 <Link
-                  to={`/user/profile/${lastReply}`}
-                  className="text-md font-medium text-blue-400 hover:text-blue-500 mr-5"
+                  to={`/user/profile/${author}`}
+                  className={`text-md mr-3 font-medium hover:underline`}
                 >
-                  {lastReplyName}
+                  {authorName}
                 </Link>
+                {new Date(publishDate).toDateString()}
               </div>
-            )}
+              {lastReply && (
+                <div
+                  className="flex justify-between"
+                  style={{
+                    color: `${
+                      sequence === 0
+                        ? import.meta.env.VITE_MAIN_COLOR
+                        : import.meta.env.VITE_MAIN_STRING_COLOR
+                    }`,
+                  }}
+                >
+                  <Link
+                    to={`/user/profile/${lastReply}`}
+                    className={`text-md mr-3 font-medium hover:underline`}
+                  >
+                    {lastReplyName}
+                  </Link>
+                  {new Date(updateDate).toDateString()}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

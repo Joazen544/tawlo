@@ -12,6 +12,7 @@ router.route('/post').get(post_1.getPost);
 router.route('/post').delete(verifyJWT_1.default, post_1.deletePost);
 router.route('/post/search').get(post_1.searchPost);
 router.route('/posts/recommendation').get(verifyJWT_1.default, post_1.getRecommendPosts);
+router.route('/posts/customize').get(verifyJWT_1.default, post_1.getCustomizedPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(post_1.getPostsOnBoard);
 router.route('/board/post/detail').get(post_1.getMotherAndReplies);

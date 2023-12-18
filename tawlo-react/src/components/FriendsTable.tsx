@@ -53,12 +53,8 @@ const FriendsTable = ({ friends, handleMessageTarget }: Props) => {
   };
 
   return (
-    <div
-      id="sideBar"
-      style={{ height: '20rem' }}
-      className="flex-shrink-0 fixed left-0 top-96 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
-    >
-      <div>好友上線</div>
+    <div className="relative z-10 mt-5">
+      <div className="mb-4 font-bold text-xl">好友上線</div>
       <div className="overflow-y-auto">
         {friends &&
           friends.map((friend) => (

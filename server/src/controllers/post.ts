@@ -6,6 +6,7 @@ import Post, {
   getMotherAndReplyPostsFromDB,
   getPostFromDB,
   searchPostsFromDB,
+  getCustomizedPostsFromDB,
 } from '../models/post';
 import {
   updateUserAction,
@@ -76,8 +77,15 @@ async function calculateMotherPostHot(
 
 export async function createPost(req: Request, res: Response) {
   try {
-    const { category, user, title, content, tags, board, motherPost } =
-      req.body;
+    const { category, user, title, content, board, motherPost } = req.body;
+    const tags = req.body.tags as string;
+
+    let tagsArray: string[] = [];
+    if (tags !== undefined) {
+      tagsArray = Array.isArray(tags)
+        ? tags.map((tag) => tag.toLowerCase())
+        : [tags.toLowerCase()].filter(Boolean);
+    }
 
     const userId = new ObjectId(user);
     const publishDate = new Date();
@@ -90,7 +98,7 @@ export async function createPost(req: Request, res: Response) {
         content,
         publish_date: publishDate,
         update_date: publishDate,
-        tags,
+        tags: tagsArray,
         floor: 1,
       });
     } else if (category === 'mother') {
@@ -104,7 +112,7 @@ export async function createPost(req: Request, res: Response) {
         content,
         publish_date: publishDate,
         update_date: publishDate,
-        tags,
+        tags: tagsArray,
         board,
         floor: 1,
       });
@@ -127,7 +135,7 @@ export async function createPost(req: Request, res: Response) {
         },
       );
 
-      const postTags = motherPostInfo.tags;
+      tagsArray = motherPostInfo.tags;
       const postBoard = motherPostInfo.board;
 
       if ((await updateMotherResult).acknowledged === false) {
@@ -141,7 +149,7 @@ export async function createPost(req: Request, res: Response) {
         content,
         publish_date: publishDate,
         update_date: publishDate,
-        tags: postTags,
+        tags: tagsArray,
         board: postBoard,
         mother_post: motherPost,
       });
@@ -173,7 +181,7 @@ export async function createPost(req: Request, res: Response) {
     }
 
     try {
-      addPostTagsToDB(tags);
+      addPostTagsToDB(tagsArray);
     } catch (err) {
       console.log(err);
       console.log('something goes wrong adding post tags to DB');
@@ -1240,10 +1248,8 @@ export async function getRecommendPosts(req: Request, res: Response) {
 
   try {
     const { user } = req.body;
-    // console.log(user);
 
     const userId = new ObjectId(user);
-    // const {tags,}
     const userInfo = (await getUserPreference(userId)) as UserDocument;
 
     let preferenceTags;
@@ -1262,7 +1268,42 @@ export async function getRecommendPosts(req: Request, res: Response) {
     // if(recommendMode === 'auto')
     const posts = await getAutoRecommendedPosts(
       preferenceTags,
-      userInfo.read_board,
+      userInfo.read_posts,
+    );
+
+    res.json(posts);
+  } catch (err) {
+    console.log(err);
+    if (err instanceof Error) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'Get posts fail' });
+  }
+}
+
+export async function getCustomizedPosts(req: Request, res: Response) {
+  try {
+    const { user } = req.body;
+    const tags = req.query.tags as string;
+    if (!tags) {
+      res.status(400).json({ error: 'no tags' });
+      return;
+    }
+    const userInfo = (await getUserPreference(user)) as UserDocument;
+
+    let tagsArray: string[] = [];
+    if (tags !== undefined) {
+      tagsArray = Array.isArray(tags) ? tags : [tags].filter(Boolean);
+    }
+
+    const preferenceTags = userInfo.preference_tags.map(
+      (tag) => tag.name,
+    ) as string[];
+
+    const posts = await getCustomizedPostsFromDB(
+      tagsArray,
+      preferenceTags,
       userInfo.read_posts,
     );
 

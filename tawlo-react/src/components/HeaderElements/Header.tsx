@@ -121,12 +121,21 @@ const Header = ({ target, handleSearch, handleFriends }: Props) => {
     <>
       <div
         id="container"
-        style={{ boxShadow: '0 2px 3px -3px gray' }}
-        className="top-0 fixed z-10 w-full h-12 bg-white flex justify-between"
+        style={{
+          boxShadow: '0 2px 3px -3px gray',
+          backgroundColor: import.meta.env.VITE_MAIN_COLOR,
+        }}
+        className="top-0 fixed pr-3 z-20 w-full h-14 items-center bg-white flex justify-between"
       >
         <div id="left_part_header" className="w-96 h-12 flex items-center">
           <div id="logo" className="flex items-center ml-2">
-            <Link to="/" className="text-2xl h-8">
+            <Link
+              to="/"
+              style={{
+                color: import.meta.env.VITE_MAIN_STRING_COLOR,
+              }}
+              className="text-2xl h-8"
+            >
               TAWLO
             </Link>
           </div>
@@ -137,31 +146,36 @@ const Header = ({ target, handleSearch, handleFriends }: Props) => {
           />
           <div
             id="meet"
+            style={{ borderColor: import.meta.env.VITE_MAIN_STRING_COLOR }}
             className="h-8 p-2 rounded-lg flex items-center ml-10 border-solid border-2 border-gray-500 hover:bg-gray-500 hover:text-white"
           >
-            <Link to="/meeting" className="text-xl h-8">
-              Meet
+            <Link
+              style={{ color: import.meta.env.VITE_MAIN_STRING_COLOR }}
+              to="/meeting"
+              className="text-xl h-8 w-28 flex items-center justify-center"
+            >
+              <p>認識新朋友</p>
             </Link>
           </div>
         </div>
         <div
           id="right_part_container"
-          className="w-32 h-12 flex items-center justify-around"
+          className=" w-36 h-12 flex items-center justify-around"
         >
           <MessageDropdown messageTarget={target} />
           <Notification />
           <Link
             to={`/user/profile/${Cookies.get('userId') || 'not-log-in'}`}
-            className={`w-8 h-8 ${
+            className={`w-9 h-9 ${
               !userImage && 'bg-user-image'
             } bg-contain bg-no-repeat`}
           >
             {userImage && (
               <img
-                style={{ objectFit: 'cover' }}
+                style={{ objectFit: 'cover', borderWidth: '3px' }}
                 src={userImage}
                 alt="user-image"
-                className="h-8 w-8 rounded-full"
+                className="h-9 w-9 rounded-full border-white border-solid"
               />
             )}
           </Link>

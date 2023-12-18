@@ -63,10 +63,10 @@ const Board = () => {
   return (
     <>
       <Header />
-      <div className="flex flex-col items-center pt-28 bg-gray-50 min-h-screen">
+      <div className="flex flex-col relative z-0 items-center pt-32 bg-gray-50 min-h-screen pb-5">
         <h2 className="text-2xl font-bold mb-4">Board: {boardName}</h2>
         <button
-          className="px-4 w-20 h-12 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-lg"
+          className="px-4 w-20 h-10 mt-3  bg-slate-900 text-white rounded-md hover:bg-slate-600 text-lg"
           onClick={() => setIfAppendPostArea(!ifAppendPostArea)}
         >
           Post
@@ -80,8 +80,9 @@ const Board = () => {
           ></CreatePost>
         )}
         <ul>
-          {postsData.map((post) => (
+          {postsData.map((post, index) => (
             <BoardPost
+              sequence={index % 2}
               key={post._id}
               _id={post._id}
               tags={post.tags}

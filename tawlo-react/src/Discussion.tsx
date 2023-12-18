@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Header from './components/HeaderElements/Header';
 import Post from './components/PostElements/Post';
+import MotherPost from './components/PostElements/MotherPost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
 import CreatePost from './components/CreatePost';
 import { PostInterface } from './Home';
+import ReplyPost from './components/PostElements/ReplyPost';
 
 export interface Post {
   _id: string;
@@ -134,14 +136,15 @@ const Discussion = () => {
           >
             {postsRender[0] && (
               <Link
-                className="px-4 w-20 h-16 mt-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+                style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
+                className="px-4 w-20 h-16 mt-3 py-2 text-white rounded-md hover:underline text-sm"
                 to={`/board?id=${postsRender[0].board}`}
               >
                 回到討論版
               </Link>
             )}
             {postsRender[0] && (
-              <Post
+              <MotherPost
                 key={postsRender[0]._id}
                 _id={postsRender[0]._id}
                 floor={0}
@@ -176,7 +179,7 @@ const Discussion = () => {
             {postsRender.map((post, index) => {
               if (index > 0) {
                 return (
-                  <Post
+                  <ReplyPost
                     key={post._id}
                     _id={post._id}
                     title={postsRender[0].title}

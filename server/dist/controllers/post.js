@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchPost = exports.getRelevantTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
+exports.searchPost = exports.getRelevantTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getCustomizedPosts = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post"));
 const user_1 = require("../models/user");
@@ -92,7 +92,14 @@ function calculateMotherPostHot(postId, increaseField, increase) {
 function createPost(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const { category, user, title, content, tags, board, motherPost } = req.body;
+            const { category, user, title, content, board, motherPost } = req.body;
+            const tags = req.body.tags;
+            let tagsArray = [];
+            if (tags !== undefined) {
+                tagsArray = Array.isArray(tags)
+                    ? tags.map((tag) => tag.toLowerCase())
+                    : [tags.toLowerCase()].filter(Boolean);
+            }
             const userId = new mongodb_1.ObjectId(user);
             const publishDate = new Date();
             let postData;
@@ -103,7 +110,7 @@ function createPost(req, res) {
                     content,
                     publish_date: publishDate,
                     update_date: publishDate,
-                    tags,
+                    tags: tagsArray,
                     floor: 1,
                 });
             }
@@ -118,7 +125,7 @@ function createPost(req, res) {
                     content,
                     publish_date: publishDate,
                     update_date: publishDate,
-                    tags,
+                    tags: tagsArray,
                     board,
                     floor: 1,
                 });
@@ -137,7 +144,7 @@ function createPost(req, res) {
                     },
                     $inc: { sum_reply: 1 },
                 });
-                const postTags = motherPostInfo.tags;
+                tagsArray = motherPostInfo.tags;
                 const postBoard = motherPostInfo.board;
                 if ((yield updateMotherResult).acknowledged === false) {
                     throw new Error('mother post deoes not exist or something is wrong updating it');
@@ -148,7 +155,7 @@ function createPost(req, res) {
                     content,
                     publish_date: publishDate,
                     update_date: publishDate,
-                    tags: postTags,
+                    tags: tagsArray,
                     board: postBoard,
                     mother_post: motherPost,
                 });
@@ -171,7 +178,7 @@ function createPost(req, res) {
                 res.status(400).json({ error: 'The category of post is wrong' });
             }
             try {
-                (0, tag_1.addPostTagsToDB)(tags);
+                (0, tag_1.addPostTagsToDB)(tagsArray);
             }
             catch (err) {
                 console.log(err);
@@ -1050,9 +1057,7 @@ function getRecommendPosts(req, res) {
         // take posts from post model using the info
         try {
             const { user } = req.body;
-            // console.log(user);
             const userId = new mongodb_1.ObjectId(user);
-            // const {tags,}
             const userInfo = (yield (0, user_1.getUserPreference)(userId));
             let preferenceTags;
             let recommendMode;
@@ -1065,7 +1070,7 @@ function getRecommendPosts(req, res) {
             }
             console.log(recommendMode);
             // if(recommendMode === 'auto')
-            const posts = yield (0, post_1.getAutoRecommendedPosts)(preferenceTags, userInfo.read_board, userInfo.read_posts);
+            const posts = yield (0, post_1.getAutoRecommendedPosts)(preferenceTags, userInfo.read_posts);
             res.json(posts);
         }
         catch (err) {
@@ -1079,6 +1084,35 @@ function getRecommendPosts(req, res) {
     });
 }
 exports.getRecommendPosts = getRecommendPosts;
+function getCustomizedPosts(req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { user } = req.body;
+            const tags = req.query.tags;
+            if (!tags) {
+                res.status(400).json({ error: 'no tags' });
+                return;
+            }
+            const userInfo = (yield (0, user_1.getUserPreference)(user));
+            let tagsArray = [];
+            if (tags !== undefined) {
+                tagsArray = Array.isArray(tags) ? tags : [tags].filter(Boolean);
+            }
+            const preferenceTags = userInfo.preference_tags.map((tag) => tag.name);
+            const posts = yield (0, post_1.getCustomizedPostsFromDB)(tagsArray, preferenceTags, userInfo.read_posts);
+            res.json(posts);
+        }
+        catch (err) {
+            console.log(err);
+            if (err instanceof Error) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.status(500).json({ error: 'Get posts fail' });
+        }
+    });
+}
+exports.getCustomizedPosts = getCustomizedPosts;
 function getPostsOnBoard(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {

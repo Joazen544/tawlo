@@ -221,8 +221,8 @@ const CreatePost: React.FC<CreatePostProps> = ({
 
   return (
     <div
-      style={{ width: '50rem' }}
-      className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
+      style={{ width: '60rem' }}
+      className=" mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
     >
       <div id="createPostContent" className="p-4">
         {category === 'mother' && (

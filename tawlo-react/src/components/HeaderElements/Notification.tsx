@@ -278,12 +278,12 @@ const Notification = () => {
     <>
       <div className="relative inline-block">
         <button
-          className="w-8 h-8 bg-bell-image bg-contain bg-no-repeat"
-          style={{ backgroundSize: '1.5rem' }}
+          className="w-9 h-9 bg-bell-image bg-white rounded-full bg-contain bg-no-repeat"
+          style={{ backgroundSize: '1.5rem', backgroundPosition: 'center' }}
           ref={dropdownRef}
           onClick={handleClick}
         >
-          <div className="ml-4 mt-3 rounded-full bg-red-100 text-center">
+          <div className="ml-6 mt-4 w-3 rounded-full bg-red-100 text-center">
             {unreadCount}
           </div>
         </button>

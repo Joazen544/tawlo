@@ -187,11 +187,11 @@ const SearchBar = ({ handleSearchResult }: Props) => {
         <div
           style={{ backgroundOrigin: 'content-box' }}
           onClick={handleSearchSubmit}
-          className="bg-search-image bg-no-repeat bg-right bg-contain h-10 w-10 pr-3 cursor-pointer"
+          className="bg-search-white-image ml-2 bg-no-repeat bg-right bg-contain h-10 w-10 pr-3 cursor-pointer"
         ></div>
       </div>
       {ifSelected && (
-        <div className="absolute h-64 overflow-y-auto left-28 top-10 mt-2 w-96 bg-white border border-gray-200 rounded-md shadow-md">
+        <div className=" absolute h-64 overflow-y-auto left-28 top-10 mt-2 w-96 bg-white border border-gray-200 rounded-md shadow-md">
           <div className="ml-3 mt-4">
             <h1 className="text-lg">搜尋輸入建議</h1>
             <div className="mt-1">「後端」或「資料庫」，例： 後端 資料庫</div>

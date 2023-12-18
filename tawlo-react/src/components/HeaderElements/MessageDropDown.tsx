@@ -236,13 +236,14 @@ const MessageDropdown = ({ messageTarget }: Props) => {
 
   return (
     <>
-      <div className="relative inline-block">
+      <div className="relative inline-block mr-2">
         <button
           ref={dropdownRef}
           onClick={toggleDropdown}
-          className="w-8 h-8 bg-message-image bg-contain cursor-pointer"
+          style={{ backgroundSize: '1.5rem', backgroundPosition: 'center' }}
+          className="w-9 h-9 bg-message-image bg-no-repeat bg-white rounded-full bg-contain cursor-pointer"
         >
-          <div className="ml-4 mt-3 rounded-full bg-red-100 text-center">
+          <div className="ml-6 mt-4 w-3 rounded-full bg-red-100 text-center">
             {unreadNum}
           </div>
         </button>

@@ -27,9 +27,8 @@ const Comment = ({ index, name, comment, time, userId }: Props) => {
         </Link>
         <p>{comment.content}</p>
       </div>
-      <div className="flex">
-        <p className="mr-5">{time.toLocaleString()}</p>
-        {/* <p>like:{comment.like.number}</p> */}
+      <div className="flex w-52 justify-end">
+        <p className="mr-1">{time.toLocaleString()}</p>
       </div>
     </div>
   );

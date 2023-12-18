@@ -4,6 +4,7 @@ import Post from './components/PostElements/Post';
 import DiscussPost from './components/PostElements/DiscussPost';
 import CreatePost from './components/CreatePost';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import CustomizeSearch from './components/CustomizeSearch';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import 'dotenv';
@@ -71,6 +72,7 @@ const Home = () => {
   const [postsRender, setPostsRender] = useState<PostArray>([]);
   const [friendsOnline, setFriendsOnline] = useState<FriendInterface[]>([]);
   const [messageTarget, setMessageTarget] = useState<MessageTarget>();
+  const [customizeTags, setCustomizeTags] = useState<string[]>([]);
 
   const token = Cookies.get('jwtToken');
 
@@ -93,20 +95,42 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/posts/recommendation`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((res) => {
-        setPostsRecommend(res.data);
+    const tags = Cookies.get('customize_tags');
+    if (!tags) {
+      console.log('wrong trigger');
+      axios
+        .get(`${import.meta.env.VITE_DOMAIN}/api/posts/recommendation`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          setPostsRecommend(res.data);
+          renderNewPosts([], res.data);
+        })
+        .catch((err) => console.log(err));
+    } else {
+      console.log('trigger');
 
-        renderNewPosts(postsRender, res.data);
-      })
-      .catch((err) => console.log(err));
-    return;
-  }, []);
+      axios
+        .get(`${import.meta.env.VITE_DOMAIN}/api/posts/customize`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            tags: customizeTags,
+          },
+          paramsSerializer: {
+            indexes: null,
+          },
+        })
+        .then((res) => {
+          setPostsRecommend(res.data);
+          renderNewPosts([], res.data);
+        })
+        .catch((err) => console.log(err));
+    }
+  }, [customizeTags]);
 
   function renderNewPosts(
     postsNowRender: PostArray,
@@ -125,8 +149,7 @@ const Home = () => {
       nextPosts.push(postsRecommend[i]);
       nextPostsId.push(postsRecommend[i]._id);
     }
-    // console.log(nextPosts);
-    // console.log(nextPostsId);
+
     axios.post(
       `${import.meta.env.VITE_DOMAIN}/api/user/read`,
       {
@@ -168,27 +191,48 @@ const Home = () => {
       >
         <div
           id="sideBar"
-          style={{ height: '20rem' }}
-          className="flex-shrink-0 z-0 fixed left-0 top-32 w-48 p-4 bg-gray-200 rounded-3xl flex flex-col items-center"
+          // style={{ height: '20rem' }}
+          className="flex-shrink-0 z-10 left-3 mt-32 w-48 p-4 bg-gray-50 flex flex-col items-center"
         >
-          <div className="mb-4 font-bold text-xl">Boards</div>
-          <ul>
-            {boards.map((board) => (
-              <li key={board._id} className="mb-2">
-                <Link
-                  to={`/board?id=${board._id}`}
-                  className="text-blue-400 hover:underline"
-                >
-                  {board.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <div className="relative z-10">
+              <div className="mb-4 font-bold text-xl text-center">討論版</div>
+              <ul>
+                {boards.map((board) => (
+                  <li
+                    key={board._id}
+                    style={{
+                      backgroundColor: import.meta.env.VITE_MAIN_COLOR,
+                      color: import.meta.env.VITE_MAIN_STRING_COLOR,
+                      textDecoration: 'none',
+                    }}
+                    className="block mb-2 mt-4 rounded-xl"
+                  >
+                    <Link
+                      style={{
+                        textDecoration: 'none',
+                      }}
+                      to={`/board?id=${board._id}`}
+                      className="hover:bg-slate-500 w-full rounded-xl p-3 block text-center"
+                    >
+                      {board.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <CustomizeSearch
+            handleCustomizeTags={(tags: string[]) => setCustomizeTags(tags)}
+          />
+          <div>
+            <FriendsTable
+              friends={friendsOnline}
+              handleMessageTarget={(target) => setMessageTarget(target)}
+            />
+          </div>
         </div>
-        <FriendsTable
-          friends={friendsOnline}
-          handleMessageTarget={(target) => setMessageTarget(target)}
-        />
         <div
           id="postsContainer"
           className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
@@ -199,6 +243,7 @@ const Home = () => {
             motherPost=""
             board=""
           ></CreatePost>
+
           <InfiniteScroll
             dataLength={postsRender.length}
             next={() => {

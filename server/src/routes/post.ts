@@ -14,6 +14,7 @@ import {
   getAutoTags,
   getRelevantTags,
   searchPost,
+  getCustomizedPosts,
 } from '../controllers/post';
 import verifyJWT from '../middleware/verifyJWT';
 
@@ -24,6 +25,7 @@ router.route('/post').get(getPost);
 router.route('/post').delete(verifyJWT, deletePost);
 router.route('/post/search').get(searchPost);
 router.route('/posts/recommendation').get(verifyJWT, getRecommendPosts);
+router.route('/posts/customize').get(verifyJWT, getCustomizedPosts);
 // to get all the posts on a board
 router.route('/board/:boardId/posts').get(getPostsOnBoard);
 router.route('/board/post/detail').get(getMotherAndReplies);

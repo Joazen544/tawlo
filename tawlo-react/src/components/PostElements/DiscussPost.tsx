@@ -25,9 +25,6 @@ const DisscussPost = ({
   author,
   tags,
   content,
-  // hot,
-  // score,
-  sumLikes,
   sumUpvotes,
   sumReply,
   board,
@@ -54,20 +51,110 @@ const DisscussPost = ({
       .catch((err) => console.log(err));
   }, [board]);
 
-  const publishTime = new Date(publishDate);
+  //const publishTime = new Date(publishDate);
 
   return (
     <>
-      <div
-        style={{ width: '50rem' }}
-        className="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
-      >
-        <div className="ml-6 mt-6 flex text-lg items-center justify-between">
-          <div id="boardName" className="text-blue-400">
-            <Link to={`/board?id=${board}`} className=" p-1.5 text-xl">
-              討論版： {boardName}
+      <div style={{ width: '60rem' }} className="mx-auto mt-8  relative ">
+        <div
+          style={{
+            backgroundColor: import.meta.env.VITE_MAIN_STRING_COLOR,
+            color: import.meta.env.VITE_MAIN_COLOR,
+          }}
+          className="absolute left-16 -top-4 z-10 px-8 rounded-2xl border-solid border-gray-400 border-2"
+        >
+          <div id="info" className="flex">
+            <div
+              id="interactionInfo"
+              className=" mr-12 flex justify-center items-center "
+            >
+              <span className="text-3xl ">{sumUpvotes}</span>
+            </div>
+            <div className="flex w-20 items-center">
+              <span className="">總回覆:</span>
+              <span className="ml-1">{sumReply}</span>
+            </div>
+            <div id="boardName" className="flex items-center ml-2">
+              <div>討論版：</div>
+              <Link to={`/board?id=${board}`} className="text-blue-400">
+                {boardName}
+              </Link>
+            </div>
+          </div>
+        </div>
+        <div
+          id="postContent"
+          className="px-4 pt-6 pb-6 flex justify-between items-center shadow-lg rounded-2xl border-solid border-gray-400 border-2"
+          style={{
+            backgroundColor: import.meta.env.VITE_MAIN_COLOR,
+          }}
+        >
+          <div
+            id="content"
+            // style={{ width: '40rem' }}
+            className="ml-10 flex flex-col"
+          >
+            <Link
+              to={`/board/discussion?id=${_id}`}
+              id="postContent"
+              style={{
+                textDecorationColor: import.meta.env.VITE_MAIN_STRING_COLOR,
+              }}
+              className="mt-2 hover:underline flex items-center"
+            >
+              <div className="text-2xl font-medium w-72 mr-5 mt-1 overflow-hidden">
+                <div
+                  style={{
+                    color: import.meta.env.VITE_MAIN_STRING_COLOR,
+                  }}
+                >
+                  {title}
+                </div>
+              </div>
+              <div
+                //style={{ height: '3.5rem' }}
+                className="w-60  flex items-start overflow-hidden"
+              >
+                <p
+                  style={{ maxHeight: '3.6rem' }}
+                  className="text-gray-400 text-sm"
+                >
+                  {content}
+                </p>
+              </div>
             </Link>
           </div>
+          <div id="right-part" className=" w-56">
+            <div id="tags" className=" flex flex-wrap">
+              {tags.map((tag, index) => (
+                <p
+                  style={{
+                    color: import.meta.env.VITE_MAIN_STRING_COLOR,
+                  }}
+                  className={`w-24 mb-2 overflow-hidden mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center`}
+                  key={index}
+                >
+                  {tag}
+                </p>
+              ))}
+            </div>
+            <div id="timeInfo" className="w-56 text-sm mt-2">
+              <div
+                className=" flex justify-between"
+                style={{ color: import.meta.env.VITE_MAIN_STRING_COLOR }}
+              >
+                <Link
+                  to={`/user/profile/${author}`}
+                  className={`text-md mr-3 font-medium hover:underline`}
+                >
+                  {authorName}
+                </Link>
+                {new Date(publishDate).toDateString()}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* <div className="ml-6 mt-6 flex text-lg items-center justify-between">
           <div className="ml-5 flex text-base items-center mr-5">
             <div id="tags" className=" text-gray-500 flex flex-wrap">
               {tags.map((tag, index) => (
@@ -84,28 +171,6 @@ const DisscussPost = ({
         </div>
         <div id="postContent" className="p-4 flex items-center">
           <div
-            id="interactionInfo"
-            className="w-40 h-32 mr-1 box-content flex flex-col justify-center items-left border-r border-gray-200"
-          >
-            <span className="text-gray-900">有用 {sumUpvotes}</span>
-            {/* <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Score:</span>
-              <span className="text-gray-900">{score}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600">Hot:</span>
-              <span className="text-gray-900">{Math.round(hot)}</span>
-            </div> */}
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600">總喜歡:</span>
-              <span className="text-gray-900">{sumLikes}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button className="text-gray-600">回覆篇數:</button>
-              <span className="text-gray-900">{sumReply}</span>
-            </div>
-          </div>
-          <div
             id="content"
             className="ml-10 flex flex-col justify-between w-full"
           >
@@ -118,31 +183,9 @@ const DisscussPost = ({
               </p>
             </Link>
             <div id="posterInfo" className="flex justify-between">
-              <div id="leftPart" className="flex items-center">
-                {/* <div id="boardName" className="text-blue-400 w-36">
-                  <Link
-                    to={`/board?id=${board}`}
-                    className=" border-solid border-2 border-blue-400 rounded-md p-1.5"
-                  >
-                    {boardName}
-                  </Link>
-                </div>
-                <div id="tags" className="ml-5 text-gray-500 flex flex-wrap">
-                  {tags.map((tag, index) => (
-                    <p
-                      className="w-24 overflow-hidden mr-2 mt-1 pr-2 border-solid border-2 rounded-md p-1.5 text-center"
-                      key={index}
-                    >
-                      {tag}
-                    </p>
-                  ))}
-                </div> */}
-              </div>
+              <div id="leftPart" className="flex items-center"></div>
 
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  {/* Add user avatar or profile image here */}
-                </div>
                 <div className="ml-3">
                   <Link
                     to={`/user/profile/${author}`}
@@ -157,7 +200,7 @@ const DisscussPost = ({
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </>
   );

@@ -57,31 +57,29 @@ interface CommentsData {
   };
 }
 
-const Post = ({
+const ReplyPost = ({
   _id,
   publishDate,
   author,
   floor,
-  tags,
+  // tags,
   content,
   // hot,
   // score,
   board,
-  liked,
+  // liked,
   upvote,
   downvote,
   comments,
-  title,
+  // title,
   category,
-  clickReply,
+  // clickReply,
   clickDelete,
 }: Props) => {
   const [authorName, setAuthorName] = useState('');
   const [commentNames, setCommentNames] = useState<string[]>([]);
-  const [isLiked, setIsLiked] = useState(false);
   const [isUpvoted, setIsUpvoted] = useState(false);
   const [isDownvoted, setIsDownvoted] = useState(false);
-  const [likeNumber, setLikeNumber] = useState(liked.number);
   const [upvoteSum, setUpvoteSum] = useState(upvote.number - downvote.number);
   const [commentsData, setCommentsData] = useState<CommentsData[]>(
     comments.data,
@@ -99,13 +97,6 @@ const Post = ({
   const navigate = useNavigate();
 
   useEffect(() => {
-    // setToken(Cookies.get('jwtToken'));
-    // setUserId(Cookies.get('userId'));
-    if (liked.number && userId) {
-      if (liked.users.includes(userId)) {
-        setIsLiked(true);
-      }
-    }
     if (upvote.number && userId) {
       if (upvote.users.includes(userId)) {
         setIsUpvoted(true);
@@ -150,33 +141,6 @@ const Post = ({
         });
     });
   }, [commentsData]);
-
-  const handleLike = async () => {
-    const likeStatus = !isLiked;
-    if (isLiked) {
-      setLikeNumber(likeNumber - 1);
-    } else {
-      setLikeNumber(likeNumber + 1);
-    }
-    setIsLiked(likeStatus);
-
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_DOMAIN}/api/post/${_id}/like`,
-        {
-          like: likeStatus,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            authorization: `Bearer ${token}`,
-          },
-        },
-      );
-    } catch (error) {
-      console.error('Error liking post:', error);
-    }
-  };
 
   const handleUpvote = async () => {
     const upvoteStatus = !isUpvoted;
@@ -344,119 +308,53 @@ const Post = ({
   };
 
   const publishTime = new Date(publishDate);
-  let postContainer;
-  if (category === 'native') {
-    postContainer =
-      'mx-auto mt-8 bg-white shadow-lg rounded-lg  overflow-hidden border-solid border-2 border-gray-400';
-  } else {
-    postContainer =
-      'w-full mx-auto mt-2 pb-6  bg-white overflow-hidden border-solid border-b-2 border-gray-200';
-  }
 
   return (
     <>
-      <div style={{ width: '60rem' }} className={postContainer}>
-        {/* only mother post has title */}
-        {category === 'mother' && (
-          <div
-            id="title"
-            className="p-4 border-b border-gray-200 flex justify-between items-center"
-          >
-            <span className="text-2xl">#問題：{title}</span>
-            <button
-              className="px-2 w-20 h-16 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
-              onClick={clickReply}
-            >
-              回覆貼文
-            </button>
-          </div>
-        )}
-        {category === 'reply' && (
-          <>
-            {author === userId && (
-              <div id="settings" className="ml-2 flex justify-end mt-10">
-                {isSettingAppend && (
-                  <div className="z-0 w-14 rounded-lg top-7 right-0 border-2 bg-white border-gray-400 border-solid">
-                    <button className="hover:bg-blue-400 h-1/2 w-full">
-                      編輯
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="hover:bg-red-400 h-1/2 w-full"
-                    >
-                      刪除
-                    </button>
-                  </div>
-                )}
+      <div
+        style={{ width: '60rem' }}
+        className="w-full mx-auto mt-2 pb-6  bg-white overflow-hidden border-solid border-b-2 border-gray-200"
+      >
+        {author === userId && (
+          <div id="settings" className="ml-2 flex justify-end mt-10">
+            {isSettingAppend && (
+              <div className="z-0 w-14 rounded-lg top-7 right-0 border-2 bg-white border-gray-400 border-solid">
+                <button className="hover:bg-blue-400 h-1/2 w-full">編輯</button>
                 <button
-                  onClick={handleSettingAppend}
-                  ref={settingRef}
-                  className="w-8 h-8 bg-more-image bg-no-repeat bg-contain mr-5 mb-5"
-                ></button>
+                  onClick={handleDelete}
+                  className="hover:bg-red-400 h-1/2 w-full"
+                >
+                  刪除
+                </button>
               </div>
             )}
-            <div
-              id="title"
-              className="pr-4 mt-2 border-gray-200 flex justify-between items-center"
-            >
-              <span className="text-2xl">#{floor} 回答</span>
-              <div id="authorInfo" className="r-4 flex">
-                <div className="flex items-center">
-                  <div className="ml-3">
-                    <Link
-                      to={`/user/profile/${author}`}
-                      id="commentName"
-                      className="w-20 text-left text-blue-400"
-                    >
-                      {authorName}
-                    </Link>
-                    <div className="text-gray-500">
-                      {publishTime.toDateString()}
-                    </div>
-                  </div>
-                  <div id="tags" className="ml-10 text-gray-500 flex">
-                    {category !== 'reply' &&
-                      tags.map((tag, index) => (
-                        <p
-                          className="border-solid border-2 rounded-md p-1.5 mr-3"
-                          key={index}
-                        >
-                          {tag}
-                        </p>
-                      ))}
-                  </div>
-                  <div className="flex-shrink-0">
-                    <div
-                      id="userImage"
-                      className={`h-12 w-12 border-2 border-solid border-gray-400 ${
-                        !authorImage && 'bg-user-image'
-                      } bg-contain bg-no-repeat`}
-                    >
-                      {authorImage && (
-                        <img
-                          style={{ objectFit: 'cover' }}
-                          src={authorImage}
-                          alt="user-image"
-                          className="h-full w-full rounded-full"
-                        />
-                      )}
-                    </div>{' '}
-                  </div>
+            <button
+              onClick={handleSettingAppend}
+              ref={settingRef}
+              className="w-8 h-8 bg-more-image bg-no-repeat bg-contain mr-5 mb-5"
+            ></button>
+          </div>
+        )}
+        <div id="title" className="pr-4 mt-2 flex justify-between items-center">
+          <span className="text-2xl">#{floor} 回答</span>
+          <div id="authorInfo" className="r-4 flex">
+            <div className="flex items-center">
+              <div className="ml-3">
+                <Link
+                  to={`/user/profile/${author}`}
+                  id="commentName"
+                  className="w-20 text-left text-blue-400"
+                >
+                  {authorName}
+                </Link>
+                <div className="text-gray-500">
+                  {publishTime.toDateString()}
                 </div>
               </div>
-            </div>
-          </>
-        )}
-        {category !== 'reply' && (
-          <div
-            id="authorInfo"
-            className="p-4 flex items-center justify-between"
-          >
-            <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div
                   id="userImage"
-                  className={`h-12 w-12  ${
+                  className={`h-12 w-12 ${
                     !authorImage && 'bg-user-image'
                   } bg-contain bg-no-repeat`}
                 >
@@ -468,56 +366,11 @@ const Post = ({
                       className="h-full w-full rounded-full"
                     />
                   )}
-                </div>
-              </div>
-              <div className="ml-3">
-                <Link
-                  to={`/user/profile/${author}`}
-                  id="commentName"
-                  className="w-20 text-left text-blue-400"
-                >
-                  {authorName}
-                </Link>
-                <div className="text-gray-500">
-                  {publishTime.toLocaleDateString()}
-                </div>
-              </div>
-              <div id="tags" className="ml-10 text-gray-500 flex">
-                {category !== 'reply' &&
-                  tags.map((tag, index) => (
-                    <p
-                      className="border-solid border-2 rounded-md p-1.5 mr-3"
-                      key={index}
-                    >
-                      {tag}
-                    </p>
-                  ))}
+                </div>{' '}
               </div>
             </div>
-            {author === userId && (
-              <div id="settings" className="flex items-center">
-                {isSettingAppend && (
-                  <div className="w-14 rounded-lg right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
-                    <button className="hover:bg-blue-400 h-full w-full">
-                      編輯
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="hover:bg-red-400 h-full w-full"
-                    >
-                      刪除
-                    </button>
-                  </div>
-                )}
-                <button
-                  onClick={handleSettingAppend}
-                  ref={settingRef}
-                  className="w-8 h-10 bg-more-image bg-no-repeat bg-contain"
-                ></button>
-              </div>
-            )}
           </div>
-        )}
+        </div>
         <div id="postContent" className="p-4 flex mt-3 mb-3">
           <div
             id="useful"
@@ -560,27 +413,6 @@ const Post = ({
             )}
           </div>
         </div>
-        {category === 'native' && (
-          <div id="postInfo" className="p-4 border-t border-gray-200">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <button
-                  className={`text-gray-600 w-6 h-6 bg-contain bg-no-repeat cursor-pointer ${
-                    isLiked ? 'bg-liked-image' : 'bg-like-image'
-                  }`}
-                  onClick={handleLike}
-                ></button>
-                <span className="text-gray-900">{likeNumber}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="text-gray-600">留言:</div>
-                <span className="text-gray-900">{commentNumber}</span>
-              </div>
-              {/* Add more details as needed */}
-            </div>
-          </div>
-        )}
-
         {commentsData.length > 0 && (
           <div id="comments" className="p-4 border-t border-gray-200">
             {commentsData &&
@@ -621,4 +453,4 @@ const Post = ({
   );
 };
 
-export default Post;
+export default ReplyPost;
