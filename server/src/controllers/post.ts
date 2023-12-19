@@ -1253,17 +1253,17 @@ export async function getRecommendPosts(req: Request, res: Response) {
     const userInfo = (await getUserPreference(userId)) as UserDocument;
 
     let preferenceTags;
-    let recommendMode;
+    // let recommendMode;
     if (userInfo) {
       preferenceTags = userInfo.preference_tags.map(
         (tag) => tag.name,
       ) as string[];
-      recommendMode = userInfo.recommend_mode;
+      // recommendMode = userInfo.recommend_mode;
     } else {
       throw Error('No such user, something wrong getting posts');
     }
 
-    console.log(recommendMode);
+    // console.log(recommendMode);
 
     // if(recommendMode === 'auto')
     const posts = await getAutoRecommendedPosts(
@@ -1545,9 +1545,6 @@ export async function searchPost(
     const should = req.query.should as string;
     const must = req.query.must as string;
     const tags = req.query.tags as string;
-
-    console.log(should);
-    console.log(must);
 
     let shouldArray: string[] = [];
     if (should !== undefined) {

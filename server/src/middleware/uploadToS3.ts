@@ -9,10 +9,6 @@ const uploadFilesToS3 = async (
   try {
     if (req.file) {
       const userImageFile = req.file;
-      // .image as Express.Multer.File;
-
-      console.log(req.files);
-      console.log(req);
 
       upload(userImageFile, 'user-image');
     }
