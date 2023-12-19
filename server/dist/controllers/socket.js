@@ -125,6 +125,7 @@ function initSocket(server) {
                             .to(friendId)
                             .emit('friend-offline', socketsConnected[socket.id].userId);
                     });
+                    redis_1.default.DEL(`${socketsConnected[socket.id].userId}friends`);
                 }
                 // tell every other user who disconnected
                 delete socketsConnected[socket.id];

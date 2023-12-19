@@ -4,6 +4,8 @@ import Meeting, {
   createMeeting,
   joinMeeting,
   MeetingDocument,
+  getSharingsFromDB,
+  getAskingsFromDB,
 } from '../models/meeting';
 import { getIO } from './socket';
 import User, { UserDocument, addNotificationToUserDB } from '../models/user';
@@ -616,6 +618,48 @@ export async function cancelMeeting(
     await User.updateOne({ _id: user }, { $set: { meeting_status: 'none' } });
 
     res.json({ message: 'cancel meeting success' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getSharings(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const search = req.query.search as string;
+
+    if (!search) {
+      res.status(400).json({ error: 'no search words' });
+      return;
+    }
+
+    const tags = await getSharingsFromDB(search);
+
+    res.json(tags);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAskings(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const search = req.query.search as string;
+
+    if (!search) {
+      res.status(400).json({ error: 'no search words' });
+      return;
+    }
+
+    const tags = await getAskingsFromDB(search);
+
+    res.json(tags);
   } catch (err) {
     next(err);
   }

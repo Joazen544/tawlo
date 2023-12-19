@@ -40,6 +40,49 @@ const Meeting = () => {
   const [comment, setComment] = useState<string>('');
   const [commentError, setCommentError] = useState<string>('');
 
+  const [peopleSharings, setPeopleSharing] = useState<string[]>([]);
+  const [peopleAskings, setPeopleAsking] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (toShareInputText === '') {
+      setPeopleAsking([]);
+    }
+    if (toShareInputText) {
+      axios
+        .get(
+          `${
+            import.meta.env.VITE_DOMAIN
+          }/api/meeting/ask?search=${toShareInputText}`,
+        )
+        .then((res) => {
+          setPeopleAsking(res.data);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  }, [toShareInputText]);
+
+  useEffect(() => {
+    if (toAskInputText === '') {
+      setPeopleSharing([]);
+    }
+    if (toAskInputText) {
+      axios
+        .get(
+          `${
+            import.meta.env.VITE_DOMAIN
+          }/api/meeting/share?search=${toAskInputText}`,
+        )
+        .then((res) => {
+          setPeopleSharing(res.data);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  }, [toAskInputText]);
+
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_DOMAIN}/api/meeting`, {
@@ -115,10 +158,11 @@ const Meeting = () => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('notificate', (data) => {
+      socket.on('notificate_2', (data) => {
         console.log('yoyo');
 
         const category = data.category;
+        console.log(data);
 
         if (
           category === 'meet_match' ||
@@ -131,7 +175,7 @@ const Meeting = () => {
     }
     return () => {
       if (socket) {
-        socket.off('notificate');
+        socket.off('notificate_2');
       }
     };
   }, [meetingStatus]);
@@ -413,7 +457,28 @@ const Meeting = () => {
                     />
                   </div>
                   <div id="to_ask" className="mt-8">
-                    <span>你想了解哪些領域？（最多五項）</span>
+                    <div className="mb-2">你想了解哪些領域？（最多五項）</div>
+                    <input
+                      type="text"
+                      value={toAskInputText}
+                      onChange={handleToAskInputChange}
+                      className="pl-2 text-gray-800 rounded-md"
+                      placeholder="想分享..."
+                      list="peopleSharing"
+                      maxLength={14}
+                    />
+                    <datalist id="peopleSharing">
+                      {peopleSharings.length > 0 &&
+                        peopleSharings.map((tag) => (
+                          <option key={tag}>{tag}</option>
+                        ))}
+                    </datalist>
+                    <button
+                      className="ml-2  rounded-md bg-blue-500 hover:bg-blue-600 p-1"
+                      onClick={handleAddToAskItem}
+                    >
+                      新增
+                    </button>
                     <div
                       style={{ minHeight: '3rem' }}
                       className="pl-2 flex items-center border-solid border-b-2  mt-2 mb-2"
@@ -433,23 +498,30 @@ const Meeting = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                  <div id="to_share" className="mt-8">
+                    <div className="mb-2">你想分享哪些領域？（最多五項）</div>
                     <input
                       type="text"
-                      value={toAskInputText}
-                      onChange={handleToAskInputChange}
+                      value={toShareInputText}
+                      onChange={handleToShareInputChange}
                       className="pl-2 text-gray-800 rounded-md"
-                      placeholder="想分享..."
+                      placeholder="想了解..."
+                      list="peopleAsking"
                       maxLength={14}
                     />
+                    <datalist id="peopleAsking">
+                      {peopleAskings.length > 0 &&
+                        peopleAskings.map((tag) => (
+                          <option key={tag}>{tag}</option>
+                        ))}
+                    </datalist>
                     <button
-                      className="ml-2  rounded-md bg-blue-500 hover:bg-blue-600 p-1"
-                      onClick={handleAddToAskItem}
+                      className="ml-2 bg-blue-500 hover:bg-blue-600 rounded-md  p-1"
+                      onClick={handleAddToShareItem}
                     >
                       新增
                     </button>
-                  </div>
-                  <div id="to_share" className="mt-8">
-                    <span>你想分享哪些領域？（最多五項）</span>
                     <div
                       style={{ minHeight: '3rem' }}
                       className="pl-2 flex items-center border-solid border-b-2  mt-2 mb-2"
@@ -469,20 +541,6 @@ const Meeting = () => {
                         </div>
                       ))}
                     </div>
-                    <input
-                      type="text"
-                      value={toShareInputText}
-                      onChange={handleToShareInputChange}
-                      className="pl-2 text-gray-800 rounded-md"
-                      placeholder="想了解..."
-                      maxLength={14}
-                    />
-                    <button
-                      className="ml-2 bg-blue-500 hover:bg-blue-600 rounded-md  p-1"
-                      onClick={handleAddToShareItem}
-                    >
-                      新增
-                    </button>
                   </div>
                   <div id="to_share" className="mt-8">
                     <div>介紹一下自己，或是你期待聽到什麼</div>

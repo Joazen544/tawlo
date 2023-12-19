@@ -15,4 +15,6 @@ router
     .route('/meeting/:meetingId')
     .post(verifyJWT_1.default, meeting_1.replyMeeting, message_1.clickChatRoom);
 router.route('/meeting/:meetingId/score').post(verifyJWT_1.default, meeting_1.scoreMeeting);
+router.route('/meeting/share').get(meeting_1.getSharings);
+router.route('/meeting/ask').get(meeting_1.getAskings);
 exports.default = router;

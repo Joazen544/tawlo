@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelMeeting = exports.scoreMeeting = exports.replyMeeting = exports.getMeeting = exports.accessMeeting = void 0;
+exports.getAskings = exports.getSharings = exports.cancelMeeting = exports.scoreMeeting = exports.replyMeeting = exports.getMeeting = exports.accessMeeting = void 0;
 const mongodb_1 = require("mongodb");
 const meeting_1 = __importStar(require("../models/meeting"));
 const socket_1 = require("./socket");
@@ -464,3 +464,37 @@ function cancelMeeting(req, res, next) {
     });
 }
 exports.cancelMeeting = cancelMeeting;
+function getSharings(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const search = req.query.search;
+            if (!search) {
+                res.status(400).json({ error: 'no search words' });
+                return;
+            }
+            const tags = yield (0, meeting_1.getSharingsFromDB)(search);
+            res.json(tags);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getSharings = getSharings;
+function getAskings(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const search = req.query.search;
+            if (!search) {
+                res.status(400).json({ error: 'no search words' });
+                return;
+            }
+            const tags = yield (0, meeting_1.getAskingsFromDB)(search);
+            res.json(tags);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getAskings = getAskings;

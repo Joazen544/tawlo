@@ -148,6 +148,7 @@ export function initSocket(server: http.Server) {
               .to(friendId)
               .emit('friend-offline', socketsConnected[socket.id].userId);
           });
+          redisClient.DEL(`${socketsConnected[socket.id].userId}friends`);
         }
 
         // tell every other user who disconnected

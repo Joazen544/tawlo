@@ -5,6 +5,8 @@ import {
   replyMeeting,
   scoreMeeting,
   cancelMeeting,
+  getSharings,
+  getAskings,
 } from '../controllers/meeting';
 import { clickChatRoom } from '../controllers/message';
 import verifyJWT from '../middleware/verifyJWT';
@@ -19,5 +21,7 @@ router
   .post(verifyJWT, replyMeeting, clickChatRoom);
 
 router.route('/meeting/:meetingId/score').post(verifyJWT, scoreMeeting);
+router.route('/meeting/share').get(getSharings);
+router.route('/meeting/ask').get(getAskings);
 
 export default router;

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.joinMeeting = exports.createMeeting = void 0;
+exports.getAskingsFromDB = exports.getSharingsFromDB = exports.joinMeeting = exports.createMeeting = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const meetingSchema = new mongoose_1.default.Schema({
@@ -180,4 +180,82 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
     });
 }
 exports.joinMeeting = joinMeeting;
+function getSharingsFromDB(search) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const results = yield Meeting.aggregate([
+            {
+                $match: {
+                    status: 'pending',
+                },
+            },
+            {
+                $unwind: {
+                    path: '$to_share',
+                },
+            },
+            {
+                $match: {
+                    to_share: {
+                        $regex: search,
+                    },
+                },
+            },
+            {
+                $project: {
+                    to_share: 1,
+                },
+            },
+        ]);
+        const map = new Map();
+        // eslint-disable-next-line array-callback-return, consistent-return
+        const filterArray = results.filter((el) => {
+            if (!map.get(el.to_share[0])) {
+                map.set(el.to_share[0], 1);
+                return el;
+            }
+        });
+        const returnArray = filterArray.map((el) => el.to_share[0]);
+        return returnArray;
+    });
+}
+exports.getSharingsFromDB = getSharingsFromDB;
+function getAskingsFromDB(search) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const results = yield Meeting.aggregate([
+            {
+                $match: {
+                    status: 'pending',
+                },
+            },
+            {
+                $unwind: {
+                    path: '$to_ask',
+                },
+            },
+            {
+                $match: {
+                    to_ask: {
+                        $regex: search,
+                    },
+                },
+            },
+            {
+                $project: {
+                    to_ask: 1,
+                },
+            },
+        ]);
+        const map = new Map();
+        // eslint-disable-next-line array-callback-return, consistent-return
+        const filterArray = results.filter((el) => {
+            if (!map.get(el.to_ask[0])) {
+                map.set(el.to_ask[0], 1);
+                return el;
+            }
+        });
+        const returnArray = filterArray.map((el) => el.to_ask[0]);
+        return returnArray;
+    });
+}
+exports.getAskingsFromDB = getAskingsFromDB;
 exports.default = Meeting;
