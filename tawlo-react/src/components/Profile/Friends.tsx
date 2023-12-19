@@ -190,7 +190,10 @@ const Friends = () => {
         style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
         className="flex justify-center pt-40"
       >
-        <div style={{ width: '70rem', minHeight: '50rem' }} className="flex">
+        <div
+          style={{ width: '70rem', minHeight: '50rem' }}
+          className="flex mb-10"
+        >
           <ProfileSideBar page="friends" />
           <div
             id="friends_list"

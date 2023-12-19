@@ -10,7 +10,7 @@ const uploadFilesToS3 = async (
     if (req.file) {
       const userImageFile = req.file;
 
-      upload(userImageFile, 'user-image');
+      await upload(userImageFile, 'user-image');
     }
 
     next();

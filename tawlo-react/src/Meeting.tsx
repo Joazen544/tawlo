@@ -48,8 +48,6 @@ const Meeting = () => {
         },
       })
       .then((res) => {
-        // console.log(res.data);
-
         setMeetingStatus(res.data.status);
       });
   }, [meetingStatusChange]);
@@ -118,6 +116,8 @@ const Meeting = () => {
   useEffect(() => {
     if (socket) {
       socket.on('notificate', (data) => {
+        console.log('yoyo');
+
         const category = data.category;
 
         if (
@@ -134,7 +134,7 @@ const Meeting = () => {
         socket.off('notificate');
       }
     };
-  }, [meetingStatusChange]);
+  }, [meetingStatus]);
 
   useEffect(() => {
     if (targetId) {

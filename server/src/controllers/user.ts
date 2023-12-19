@@ -31,10 +31,6 @@ export async function signUp(req: Request, res: Response) {
       image = req.file.filename;
     }
 
-    if (image) {
-      fs.unlink(`${__dirname}/../../public/userImage/${image}`, () => {});
-    }
-
     const userData = await User.create({
       name,
       email,
@@ -44,6 +40,11 @@ export async function signUp(req: Request, res: Response) {
     });
 
     const token = await signJWT(userData._id.toString());
+
+    if (image) {
+      fs.unlink(`${__dirname}/../../public/userImage/${image}`, () => {});
+    }
+
     res
       .cookie('jwtToken', token)
       .status(200)

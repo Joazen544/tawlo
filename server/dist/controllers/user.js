@@ -53,9 +53,6 @@ function signUp(req, res) {
             if (req.file) {
                 image = req.file.filename;
             }
-            if (image) {
-                fs_1.default.unlink(`${__dirname}/../../public/userImage/${image}`, () => { });
-            }
             const userData = yield user_1.default.create({
                 name,
                 email,
@@ -64,6 +61,9 @@ function signUp(req, res) {
                 password_confirm: passwordConfirm,
             });
             const token = yield (0, JWT_1.signJWT)(userData._id.toString());
+            if (image) {
+                fs_1.default.unlink(`${__dirname}/../../public/userImage/${image}`, () => { });
+            }
             res
                 .cookie('jwtToken', token)
                 .status(200)
