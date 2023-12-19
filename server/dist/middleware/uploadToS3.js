@@ -17,9 +17,6 @@ const uploadFilesToS3 = (req, _res, next) => __awaiter(void 0, void 0, void 0, f
     try {
         if (req.file) {
             const userImageFile = req.file;
-            // .image as Express.Multer.File;
-            console.log(req.files);
-            console.log(req);
             (0, s3_1.default)(userImageFile, 'user-image');
         }
         next();

@@ -55,11 +55,11 @@ const DisscussPost = ({
 
   return (
     <>
-      <div style={{ width: '60rem' }} className="mx-auto mt-8  relative ">
+      <div style={{ width: '60rem' }} className="mx-auto mt-14  relative ">
         <div
           style={{
             backgroundColor: import.meta.env.VITE_MAIN_STRING_COLOR,
-            color: import.meta.env.VITE_MAIN_COLOR,
+            color: import.meta.env.VITE_SIDE_COLOR,
           }}
           className="absolute left-16 -top-4 z-10 px-8 rounded-2xl border-solid border-gray-400 border-2"
         >
@@ -86,7 +86,7 @@ const DisscussPost = ({
           id="postContent"
           className="px-4 pt-6 pb-6 flex justify-between items-center shadow-lg rounded-2xl border-solid border-gray-400 border-2"
           style={{
-            backgroundColor: import.meta.env.VITE_MAIN_COLOR,
+            backgroundColor: import.meta.env.VITE_SIDE_COLOR,
           }}
         >
           <div

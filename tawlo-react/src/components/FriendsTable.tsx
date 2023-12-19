@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { FriendInterface } from './HeaderElements/Header';
-import { MessageTarget } from '../Profile';
+import { MessageTarget } from './Profile/Profile';
 import { useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';

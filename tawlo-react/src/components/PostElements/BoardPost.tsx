@@ -63,20 +63,23 @@ const BoardPost = ({
   return (
     <>
       <div
-        style={{ width: '60rem' }}
-        className=" mx-auto mt-16 z-10 relative bg-gray-50 "
+        style={{
+          width: '60rem',
+          backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR,
+        }}
+        className=" mx-auto mt-16 z-10 relative  "
       >
         <div
           style={{
             backgroundColor: `${
               sequence === 0
-                ? import.meta.env.VITE_MAIN_COLOR
-                : import.meta.env.VITE_MAIN_STRING_COLOR
+                ? import.meta.env.VITE_SIDE_COLOR
+                : import.meta.env.VITE_THIRD_COLOR
             }`,
             color: `${
               sequence === 0
-                ? import.meta.env.VITE_MAIN_STRING_COLOR
-                : import.meta.env.VITE_MAIN_COLOR
+                ? import.meta.env.VITE_THIRD_COLOR
+                : import.meta.env.VITE_SIDE_COLOR
             }`,
           }}
           className="absolute left-16 -top-4 z-10 px-8 rounded-2xl border-solid border-gray-400 border-2"
@@ -106,8 +109,8 @@ const BoardPost = ({
           style={{
             backgroundColor: `${
               sequence === 0
-                ? import.meta.env.VITE_MAIN_STRING_COLOR
-                : import.meta.env.VITE_MAIN_COLOR
+                ? import.meta.env.VITE_THIRD_COLOR
+                : import.meta.env.VITE_SIDE_COLOR
             }`,
           }}
         >
@@ -122,8 +125,8 @@ const BoardPost = ({
               style={{
                 textDecorationColor: `${
                   sequence === 0
-                    ? import.meta.env.VITE_MAIN_COLOR
-                    : import.meta.env.VITE_MAIN_STRING_COLOR
+                    ? import.meta.env.VITE_SIDE_COLOR
+                    : import.meta.env.VITE_THIRD_COLOR
                 }`,
               }}
               className="mt-2 hover:underline flex items-center"
@@ -133,8 +136,8 @@ const BoardPost = ({
                   style={{
                     color: `${
                       sequence === 0
-                        ? import.meta.env.VITE_MAIN_COLOR
-                        : import.meta.env.VITE_MAIN_STRING_COLOR
+                        ? import.meta.env.VITE_SIDE_COLOR
+                        : import.meta.env.VITE_THIRD_COLOR
                     }`,
                   }}
                 >
@@ -161,8 +164,13 @@ const BoardPost = ({
                   style={{
                     color: `${
                       sequence === 0
-                        ? import.meta.env.VITE_MAIN_COLOR
-                        : import.meta.env.VITE_MAIN_STRING_COLOR
+                        ? import.meta.env.VITE_SIDE_COLOR
+                        : import.meta.env.VITE_THIRD_COLOR
+                    }`,
+                    borderColor: `${
+                      sequence === 0
+                        ? import.meta.env.VITE_SIDE_COLOR
+                        : import.meta.env.VITE_THIRD_COLOR
                     }`,
                   }}
                   className={`w-24 mb-2 overflow-hidden mr-2 pl-2 pr-2 border-solid border-2 rounded-md p-0.5 text-center`}
@@ -178,8 +186,8 @@ const BoardPost = ({
                 style={{
                   color: `${
                     sequence === 0
-                      ? import.meta.env.VITE_MAIN_COLOR
-                      : import.meta.env.VITE_MAIN_STRING_COLOR
+                      ? import.meta.env.VITE_SIDE_COLOR
+                      : import.meta.env.VITE_THIRD_COLOR
                   }`,
                 }}
               >
@@ -197,8 +205,8 @@ const BoardPost = ({
                   style={{
                     color: `${
                       sequence === 0
-                        ? import.meta.env.VITE_MAIN_COLOR
-                        : import.meta.env.VITE_MAIN_STRING_COLOR
+                        ? import.meta.env.VITE_SIDE_COLOR
+                        : import.meta.env.VITE_THIRD_COLOR
                     }`,
                   }}
                 >

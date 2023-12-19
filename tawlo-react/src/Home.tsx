@@ -11,7 +11,7 @@ import 'dotenv';
 import { Link, Navigate } from 'react-router-dom';
 import FriendsTable from './components/FriendsTable';
 import { FriendInterface } from './components/HeaderElements/Header';
-import { MessageTarget } from './Profile';
+import { MessageTarget } from './components/Profile/Profile';
 
 export interface PostInterface {
   _id: string;
@@ -187,12 +187,13 @@ const Home = () => {
       />
       <section
         id="posts_container"
-        className="w-full bg-gray-50 min-h-screen flex flex-row"
+        style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+        className="w-full  min-h-screen flex flex-row"
       >
         <div
           id="sideBar"
-          // style={{ height: '20rem' }}
-          className="flex-shrink-0 z-10 left-3 mt-32 w-48 p-4 bg-gray-50 flex flex-col items-center"
+          style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+          className="flex-shrink-0 z-10 left-3 pt-32 w-48 p-4  flex flex-col items-center"
         >
           <div>
             <div className="relative z-10">
@@ -235,7 +236,8 @@ const Home = () => {
         </div>
         <div
           id="postsContainer"
-          className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-10"
+          style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+          className="w-full  min-h-screen flex flex-col items-center pt-10"
         >
           <CreatePost
             onPostCreated={(newPost: PostInterface) => handleNewPost(newPost)}

@@ -1,11 +1,11 @@
 import Home from './Home';
 import Discussion from './Discussion';
 import Signin from './Signin';
-import Profile from './Profile';
+import Profile from './components/Profile/Profile';
 import Board from './Board';
 import Meeting from './Meeting';
 import PostPage from './PostPage';
-import Friends from './Friends';
+import Friends from './components/Profile/Friends';
 import { Routes, Route } from 'react-router-dom';
 import './socket';
 import SearchResult from './SearchResult';

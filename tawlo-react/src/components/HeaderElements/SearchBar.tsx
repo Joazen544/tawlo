@@ -232,7 +232,7 @@ const SearchBar = ({ handleSearchResult }: Props) => {
                   ))}
               </datalist>
               <button
-                className="ml-2 mt-2 border-2 border-solid border-black rounded-md bg-white hover:bg-gray-50 p-1"
+                className="ml-2 mt-2 border-2 border-solid text-white rounded-md bg-blue-500 hover:bg-blue-600 p-1"
                 onClick={handleAddToTags}
               >
                 新增

@@ -1060,15 +1060,15 @@ function getRecommendPosts(req, res) {
             const userId = new mongodb_1.ObjectId(user);
             const userInfo = (yield (0, user_1.getUserPreference)(userId));
             let preferenceTags;
-            let recommendMode;
+            // let recommendMode;
             if (userInfo) {
                 preferenceTags = userInfo.preference_tags.map((tag) => tag.name);
-                recommendMode = userInfo.recommend_mode;
+                // recommendMode = userInfo.recommend_mode;
             }
             else {
                 throw Error('No such user, something wrong getting posts');
             }
-            console.log(recommendMode);
+            // console.log(recommendMode);
             // if(recommendMode === 'auto')
             const posts = yield (0, post_1.getAutoRecommendedPosts)(preferenceTags, userInfo.read_posts);
             res.json(posts);
@@ -1307,8 +1307,6 @@ function searchPost(req, res, next) {
             const should = req.query.should;
             const must = req.query.must;
             const tags = req.query.tags;
-            console.log(should);
-            console.log(must);
             let shouldArray = [];
             if (should !== undefined) {
                 shouldArray = Array.isArray(should) ? should : [should].filter(Boolean);

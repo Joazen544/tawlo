@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import Header from './components/HeaderElements/Header';
+import Header from '../HeaderElements/Header';
 import Cookies from 'js-cookie';
 import { Navigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { socket } from './socket';
+import { socket } from '../../socket';
 import ProfileSideBar from './ProfileSideBar';
 
 export interface MessageTarget {
@@ -189,11 +189,14 @@ const Profile = () => {
       {ifLogOut && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header target={messageTarget} />
       {ifOwnProfile && (
-        <div className="flex justify-center bg-gray-50 min-h-screen pt-40">
+        <div
+          style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+          className="flex justify-center  min-h-screen pt-40"
+        >
           <div style={{ width: '70rem' }} className="flex">
             <ProfileSideBar page="profile" />
             <div>
-              <div className="max-w-md h-60 p-4 bg-white shadow-md flex">
+              <div className="max-w-md h-60 p-4 rounded-lg border-black border-2 bg-white shadow-md flex">
                 <div>
                   <h1 className="text-2xl font-bold mb-4">{userName}</h1>
                   <div
@@ -248,7 +251,10 @@ const Profile = () => {
         </div>
       )}
       {!ifOwnProfile && (
-        <div className="flex flex-col items-center pt-40 bg-gray-50 min-h-screen">
+        <div
+          style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+          className="flex flex-col items-center pt-40  min-h-screen"
+        >
           <div className="max-w-md mx-auto p-4 bg-white shadow-md flex">
             <div>
               <h1 className="text-2xl font-bold mb-4">{userName}</h1>

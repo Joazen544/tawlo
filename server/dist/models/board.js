@@ -34,7 +34,6 @@ exports.getAllBoardsFromDB = getAllBoardsFromDB;
 function getBoardNameFromDB(id) {
     return __awaiter(this, void 0, void 0, function* () {
         const name = yield Board.findOne({ _id: id });
-        // console.log(name);
         return name;
     });
 }

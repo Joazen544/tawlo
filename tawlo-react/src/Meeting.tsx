@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import axios from 'axios';
+import { socket } from './socket';
 
 interface Item {
   id: number;
@@ -14,6 +15,7 @@ const Meeting = () => {
   const token = Cookies.get('jwtToken');
 
   const [meetingStatus, setMeetingStatus] = useState('');
+  const [meetingStatusChange, setMeetingStatusChange] = useState<number>(0);
   const [meetingId, setMeetingId] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [toAskInputText, setToAskInputText] = useState<string>('');
@@ -50,7 +52,7 @@ const Meeting = () => {
 
         setMeetingStatus(res.data.status);
       });
-  }, []);
+  }, [meetingStatusChange]);
 
   useEffect(() => {
     if (meetingStatus === 'pending') {
@@ -112,6 +114,27 @@ const Meeting = () => {
         });
     }
   }, [meetingStatus]);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('notificate', (data) => {
+        const category = data.category;
+
+        if (
+          category === 'meet_match' ||
+          category === 'meet_success' ||
+          category === 'meet_fail'
+        ) {
+          setMeetingStatusChange((pre) => pre + 1);
+        }
+      });
+    }
+    return () => {
+      if (socket) {
+        socket.off('notificate');
+      }
+    };
+  }, [meetingStatusChange]);
 
   useEffect(() => {
     if (targetId) {
@@ -362,418 +385,429 @@ const Meeting = () => {
     <>
       {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header />
-      <div className="w-full flex justify-center">
-        <div className="bg-gray-200 w-1/2 mt-20 rounded-3xl">
-          {meetingStatus === 'none' && (
-            <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
-              <h1 className="text-2xl">請填寫配對資訊</h1>
-              <div id="meetingFormContainer" className="w-full h-full  m-10">
-                <div id="role">
-                  <div>你的職稱？</div>
-                  <input
-                    type="text"
-                    value={jobTitle}
-                    onChange={handleJobTitleChange}
-                    className="pl-2"
-                    placeholder="輸入職稱..."
-                    maxLength={14}
-                  />
-                </div>
-                <div id="to_ask" className="mt-8">
-                  <span>你想了解哪些領域？（最多五項）</span>
-                  <div
-                    style={{ minHeight: '3rem' }}
-                    className="pl-2 flex items-center border-solid border-gray-400 border-b-2 bg-gray-200 mt-2 mb-2"
-                  >
-                    {toAskItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
-                      >
-                        <span>{item.text}</span>
-                        <button
-                          className="ml-1"
-                          onClick={() => handleRemoveToAskItem(item.id)}
-                        >
-                          X
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={toAskInputText}
-                    onChange={handleToAskInputChange}
-                    className="pl-2"
-                    placeholder="想分享..."
-                    maxLength={14}
-                  />
-                  <button
-                    className="ml-2 border-2 border-solid border-gray-300 rounded-md bg-white p-1"
-                    onClick={handleAddToAskItem}
-                  >
-                    新增
-                  </button>
-                </div>
-                <div id="to_share" className="mt-8">
-                  <span>你想分享哪些領域？（最多五項）</span>
-                  <div
-                    style={{ minHeight: '3rem' }}
-                    className="pl-2 flex items-center border-solid border-gray-400 border-b-2 bg-gray-200 mt-2 mb-2"
-                  >
-                    {toShareItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
-                      >
-                        <span>{item.text}</span>
-                        <button
-                          className="ml-1"
-                          onClick={() => handleRemoveToShareItem(item.id)}
-                        >
-                          X
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={toShareInputText}
-                    onChange={handleToShareInputChange}
-                    className="pl-2"
-                    placeholder="想了解..."
-                    maxLength={14}
-                  />
-                  <button
-                    className="ml-2 border-2 border-solid border-gray-300 rounded-md bg-white p-1"
-                    onClick={handleAddToShareItem}
-                  >
-                    新增
-                  </button>
-                </div>
-                <div id="to_share" className="mt-8">
-                  <div>介紹一下自己，或是你期待聽到什麼</div>
-                  <textarea
-                    value={selfIntro}
-                    onChange={handleSelfIntroInputChange}
-                    className="pl-2 mt-2 w-full h-48"
-                    placeholder="我是怎麼樣的人、我想了解某些領域的動機..."
-                  />
-                </div>
-                <div className="mt-8">
-                  <button
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    onClick={handleMeetingSubmit}
-                  >
-                    開始配對
-                  </button>
-                </div>
-                {postError && <p className="text-red-500">{postError}</p>}
-              </div>
-            </div>
-          )}
-          {meetingStatus === 'pending' && (
-            <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
-              <h1 className="text-2xl">
-                等一下喔，在看有沒有適合聊天的對象出現
-              </h1>
-              <div id="userInfoContainer" className="w-full h-full  m-10">
-                <div id="role">
-                  <div>你的職稱</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {userRole}
-                  </div>
-                </div>
-                <div id="toAsk" className="mt-5">
-                  <div>你想了解的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {userToAsk.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="toShare" className="mt-5">
-                  <div>你想分享的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {userToShare.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="userIntro" className="mt-5">
-                  <div>你的自我介紹</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 min-h-10 flex items-center">
-                    <p>{userIntro}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleCancelPending}
-                  className="mt-6 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  取消
-                </button>
-              </div>
-            </div>
-          )}
-          {meetingStatus === 'checking' && (
-            <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
-              <h1 className="text-2xl">配對到了！</h1>
-              <div id="userInfoContainer" className="w-full h-full  m-10">
-                <div id="role">
-                  <div>他的職稱</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {targetRole}
-                  </div>
-                </div>
-                <div id="score" className="mt-5">
-                  <div>他的評分</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {targetRating}
-                  </div>
-                </div>
-                <div id="comments" className="mt-5">
-                  <div>他的評價</div>
-                  <div className="bg-gray-300 max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
-                    {targetComments.length &&
-                      targetComments.map((comment) => <p>{comment}</p>)}
-                  </div>
-                </div>
-                <div id="toAsk" className="mt-5">
-                  <div>他想了解的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {targetToAsk.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="toShare" className="mt-5">
-                  <div>他想分享的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {targetToShare.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="userIntro" className="mt-5">
-                  <div>他的自我介紹</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 min-h-10 flex items-center">
-                    <p style={{ whiteSpace: 'pre-line' }}>{targetIntro}</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleAcceptMeeting}
-                  className="mr-3 mt-6 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                >
-                  接受
-                </button>
-                <button
-                  onClick={handleRefuseMeeting}
-                  className="mt-6 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  拒絕
-                </button>
-              </div>
-            </div>
-          )}
-          {meetingStatus === 'waiting' && (
-            <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
-              <h1 className="text-2xl">已同意配對，等對方一下子</h1>
-              <div id="userInfoContainer" className="w-full h-full  m-10">
-                <div id="role">
-                  <div>他的職稱</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {targetRole}
-                  </div>
-                </div>
-                <div id="score" className="mt-5">
-                  <div>他的評分</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {targetRating}
-                  </div>
-                </div>
-                <div id="comments" className="mt-5">
-                  <div>他的評價</div>
-                  <div className="bg-gray-300 max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
-                    {targetComments.length &&
-                      targetComments.map((comment) => <p>{comment}</p>)}
-                  </div>
-                </div>
-                <div id="toAsk" className="mt-5">
-                  <div>他想了解的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {targetToAsk.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="toShare" className="mt-5">
-                  <div>他想分享的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {targetToShare.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="userIntro" className="mt-5">
-                  <div>他的自我介紹</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 min-h-10 flex items-center">
-                    <p>{targetIntro}</p>
-                  </div>
-                </div>
-
-                <button
-                  disabled
-                  className="mr-3 mt-6 px-3 py-2 bg-blue-300 text-white rounded-md cursor-not-allowed"
-                >
-                  已接受
-                </button>
-                <button
-                  onClick={handleRefuseMeeting}
-                  className="mt-6 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                >
-                  拒絕
-                </button>
-              </div>
-            </div>
-          )}
-          {meetingStatus === 'end' && (
-            <div className="flex flex-col items-center pl-10 pr-10 pt-10 w-full h-full">
-              <h1 className="text-2xl">
-                成功配對！與 {targetName} 的聊天室已建立
-              </h1>
-              <div id="userInfoContainer" className="w-full h-full  m-10">
-                <div id="name" className="mb-2">
-                  <div className="mb-2">對方的名字</div>
-
-                  <Link
-                    to={`/user/profile/${targetId}`}
-                    className="w-20 text-left text-blue-400 text-lg"
-                  >
-                    {targetName}
-                  </Link>
-                </div>
-                <div id="role">
-                  <div>他的職稱</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {targetRole}
-                  </div>
-                </div>
-                <div id="score" className="mt-5">
-                  <div>他的評分</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-8 flex items-center">
-                    {targetRating}
-                  </div>
-                </div>
-                <div id="comments" className="mt-5">
-                  <div>他的評價</div>
-                  <div className="bg-gray-300 max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
-                    {targetComments.length &&
-                      targetComments.map((comment) => <p>{comment}</p>)}
-                  </div>
-                </div>
-                <div id="toAsk" className="mt-5">
-                  <div>他想了解的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {targetToAsk.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="toShare" className="mt-5">
-                  <div>他想分享的領域</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
-                    {targetToShare.map((item, index) => (
-                      <div
-                        key={item + index}
-                        className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
-                      >
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div id="userIntro" className="mt-5">
-                  <div>他的自我介紹</div>
-                  <div className="bg-gray-300 p-2 rounded-md mt-2 min-h-10 flex items-center">
-                    <p>{targetIntro}</p>
-                  </div>
-                </div>
-
-                <div className="mt-10">
-                  <div id="score" className="mb-2">
-                    <div className="mb-2">給這位分享者 1~5 分的評價</div>
+      <div
+        style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+        className="w-full  min-h-screen pt-14 flex justify-center"
+      >
+        <div className=" w-1/2 mt-20 mb-8 rounded-3xl">
+          <div
+            style={{
+              backgroundColor: import.meta.env.VITE_SIDE_COLOR,
+              color: import.meta.env.VITE_MAIN_STRING_COLOR,
+            }}
+            className="flex flex-col rounded-3xl items-center pl-10 pr-10 pt-10 w-full"
+          >
+            {meetingStatus === 'none' && (
+              <>
+                <h1 className="text-2xl">請填寫配對資訊</h1>
+                <div id="meetingFormContainer" className="w-full h-full  m-10">
+                  <div id="role">
+                    <div className="mb-2">你的職稱？</div>
                     <input
-                      type="number"
-                      value={score}
-                      onChange={handleScoreChange}
-                      className="pl-2 w-20"
-                      max={5}
-                      min={1}
-                      placeholder="1~5"
+                      type="text"
+                      value={jobTitle}
+                      onChange={handleJobTitleChange}
+                      className="pl-2 text-gray-800 rounded-md"
+                      placeholder="輸入職稱..."
+                      maxLength={14}
                     />
                   </div>
-                  <div id="comment">
-                    <div className="mb-2">
-                      這位分享者如何？給其他配對者一個參考
+                  <div id="to_ask" className="mt-8">
+                    <span>你想了解哪些領域？（最多五項）</span>
+                    <div
+                      style={{ minHeight: '3rem' }}
+                      className="pl-2 flex items-center border-solid border-b-2  mt-2 mb-2"
+                    >
+                      {toAskItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
+                        >
+                          <span>{item.text}</span>
+                          <button
+                            className="ml-1"
+                            onClick={() => handleRemoveToAskItem(item.id)}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
                     </div>
+                    <input
+                      type="text"
+                      value={toAskInputText}
+                      onChange={handleToAskInputChange}
+                      className="pl-2 text-gray-800 rounded-md"
+                      placeholder="想分享..."
+                      maxLength={14}
+                    />
+                    <button
+                      className="ml-2  rounded-md bg-blue-500 hover:bg-blue-600 p-1"
+                      onClick={handleAddToAskItem}
+                    >
+                      新增
+                    </button>
+                  </div>
+                  <div id="to_share" className="mt-8">
+                    <span>你想分享哪些領域？（最多五項）</span>
+                    <div
+                      style={{ minHeight: '3rem' }}
+                      className="pl-2 flex items-center border-solid border-b-2  mt-2 mb-2"
+                    >
+                      {toShareItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
+                        >
+                          <span>{item.text}</span>
+                          <button
+                            className="ml-1"
+                            onClick={() => handleRemoveToShareItem(item.id)}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={toShareInputText}
+                      onChange={handleToShareInputChange}
+                      className="pl-2 text-gray-800 rounded-md"
+                      placeholder="想了解..."
+                      maxLength={14}
+                    />
+                    <button
+                      className="ml-2 bg-blue-500 hover:bg-blue-600 rounded-md  p-1"
+                      onClick={handleAddToShareItem}
+                    >
+                      新增
+                    </button>
+                  </div>
+                  <div id="to_share" className="mt-8">
+                    <div>介紹一下自己，或是你期待聽到什麼</div>
                     <textarea
-                      value={comment}
-                      onChange={handleCommentChange}
-                      className="pl-2 w-full h-32"
+                      value={selfIntro}
+                      onChange={handleSelfIntroInputChange}
+                      className="pl-2 mt-2 w-full h-48 text-gray-800 rounded-md"
+                      placeholder="我是怎麼樣的人、我想了解某些領域的動機..."
                     />
                   </div>
-                  <div className="mt-5">
-                    注意：送出評論後，這個頁面會消失。並且可以重新配對新的對象
+                  <div className="mt-8">
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      onClick={handleMeetingSubmit}
+                    >
+                      開始配對
+                    </button>
+                  </div>
+                  {postError && <p className="text-red-500">{postError}</p>}
+                </div>
+              </>
+            )}
+            {meetingStatus === 'pending' && (
+              <>
+                <h1 className="text-2xl">
+                  等一下喔，在看有沒有適合聊天的對象出現
+                </h1>
+                <div id="userInfoContainer" className="w-full h-full  m-10">
+                  <div id="role">
+                    <div>你的職稱</div>
+                    <div className="bg-gray-300 p-2 text-black rounded-md mt-2 h-8 flex items-center">
+                      {userRole}
+                    </div>
+                  </div>
+                  <div id="toAsk" className="mt-5">
+                    <div>你想了解的領域</div>
+                    <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
+                      {userToAsk.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="toShare" className="mt-5">
+                    <div>你想分享的領域</div>
+                    <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
+                      {userToShare.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="userIntro" className="mt-5">
+                    <div>你的自我介紹</div>
+                    <div className="bg-gray-300 p-2 text-black rounded-md mt-2 min-h-10 flex items-center">
+                      <p>{userIntro}</p>
+                    </div>
                   </div>
                   <button
-                    onClick={handleCommentSubmit}
-                    className="mr-3 mt-6 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md"
+                    onClick={handleCancelPending}
+                    className="mt-6 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                   >
-                    送出評論
+                    取消
                   </button>
-                  {commentError && (
-                    <p className="text-red-500">{commentError}</p>
-                  )}
                 </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+            {meetingStatus === 'checking' && (
+              <>
+                <h1 className="text-2xl">配對到了！</h1>
+                <div id="userInfoContainer" className="w-full h-full  m-10">
+                  <div id="role">
+                    <div>他的職稱</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-8 flex items-center">
+                      {targetRole}
+                    </div>
+                  </div>
+                  <div id="score" className="mt-5">
+                    <div>他的評分</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-8 flex items-center">
+                      {targetRating}
+                    </div>
+                  </div>
+                  <div id="comments" className="mt-5">
+                    <div>他的評價</div>
+                    <div className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
+                      {targetComments.length &&
+                        targetComments.map((comment) => <p>{comment}</p>)}
+                    </div>
+                  </div>
+                  <div id="toAsk" className="mt-5">
+                    <div>他想了解的領域</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-10 flex items-center">
+                      {targetToAsk.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="toShare" className="mt-5">
+                    <div>他想分享的領域</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-10 flex items-center">
+                      {targetToShare.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="userIntro" className="mt-5">
+                    <div>他的自我介紹</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 min-h-10 flex items-center">
+                      <p style={{ whiteSpace: 'pre-line' }}>{targetIntro}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleAcceptMeeting}
+                    className=" bg-blue-500 hover:bg-blue-600 rounded-md px-3 mr-4 py-2"
+                  >
+                    接受
+                  </button>
+                  <button
+                    onClick={handleRefuseMeeting}
+                    className="mt-6 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  >
+                    拒絕
+                  </button>
+                </div>
+              </>
+            )}
+            {meetingStatus === 'waiting' && (
+              <>
+                <h1 className="text-2xl">已同意配對，等對方一下子</h1>
+                <div id="userInfoContainer" className="w-full h-full  m-10">
+                  <div id="role">
+                    <div>他的職稱</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-8 flex items-center">
+                      {targetRole}
+                    </div>
+                  </div>
+                  <div id="score" className="mt-5">
+                    <div>他的評分</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-8 flex items-center">
+                      {targetRating}
+                    </div>
+                  </div>
+                  <div id="comments" className="mt-5">
+                    <div>他的評價</div>
+                    <div className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
+                      {targetComments.length &&
+                        targetComments.map((comment) => <p>{comment}</p>)}
+                    </div>
+                  </div>
+                  <div id="toAsk" className="mt-5">
+                    <div>他想了解的領域</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-10 flex items-center">
+                      {targetToAsk.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="toShare" className="mt-5">
+                    <div>他想分享的領域</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-10 flex items-center">
+                      {targetToShare.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="userIntro" className="mt-5">
+                    <div>他的自我介紹</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 min-h-10 flex items-center">
+                      <p>{targetIntro}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    disabled
+                    className=" bg-blue-400  rounded-md  px-3 mr-4 py-2"
+                  >
+                    已接受
+                  </button>
+                  <button
+                    onClick={handleRefuseMeeting}
+                    className="mt-6 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  >
+                    拒絕
+                  </button>
+                </div>
+              </>
+            )}
+            {meetingStatus === 'end' && (
+              <>
+                <h1 className="text-2xl">
+                  成功配對！與 {targetName} 的聊天室已建立
+                </h1>
+                <div id="userInfoContainer" className="w-full h-full  m-10">
+                  <div id="name" className="mb-2">
+                    <div className="mb-2">對方的名字</div>
+
+                    <Link
+                      to={`/user/profile/${targetId}`}
+                      className="w-20 text-left text-blue-400 text-xl"
+                    >
+                      {targetName}
+                    </Link>
+                  </div>
+                  <div id="role">
+                    <div>他的職稱</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-8 flex items-center">
+                      {targetRole}
+                    </div>
+                  </div>
+                  <div id="score" className="mt-5">
+                    <div>他的評分</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 h-8 flex items-center">
+                      {targetRating}
+                    </div>
+                  </div>
+                  <div id="comments" className="mt-5">
+                    <div>他的評價</div>
+                    <div className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
+                      {targetComments.length &&
+                        targetComments.map((comment) => <p>{comment}</p>)}
+                    </div>
+                  </div>
+                  <div id="toAsk" className="mt-5">
+                    <div>他想了解的領域</div>
+                    <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
+                      {targetToAsk.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="toShare" className="mt-5">
+                    <div>他想分享的領域</div>
+                    <div className="bg-gray-300 p-2 rounded-md mt-2 h-10 flex items-center">
+                      {targetToShare.map((item, index) => (
+                        <div
+                          key={item + index}
+                          className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1 h-8"
+                        >
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div id="userIntro" className="mt-5">
+                    <div>他的自我介紹</div>
+                    <div className="bg-gray-300 text-black p-2 rounded-md mt-2 min-h-10 flex items-center">
+                      <p>{targetIntro}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-10">
+                    <div id="score" className="mb-2">
+                      <div className="mb-2">給這位分享者 1~5 分的評價</div>
+                      <input
+                        type="number"
+                        value={score}
+                        onChange={handleScoreChange}
+                        className="pl-2 w-20 text-black"
+                        max={5}
+                        min={1}
+                        placeholder="1~5"
+                      />
+                    </div>
+                    <div id="comment">
+                      <div className="mb-2">
+                        這位分享者如何？給其他配對者一個參考
+                      </div>
+                      <textarea
+                        value={comment}
+                        onChange={handleCommentChange}
+                        className="pl-2 w-full h-32 text-black"
+                      />
+                    </div>
+                    <div className="mt-5">
+                      注意：送出評論後，這個頁面會消失。並且可以重新配對新的對象
+                    </div>
+                    <button
+                      onClick={handleCommentSubmit}
+                      className=" mt-3 bg-blue-500 hover:bg-blue-600 rounded-md  p-1"
+                    >
+                      送出評論
+                    </button>
+                    {commentError && (
+                      <p className="text-red-500">{commentError}</p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </>

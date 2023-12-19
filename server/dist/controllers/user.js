@@ -344,7 +344,6 @@ function getNotifications(req, res, next) {
                         notification.message = '';
                 }
             });
-            // console.log(notifications);
             res.json(notifications.reverse());
         }
         catch (err) {

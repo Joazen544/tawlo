@@ -33,11 +33,13 @@ const SearchResult = () => {
       <Header handleSearch={(results) => setSearchResults(results)} />
       <section
         id="posts_container"
-        className="w-full bg-gray-50 min-h-screen flex flex-row"
+        style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+        className="w-full  min-h-screen flex flex-row"
       >
         <div
           id="postsContainer"
-          className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-16"
+          style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+          className="w-full  min-h-screen flex flex-col items-center pt-16"
         >
           <div className="text-xl">搜尋結果：</div>
           {searchResults &&

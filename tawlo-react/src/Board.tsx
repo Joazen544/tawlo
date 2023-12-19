@@ -63,9 +63,13 @@ const Board = () => {
   return (
     <>
       <Header />
-      <div className="flex flex-col relative z-0 items-center pt-32 bg-gray-50 min-h-screen pb-5">
+      <div
+        style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+        className="flex flex-col relative z-0 items-center pt-28 min-h-screen pb-5"
+      >
         <h2 className="text-2xl font-bold mb-4">Board: {boardName}</h2>
         <button
+          style={{ backgroundColor: import.meta.env.VITE_SIDE_COLOR }}
           className="px-4 w-20 h-10 mt-3  bg-slate-900 text-white rounded-md hover:bg-slate-600 text-lg"
           onClick={() => setIfAppendPostArea(!ifAppendPostArea)}
         >

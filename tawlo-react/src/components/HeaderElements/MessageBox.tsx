@@ -57,10 +57,7 @@ Props) => {
   }, [targetName, targetId, groupId]);
 
   useEffect(() => {
-    // console.log('getting socket from message box');
-
     //const socket = getSocket();
-    // console.log('socket is: ' + socket?.connected);
 
     if (socket)
       socket.on('myself', (data) => {

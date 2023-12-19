@@ -311,165 +311,176 @@ const MotherPost = ({
 
   return (
     <>
-      <div
-        style={{ width: '60rem' }}
-        className="w-full mx-auto mt-2 pb-6  bg-white overflow-hidden border-solid border-b-2 border-gray-200"
-      >
-        <div
-          id="title"
-          className="p-4 border-b border-gray-200 flex justify-between items-center"
-        >
-          <span className="text-2xl">#問題：{title}</span>
-          <button
-            className="px-2 w-20 h-16 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
-            onClick={clickReply}
+      <div style={{ width: '60rem' }} className="w-full mx-auto mt-2 pb-6 flex">
+        <div id="user_info">
+          <div
+            id="authorInfo"
+            className="pr-4 flex items-center justify-center w-44 h-full"
           >
-            回覆貼文
-          </button>
+            <div className="flex flex-col items-center">
+              <div className="flex-shrink-0">
+                <div
+                  id="userImage"
+                  className={`h-28 w-28  ${
+                    !authorImage && 'bg-user-image'
+                  } bg-contain bg-no-repeat`}
+                >
+                  {authorImage && (
+                    <img
+                      style={{ objectFit: 'cover' }}
+                      src={authorImage}
+                      alt="user-image"
+                      className="h-full w-full rounded-full"
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="flex mt-5 flex-col items-center">
+                <Link
+                  style={{ backgroundColor: import.meta.env.VITE_THIRD_COLOR }}
+                  to={`/user/profile/${author}`}
+                  id="commentName"
+                  className="w-20 text-center rounded-xl shadow-lg text-lg text-blue-400"
+                >
+                  {authorName}
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="authorInfo" className="p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div
-                id="userImage"
-                className={`h-12 w-12  ${
-                  !authorImage && 'bg-user-image'
-                } bg-contain bg-no-repeat`}
-              >
-                {authorImage && (
-                  <img
-                    style={{ objectFit: 'cover' }}
-                    src={authorImage}
-                    alt="user-image"
-                    className="h-full w-full rounded-full"
-                  />
-                )}
-              </div>
+        <div
+          id="post_body"
+          className="bg-white w-full rounded-2xl  border-solid border-2 shadow-lg border-gray-300"
+        >
+          <div
+            id="title"
+            className="p-4 border-b border-gray-200 flex justify-between items-center"
+          >
+            <div className="text-gray-500">
+              <div className="text-2xl">#標題：{title}</div>
+              {publishTime.toLocaleDateString()}
             </div>
-            <div className="ml-3">
-              <Link
-                to={`/user/profile/${author}`}
-                id="commentName"
-                className="w-20 text-left text-blue-400"
-              >
-                {authorName}
-              </Link>
-              <div className="text-gray-500">
-                {publishTime.toLocaleDateString()}
-              </div>
-            </div>
-            <div id="tags" className="ml-10 text-gray-500 flex">
+            <div id="tags" className="ml-4 w-40 text-gray-500 flex flex-wrap">
               {category !== 'reply' &&
                 tags.map((tag, index) => (
                   <p
-                    className="border-solid border-2 rounded-md p-1.5 mr-3"
+                    className="border-solid border-2 rounded-md p-1.5 mr-3 mt-1"
                     key={index}
                   >
                     {tag}
                   </p>
                 ))}
             </div>
-          </div>
-          {author === userId && (
-            <div id="settings" className="flex items-center">
-              {isSettingAppend && (
-                <div className="w-14 rounded-lg right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
-                  <button className="hover:bg-blue-400 h-full w-full">
-                    編輯
-                  </button>
+            <div className="flex w-32 justify-between">
+              {author === userId && (
+                <div id="settings" className="flex items-center">
+                  {isSettingAppend && (
+                    <div className="w-14 rounded-lg right-0 border-2 bg-white border-gray-400 border-solid overflow-hidden">
+                      <button className="hover:bg-blue-400 h-full w-full">
+                        編輯
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="hover:bg-red-400 h-full w-full"
+                      >
+                        刪除
+                      </button>
+                    </div>
+                  )}
                   <button
-                    onClick={handleDelete}
-                    className="hover:bg-red-400 h-full w-full"
-                  >
-                    刪除
-                  </button>
+                    onClick={handleSettingAppend}
+                    ref={settingRef}
+                    className="w-8 h-10 bg-more-image bg-no-repeat bg-contain"
+                  ></button>
                 </div>
               )}
               <button
-                onClick={handleSettingAppend}
-                ref={settingRef}
-                className="w-8 h-10 bg-more-image bg-no-repeat bg-contain"
+                className="pl-2 pr-2 w-20 h-10 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm"
+                onClick={clickReply}
+              >
+                回覆貼文
+              </button>
+            </div>
+          </div>
+
+          <div id="postContent" className="p-4 flex mt-3 mb-3">
+            <div
+              id="useful"
+              className="pl-14 w-10 h-25 flex flex-col justify-start items-center"
+            >
+              <button
+                id="upvote"
+                style={{ backgroundSize: '1rem' }}
+                className={`w-10 h-10 bg-up-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
+                  isUpvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
+                }`}
+                onClick={handleUpvote}
+              ></button>
+              <span className="text-gray-900">{upvoteSum}</span>
+              <button
+                id="downvote"
+                style={{ backgroundSize: '1rem' }}
+                className={`w-10 h-10 bg-down-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
+                  isDownvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
+                }`}
+                onClick={handleDownvote}
               ></button>
             </div>
-          )}
-        </div>
-        <div id="postContent" className="p-4 flex mt-3 mb-3">
-          <div
-            id="useful"
-            className="pl-14 w-10 h-25 flex flex-col justify-center items-center"
-          >
-            <button
-              id="upvote"
-              style={{ backgroundSize: '1rem' }}
-              className={`w-10 h-10 bg-up-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
-                isUpvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
-              }`}
-              onClick={handleUpvote}
-            ></button>
-            <span className="text-gray-900">{upvoteSum}</span>
-            <button
-              id="downvote"
-              style={{ backgroundSize: '1rem' }}
-              className={`w-10 h-10 bg-down-arrow  bg-no-repeat bg-center border-solid border-2 border-black rounded-full ${
-                isDownvoted ? 'bg-blue-200' : 'bg-white hover:bg-gray-100'
-              }`}
-              onClick={handleDownvote}
-            ></button>
-          </div>
-          <div ref={contentPageRef} id="content" className="ml-4">
-            <p
-              style={{ whiteSpace: 'pre-line' }}
-              className={`ml-10 pr-8 pl-3 ${
-                isFolded ? 'max-h-96 overflow-hidden' : null
-              }`}
-            >
-              {content}
-            </p>
-            {isPostLong && (
-              <div
-                className="ml-10 text-blue-400 cursor-pointer"
-                onClick={() => setIsFolded(!isFolded)}
+            <div ref={contentPageRef} id="content" className="ml-4">
+              <p
+                style={{ whiteSpace: 'pre-line' }}
+                className={`ml-10 pr-8 pl-3 ${
+                  isFolded ? 'max-h-96 overflow-hidden' : null
+                }`}
               >
-                {isFolded ? '顯示更多' : '收起'}
-              </div>
-            )}
+                {content}
+              </p>
+              {isPostLong && (
+                <div
+                  className="ml-10 text-blue-400 cursor-pointer"
+                  onClick={() => setIsFolded(!isFolded)}
+                >
+                  {isFolded ? '顯示更多' : '收起'}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {commentsData.length > 0 && (
-          <div id="comments" className="p-4 border-t border-gray-200">
-            {commentsData &&
-              commentsData.map((comment, index) => {
-                const time = new Date(comment.time);
-                const name = commentNames[index];
+          {commentsData.length > 0 && (
+            <div id="comments" className="p-4 border-t border-gray-200">
+              {commentsData &&
+                commentsData.map((comment, index) => {
+                  const time = new Date(comment.time);
+                  const name = commentNames[index];
 
-                return (
-                  <Comment
-                    key={index}
-                    userId={comment.user}
-                    index={index}
-                    name={name}
-                    comment={comment}
-                    time={time}
-                  ></Comment>
-                );
-              })}
+                  return (
+                    <Comment
+                      key={index}
+                      userId={comment.user}
+                      index={index}
+                      name={name}
+                      comment={comment}
+                      time={time}
+                    ></Comment>
+                  );
+                })}
+            </div>
+          )}
+          <div id="commentCreate" className="flex items-center">
+            <input
+              type="text"
+              value={commentCreate}
+              onChange={handleCommentChange}
+              className="w-full h-10 p-3 ml-2 mb-2 mr-2 border border-gray-300 rounded-md"
+              placeholder="輸入留言"
+            />
+            <button
+              onClick={handleCreateComment}
+              className="w-20 h-10 px-1 mb-2 mr-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm"
+            >
+              留言
+            </button>
           </div>
-        )}
-        <div id="commentCreate" className="flex items-center">
-          <input
-            type="text"
-            value={commentCreate}
-            onChange={handleCommentChange}
-            className="w-full h-10 p-3 ml-2 mb-2 mr-2 border border-gray-300 rounded-md"
-            placeholder="輸入留言"
-          />
-          <button
-            onClick={handleCreateComment}
-            className="w-20 h-10 px-1 mb-2 mr-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
-          >
-            留言
-          </button>
         </div>
       </div>
     </>

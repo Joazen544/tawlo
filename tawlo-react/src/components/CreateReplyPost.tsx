@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { PostInterface } from '../Home';
+import { Link } from 'react-router-dom';
 
 interface CreatePostProps {
   onPostCreated: (postCreated: PostInterface) => void; // Callback function to execute after a post is created
@@ -30,15 +31,31 @@ const CreatePost: React.FC<CreatePostProps> = ({
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
   const [postError, setPostError] = useState('');
-  const [title, setTitle] = useState('');
   const [relevantTags, setRelevantTags] = useState<string[]>([]);
   const [autoCompleteTags, setAutoCompleteTags] = useState<string[]>([]);
+  const [userImage, setUserImage] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
+
+  const token = Cookies.get('jwtToken');
+  const user = Cookies.get('userId');
 
   const handleContentChange = (
     event: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
     setContent(event.target.value);
   };
+
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${user}`)
+      .then((res) => {
+        setUserImage(res.data.image);
+        setUserName(res.data.name);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
 
   const handleTagInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTagInput(event.target.value);
@@ -120,11 +137,6 @@ const CreatePost: React.FC<CreatePostProps> = ({
       return;
     }
 
-    if (tags.length > 3) {
-      setPostError('標籤最多只能四個');
-      return;
-    }
-
     let ifDuplicate = false;
 
     tags.forEach((el) => {
@@ -168,18 +180,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
     setTags(updatedTags);
   };
 
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(event.target.value);
-  };
-
-  const token = Cookies.get('jwtToken');
-
   const handleCreatePost = async () => {
-    if (category === 'mother' && !title) {
-      setPostError('貼文需要一個標題');
-      return;
-    }
-
     if (category !== 'reply' && tags.length === 0) {
       setPostError('貼文至少要有一個標籤');
       return;
@@ -196,7 +197,6 @@ const CreatePost: React.FC<CreatePostProps> = ({
             content,
             motherPost,
             board,
-            title,
             tags: tagsArray,
           },
           {
@@ -220,96 +220,127 @@ const CreatePost: React.FC<CreatePostProps> = ({
         console.error('Error creating post:', error);
       }
     } else {
-      setPostError('貼文需要內文及標籤');
+      setPostError('A post must have content and at least one tag');
     }
   };
 
   return (
     <div
       style={{ width: '60rem' }}
-      className=" mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden border-solid border-2 border-gray-400"
+      className=" mx-auto mt-8 mb-10 flex  overflow-hidden "
     >
-      <div id="createPostContent" className="p-4">
-        {category === 'mother' && (
-          <input
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            className="w-full mt-4 p-2 border border-gray-300 rounded-md mb-3"
-            placeholder="這篇貼文的標題是什麼 （最多 40 個字符）"
-            maxLength={40}
-          />
-        )}
+      <div
+        id="createPostContent"
+        className="p-4 w-full bg-white shadow-lg rounded-lg border-solid border-2 border-gray-400"
+      >
         <textarea
           value={content}
           onChange={handleContentChange}
           className="w-full h-32 p-2 border border-gray-300 rounded-md"
-          placeholder="內文..."
+          placeholder="回答..."
         />
-        <>
-          <div className="pl-2 flex items-center h-10 rounded-lg mt-2 mb-2">
-            <div>標籤：</div>
-            {tags.map((tag) => (
-              <div
-                key={tag.id}
-                className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
-              >
-                <span>{tag.text}</span>
-                <button
-                  className="ml-1"
-                  onClick={() => handleRemoveTag(tag.id)}
+        {category !== 'reply' && (
+          <>
+            <div className="pl-2 flex items-center h-10 rounded-lg mt-2 mb-2">
+              <div>標籤：</div>
+              {tags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 text-white p-1"
                 >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
-          <input
-            type="text"
-            value={tagInput}
-            onChange={handleTagInputChange}
-            className="w-48 mt-4 p-2 border border-gray-300 rounded-md"
-            placeholder="這篇貼文跟什麼相關"
-            list="tagAuto"
-            maxLength={15}
-          />
-          <datalist id="tagAuto">
-            {autoCompleteTags &&
-              autoCompleteTags.map((tag) => <option key={tag}>{tag}</option>)}
-          </datalist>
-          <button
-            className="ml-2 border-2 border-solid border-black rounded-md bg-white p-1"
-            onClick={handleAddToTags}
-          >
-            新增
-          </button>
-          <div className="mt-3 ml-2 flex">
-            <p>其他人用了這些標籤：</p>
-            {relevantTags && (
-              <div className="flex flex-wrap">
-                {relevantTags.map((tag) => (
-                  <div
-                    key={tag}
-                    onClick={() => handleAddRecommendToTags(tag)}
-                    className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 hover:bg-blue-500 text-white p-1 cursor-pointer"
+                  <span>{tag.text}</span>
+                  <button
+                    className="ml-1"
+                    onClick={() => handleRemoveTag(tag.id)}
                   >
-                    <span className="w-full">{tag}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={handleTagInputChange}
+              className="w-48 mt-4 p-2 border border-gray-300 rounded-md"
+              placeholder="這篇貼文跟什麼相關"
+              list="tagAuto"
+              maxLength={15}
+            />
+            <datalist id="tagAuto">
+              {autoCompleteTags &&
+                autoCompleteTags.map((tag) => <option key={tag}>{tag}</option>)}
+            </datalist>
+            <button
+              className="ml-2 border-2 border-solid border-black rounded-md bg-white p-1"
+              onClick={handleAddToTags}
+            >
+              新增
+            </button>
+            <div className="mt-3 ml-2 flex">
+              <p>其他人用了這些標籤：</p>
+              {relevantTags && (
+                <div className="flex flex-wrap">
+                  {relevantTags.map((tag) => (
+                    <div
+                      key={tag}
+                      onClick={() => handleAddRecommendToTags(tag)}
+                      className="ml-2 border-solid border-2 border-blue-300 rounded-md bg-blue-400 hover:bg-blue-500 text-white p-1 cursor-pointer"
+                    >
+                      <span className="w-full">{tag}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
         <div className="flex justify-end">
           <button
             onClick={handleCreatePost}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
           >
-            發布貼文
+            {category === 'reply' ? '回覆' : '發布貼文'}
           </button>
         </div>
 
         {postError && <p className="text-red-500">{postError}</p>}
+      </div>
+      <div id="user_info">
+        <div
+          id="authorInfo"
+          className="pl-6 flex items-center justify-center w-44 h-full"
+        >
+          <div className="flex flex-col items-center">
+            <div className="flex-shrink-0">
+              <div
+                id="userImage"
+                className={`h-28 w-28 ${
+                  !userImage && 'bg-user-image'
+                } bg-contain bg-no-repeat`}
+              >
+                {userImage && (
+                  <img
+                    style={{ objectFit: 'cover' }}
+                    src={userImage}
+                    alt="user-image"
+                    className="h-full w-full rounded-full"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="flex mt-5 flex-col items-center">
+              <Link
+                to={`/user/profile/${user}`}
+                style={{ backgroundColor: import.meta.env.VITE_THIRD_COLOR }}
+                id="commentName"
+                className="w-20 text-center text-lg rounded-lg shadow-lg text-blue-400"
+              >
+                {userName}
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Header from './components/HeaderElements/Header';
+import Header from '../HeaderElements/Header';
 import Cookies from 'js-cookie';
 import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import ProfileSideBar from './ProfileSideBar';
@@ -183,16 +183,19 @@ const Friends = () => {
   };
 
   return (
-    <div className=" bg-gray-50">
+    <div className="">
       {!token && <Navigate to={'/user/signin'} replace={true}></Navigate>}
       <Header />
-      <div className="flex justify-center  pt-40">
+      <div
+        style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+        className="flex justify-center pt-40"
+      >
         <div style={{ width: '70rem', minHeight: '50rem' }} className="flex">
           <ProfileSideBar page="friends" />
           <div
             id="friends_list"
             style={{ width: '50rem' }}
-            className="bg-white"
+            className="bg-white rounded-lg border-2 border-solid border-black"
           >
             {requestedFriends.length > 0 && (
               <div className="pl-10 pt-10">
@@ -209,13 +212,21 @@ const Friends = () => {
                       >
                         <div className="pt-2">
                           {!requestedFriends[index].image && (
-                            <div className="bg-user-image h-20 w-20 bg-contain bg-no-repeat"></div>
+                            <div
+                              style={{
+                                borderColor: import.meta.env.VITE_BORDER_COLOR,
+                              }}
+                              className="bg-user-image h-20 w-20 bg-contain bg-no-repeat rounded-full border-solid border-2"
+                            ></div>
                           )}
                           {requestedFriends[index].image && (
                             <img
                               src={requestedFriends[index].image}
                               alt="user image"
-                              className="h-20 w-20"
+                              style={{
+                                borderColor: import.meta.env.VITE_BORDER_COLOR,
+                              }}
+                              className="h-20 w-20 rounded-full border-solid border-2"
                             />
                           )}
                         </div>
@@ -254,13 +265,21 @@ const Friends = () => {
                       >
                         <div className="pt-2">
                           {!receiveFriends[index].image && (
-                            <div className="bg-user-image h-20 w-20 bg-contain bg-no-repeat"></div>
+                            <div
+                              style={{
+                                borderColor: import.meta.env.VITE_BORDER_COLOR,
+                              }}
+                              className="bg-user-image h-20 w-20 bg-contain bg-no-repeat rounded-full border-solid border-2"
+                            ></div>
                           )}
                           {receiveFriends[index].image && (
                             <img
                               src={receiveFriends[index].image}
                               alt="user image"
-                              className="h-20 w-20"
+                              style={{
+                                borderColor: import.meta.env.VITE_BORDER_COLOR,
+                              }}
+                              className="h-20 w-20 rounded-full border-solid border-2"
                             />
                           )}
                         </div>
@@ -303,13 +322,21 @@ const Friends = () => {
                   >
                     <div className="pt-2">
                       {!friends[index].image && (
-                        <div className="mt-3 bg-user-image h-20 w-20 bg-contain bg-no-repeat"></div>
+                        <div
+                          style={{
+                            borderColor: import.meta.env.VITE_BORDER_COLOR,
+                          }}
+                          className="mt-3 bg-user-image h-20 w-20 bg-contain bg-no-repeat rounded-full border-solid border-2"
+                        ></div>
                       )}
                       {friends[index].image && (
                         <img
                           src={friends[index].image}
                           alt="user image"
-                          className="h-20 w-20 mt-3"
+                          style={{
+                            borderColor: import.meta.env.VITE_BORDER_COLOR,
+                          }}
+                          className="h-20 w-20 rounded-full border-solid border-2"
                         />
                       )}
                     </div>

@@ -6,7 +6,7 @@ import MotherPost from './components/PostElements/MotherPost';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import axios from 'axios';
 import 'dotenv';
-import CreatePost from './components/CreatePost';
+import CreateReplyPost from './components/CreateReplyPost';
 import { PostInterface } from './Home';
 import ReplyPost from './components/PostElements/ReplyPost';
 
@@ -120,13 +120,21 @@ const Discussion = () => {
       <Header />
       <section
         id="postsBackground"
-        className="w-full bg-gray-50 min-h-screen flex flex-col items-center pt-28"
+        style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+        className="w-full min-h-screen flex flex-col items-center pt-28"
       >
-        <div
-          id="postsContainer"
-          style={{ width: '60rem' }}
-          className="border-solid border-l-2 mb-14 border-r-2 bg-white"
-        >
+        {postsRender[0] && (
+          <div style={{ width: '37rem' }} className="h-6">
+            <Link
+              style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
+              className="px-4 w-20 h-16 mt-3 py-2 text-white rounded-md hover:underline text-sm"
+              to={`/board?id=${postsRender[0].board}`}
+            >
+              回到討論版
+            </Link>
+          </div>
+        )}
+        <div id="postsContainer" style={{ width: '60rem' }} className="mb-14">
           <InfiniteScroll
             dataLength={postsRender.length}
             next={() => renderNewPosts()}
@@ -134,15 +142,6 @@ const Discussion = () => {
             loader={<p>Loading...</p>}
             endMessage={<div className="h-6"></div>}
           >
-            {postsRender[0] && (
-              <Link
-                style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
-                className="px-4 w-20 h-16 mt-3 py-2 text-white rounded-md hover:underline text-sm"
-                to={`/board?id=${postsRender[0].board}`}
-              >
-                回到討論版
-              </Link>
-            )}
             {postsRender[0] && (
               <MotherPost
                 key={postsRender[0]._id}
@@ -167,14 +166,14 @@ const Discussion = () => {
               />
             )}
             {ifAppendReplyArea && (
-              <CreatePost
+              <CreateReplyPost
                 onPostCreated={(postCreated: PostInterface) =>
                   handleCreatePost(postCreated)
                 }
                 category="reply"
                 motherPost={id}
                 board=""
-              ></CreatePost>
+              ></CreateReplyPost>
             )}
             {postsRender.map((post, index) => {
               if (index > 0) {

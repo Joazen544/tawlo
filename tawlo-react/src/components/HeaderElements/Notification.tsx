@@ -6,7 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { socket } from '../../socket';
 
-interface Notification {
+export interface Notification {
   _id: string;
   time: Date;
   category: string;
