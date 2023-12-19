@@ -92,6 +92,10 @@ function accessMeeting(req, res, next) {
                         category: 'meet_match',
                         message: '配對成功，看看對方的資訊吧 ouo',
                     });
+                    io.to(joinResult.users[0].toString()).emit('notificate_2', {
+                        category: 'meet_match',
+                        message: '配對成功，看看對方的資訊吧 ouo',
+                    });
                     // console.log('send io 2');
                     yield user_1.default.updateOne({ _id: user }, {
                         meeting: joinResult._id,
@@ -282,6 +286,14 @@ function replyMeeting(req, res, next) {
                     category: 'meet_success',
                     message: '雙方都接受配對了，來跟對方聯絡吧！',
                 });
+                io.to(meeting.users[0].toString()).emit('notificate_2', {
+                    category: 'meet_success',
+                    message: '雙方都接受配對了，來跟對方聯絡吧！',
+                });
+                io.to(meeting.users[1].toString()).emit('notificate_2', {
+                    category: 'meet_success',
+                    message: '雙方都接受配對了，來跟對方聯絡吧！',
+                });
                 // open a chat for them
                 req.query.target = meeting.accept[0].toString();
                 next();
@@ -328,6 +340,14 @@ function replyMeeting(req, res, next) {
                             category: 'meet_match',
                             message: '配對成功，看看對方的資訊吧 XDD',
                         });
+                        io.to(joinResult.users[0].toString()).emit('notificate_2', {
+                            category: 'meet_match',
+                            message: '配對成功，看看對方的資訊吧 OAO',
+                        });
+                        io.to(userId.toString()).emit('notificate_2', {
+                            category: 'meet_match',
+                            message: '配對成功，看看對方的資訊吧 XDD',
+                        });
                     }
                     catch (err) {
                         throw new Error(`something wrong updating meeting info for users: ${err}`);
@@ -345,6 +365,10 @@ function replyMeeting(req, res, next) {
                         return;
                     }
                     io.to(userId.toString()).emit('notificate', {
+                        category: 'meet_fail',
+                        message: '配對失敗，自動重新配對',
+                    });
+                    io.to(userId.toString()).emit('notificate_2', {
                         category: 'meet_fail',
                         message: '配對失敗，自動重新配對',
                     });
