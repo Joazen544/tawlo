@@ -135,7 +135,7 @@ function getAutoRecommendedPosts(preferenceTags, read_posts) {
                                 $in: [tag, '$tags'],
                             },
                             {
-                                $add: ['$score', scoring * 5],
+                                $add: ['$score', scoring * 20],
                             },
                             {
                                 $add: ['$score', 0],
@@ -283,7 +283,7 @@ function getCustomizedPostsFromDB(tags, preferenceTags, read_posts) {
                                 $in: [tag, '$tags'],
                             },
                             {
-                                $add: ['$score', scoring * 5],
+                                $add: ['$score', scoring * 20],
                             },
                             {
                                 $add: ['$score', 0],
