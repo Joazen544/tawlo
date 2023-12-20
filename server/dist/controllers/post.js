@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchPost = exports.getRelevantTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getCustomizedPosts = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
+exports.searchPost = exports.getRelevantTags = exports.getHotTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getCustomizedPosts = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.likeComment = exports.commentPost = exports.createPost = void 0;
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post"));
 const user_1 = require("../models/user");
@@ -227,8 +227,6 @@ function commentPost(req, res, next) {
                 motherPost = target.mother_post.toString();
             }
             (0, user_1.updateUserAction)(userId, target.tags, target.board);
-            // console.log(content);
-            // console.log(postId);
             let result;
             if (postCategory === 'mother' || postCategory === 'native') {
                 result = yield post_1.default.updateOne({ _id: postId }, [
@@ -354,14 +352,13 @@ function likeComment(req, res) {
             // check if the post and comment exist
             const likeTargetComment = yield post_1.default.findOne({
                 _id: postId,
-            }, { _id: 1, comments: 1 });
+            }, { _id: 1, comments: 1, tags: 1, board: 1 });
             if (likeTargetComment === null || !likeTargetComment.comments.data[floor]) {
                 throw Error('like target post or comment floor does not exist');
             }
             // check if user already like the comment
             const ifAlreadyLike = likeTargetComment.comments.data[floor].like.users.includes(userId);
-            // console.log('userId: ');
-            // console.log(userId);
+            (0, user_1.updateUserAction)(userId, likeTargetComment.tags, likeTargetComment.board);
             let result;
             if (like === true) {
                 if (ifAlreadyLike === true) {
@@ -443,14 +440,11 @@ function likePost(req, res) {
                 board: 1,
                 author: 1,
             });
-            // console.log(JSON.stringify(likeTarget, null, 4));
             if (likeTarget === null) {
                 throw Error('like target post does not exist');
             }
             // check if user already like the post
             const ifAlreadyLike = likeTarget.liked.users.includes(userId);
-            // console.log('userId: ');
-            // console.log(userId);
             let increment;
             let pushOrPull;
             let adjustUserArray;
@@ -488,9 +482,8 @@ function likePost(req, res) {
             else {
                 throw Error('req body must contain like, and it should be boolean');
             }
-            // console.log(adjustUserArray);
+            (0, user_1.updateUserAction)(userId, likeTarget.tags, likeTarget.board);
             let result;
-            // console.log('liking comment');
             if (likeTarget.category === 'mother' || likeTarget.category === 'native') {
                 // update like and calculate hot
                 result = yield post_1.default.updateOne({ _id: postId }, [
@@ -590,16 +583,13 @@ function upvotePost(req, res) {
                 board: 1,
                 author: 1,
             });
-            // console.log(JSON.stringify(upvoteTarget, null, 4));
             if (upvoteTarget === null) {
                 throw Error('upvote target post does not exist');
             }
+            (0, user_1.updateUserAction)(userId, upvoteTarget.tags, upvoteTarget.board);
             // check if user already upvote the post
             const ifAlreadyUpvote = upvoteTarget.upvote.users.includes(userId);
             const ifAlreadyDownVote = upvoteTarget.downvote.users.includes(userId);
-            // console.log('userId: ');
-            // console.log(userId);
-            // ??? how to check if comment exist
             let increment;
             let pushOrPull;
             let adjustUserArray;
@@ -638,7 +628,6 @@ function upvotePost(req, res) {
                 throw Error('req body must contain key upvote, and it should be boolean');
             }
             let result;
-            // console.log('upvoting post');
             if (upvoteTarget.category === 'mother' ||
                 upvoteTarget.category === 'native') {
                 // update upvote and calculate hot
@@ -809,7 +798,6 @@ function upvotePost(req, res) {
                         targetPost: upvoteTarget._id,
                     });
                 }
-                (0, user_1.updateUserAction)(userId, upvoteTarget.tags, upvoteTarget.board);
                 res.json({ message: `${message} post success` });
                 return;
             }
@@ -839,16 +827,22 @@ function downvotePost(req, res) {
             // check if the post exist
             const downvoteTarget = yield post_1.default.findOne({
                 _id: postId,
-            }, { _id: 1, upvote: 1, category: 1, mother_post: 1, downvote: 1, tags: 1 });
-            // console.log(JSON.stringify(downvoteTarget, null, 4));
+            }, {
+                _id: 1,
+                upvote: 1,
+                category: 1,
+                mother_post: 1,
+                downvote: 1,
+                tags: 1,
+                board: 1,
+            });
             if (downvoteTarget === null) {
                 throw Error('downvote target post does not exist');
             }
+            (0, user_1.updateUserAction)(userId, downvoteTarget.tags, downvoteTarget.board);
             // check if user already upvote the post
             const ifAlreadyUpvote = downvoteTarget.upvote.users.includes(userId);
             const ifAlreadyDownVote = downvoteTarget.downvote.users.includes(userId);
-            // console.log('userId: ');
-            // console.log(userId);
             let increment;
             let pushOrPull;
             let adjustUserArray;
@@ -886,9 +880,7 @@ function downvotePost(req, res) {
             else {
                 throw Error('req body must contain key downvote, and it should be boolean');
             }
-            (0, user_1.updateUserAction)(userId, downvoteTarget.tags, downvoteTarget.board);
             let result;
-            // console.log('downvoting post');
             if (downvoteTarget.category === 'mother' ||
                 downvoteTarget.category === 'native') {
                 // update upvote and calculate hot
@@ -1069,8 +1061,6 @@ function getRecommendPosts(req, res) {
             else {
                 throw Error('No such user, something wrong getting posts');
             }
-            // console.log(recommendMode);
-            // if(recommendMode === 'auto')
             const posts = yield (0, post_1.getAutoRecommendedPosts)(preferenceTags, userInfo.read_posts);
             res.json(posts);
         }
@@ -1252,6 +1242,18 @@ function getAutoTags(req, res, next) {
     });
 }
 exports.getAutoTags = getAutoTags;
+function getHotTags(_req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const tags = yield (0, tag_1.getHotTagsFromDB)();
+            res.json(tags);
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+exports.getHotTags = getHotTags;
 function getRelevantTags(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {

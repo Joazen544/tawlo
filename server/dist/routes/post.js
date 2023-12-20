@@ -23,4 +23,5 @@ router.route('/post/:postId/upvote').post(verifyJWT_1.default, post_1.upvotePost
 router.route('/post/:postId/downvote').post(verifyJWT_1.default, post_1.downvotePost);
 router.route('/post/tags/auto').get(post_1.getAutoTags);
 router.route('/post/tags/relevant').get(post_1.getRelevantTags);
+router.route('/post/tags/hot').get(post_1.getHotTags);
 exports.default = router;

@@ -82,9 +82,12 @@ export async function getRelevantTagsFromDB(tag: string) {
 }
 
 export async function getHotTagsFromDB() {
-  const tagsInfo = await Tag.find().sort({ post_num: -1 }).limit(20);
+  const tagsInfo = await Tag.find({}, { name: 1, _id: 0 })
+    .sort({ post_num: -1 })
+    .limit(20);
 
-  return tagsInfo;
+  const returnArray = tagsInfo.map((tag) => tag.name);
+  return returnArray;
 }
 
 export default Tag;

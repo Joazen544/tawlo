@@ -159,6 +159,7 @@ function updateUserAction(userId, tags, board) {
                 const replaceTarget = doc.preference_tags.length - 1;
                 const tagsArray = [];
                 tagsArray.concat(tags);
+                const newTagsArray = [];
                 tags.forEach((tag) => {
                     let ifExist = 0;
                     let lessThan30;
@@ -186,11 +187,11 @@ function updateUserAction(userId, tags, board) {
                     else if (len === 0) {
                         doc.preference_tags.push({ name: tag, number: 20 });
                     }
-                    else if (len < 6) {
+                    else if (len < 10) {
                         doc.preference_tags.push({ name: tag, number: 0 });
                     }
                     else {
-                        doc.preference_tags[replaceTarget].name = tag;
+                        newTagsArray.push(tag);
                     }
                 });
                 if (board)
@@ -199,6 +200,14 @@ function updateUserAction(userId, tags, board) {
                     doc.read_board = doc.read_board.slice(1, 5);
                 }
                 doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
+                if (doc.preference_tags.length > 6) {
+                    for (let i = 6; i < doc.preference_tags.length; i += 1) {
+                        if (newTagsArray.includes(doc.preference_tags[i].name)) {
+                            doc.preference_tags[replaceTarget].name =
+                                doc.preference_tags[i].name;
+                        }
+                    }
+                }
                 doc.save();
             }
         });

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRelevantTagsFromDB = exports.getAutoCompleteTags = exports.addPostTagsToDB = void 0;
+exports.getHotTagsFromDB = exports.getRelevantTagsFromDB = exports.getAutoCompleteTags = exports.addPostTagsToDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const tagSchema = new mongoose_1.default.Schema({
     name: {
@@ -86,4 +86,14 @@ function getRelevantTagsFromDB(tag) {
     });
 }
 exports.getRelevantTagsFromDB = getRelevantTagsFromDB;
+function getHotTagsFromDB() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const tagsInfo = yield Tag.find({}, { name: 1, _id: 0 })
+            .sort({ post_num: -1 })
+            .limit(20);
+        const returnArray = tagsInfo.map((tag) => tag.name);
+        return returnArray;
+    });
+}
+exports.getHotTagsFromDB = getHotTagsFromDB;
 exports.default = Tag;
