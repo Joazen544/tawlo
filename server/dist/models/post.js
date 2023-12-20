@@ -169,36 +169,36 @@ function getAutoRecommendedPosts(preferenceTags, read_posts) {
                                         },
                                     ],
                                 },
-                                {
-                                    $multiply: [
-                                        200,
-                                        {
-                                            $dateDiff: {
-                                                startDate: '$$NOW',
-                                                endDate: '$update_date',
-                                                unit: 'day',
-                                            },
-                                        },
-                                    ],
-                                },
+                                // {
+                                //   $multiply: [
+                                //     200,
+                                //     {
+                                //       $dateDiff: {
+                                //         startDate: '$$NOW',
+                                //         endDate: '$update_date',
+                                //         unit: 'day',
+                                //       },
+                                //     },
+                                //   ],
+                                // },
                             ],
                         },
                         {
                             $add: [
                                 '$score',
                                 '$hot',
-                                {
-                                    $multiply: [
-                                        200,
-                                        {
-                                            $dateDiff: {
-                                                startDate: '$$NOW',
-                                                endDate: '$update_date',
-                                                unit: 'day',
-                                            },
-                                        },
-                                    ],
-                                },
+                                // {
+                                //   $multiply: [
+                                //     200,
+                                //     {
+                                //       $dateDiff: {
+                                //         startDate: '$$NOW',
+                                //         endDate: '$update_date',
+                                //         unit: 'day',
+                                //       },
+                                //     },
+                                //   ],
+                                // },
                             ],
                         },
                     ],
@@ -317,36 +317,36 @@ function getCustomizedPostsFromDB(tags, preferenceTags, read_posts) {
                                         },
                                     ],
                                 },
-                                {
-                                    $multiply: [
-                                        200,
-                                        {
-                                            $dateDiff: {
-                                                startDate: '$$NOW',
-                                                endDate: '$update_date',
-                                                unit: 'day',
-                                            },
-                                        },
-                                    ],
-                                },
+                                // {
+                                //   $multiply: [
+                                //     200,
+                                //     {
+                                //       $dateDiff: {
+                                //         startDate: '$$NOW',
+                                //         endDate: '$update_date',
+                                //         unit: 'day',
+                                //       },
+                                //     },
+                                //   ],
+                                // },
                             ],
                         },
                         {
                             $add: [
                                 '$score',
                                 '$hot',
-                                {
-                                    $multiply: [
-                                        200,
-                                        {
-                                            $dateDiff: {
-                                                startDate: '$$NOW',
-                                                endDate: '$update_date',
-                                                unit: 'day',
-                                            },
-                                        },
-                                    ],
-                                },
+                                // {
+                                //   $multiply: [
+                                //     200,
+                                //     {
+                                //       $dateDiff: {
+                                //         startDate: '$$NOW',
+                                //         endDate: '$update_date',
+                                //         unit: 'day',
+                                //       },
+                                //     },
+                                //   ],
+                                // },
                             ],
                         },
                     ],

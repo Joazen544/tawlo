@@ -170,7 +170,7 @@ export async function getAutoRecommendedPosts(
               $in: [tag, '$tags'],
             },
             {
-              $add: ['$score', scoring * 5],
+              $add: ['$score', scoring * 20],
             },
             {
               $add: ['$score', 0],
@@ -207,36 +207,36 @@ export async function getAutoRecommendedPosts(
                     },
                   ],
                 },
-                {
-                  $multiply: [
-                    200,
-                    {
-                      $dateDiff: {
-                        startDate: '$$NOW',
-                        endDate: '$update_date',
-                        unit: 'day',
-                      },
-                    },
-                  ],
-                },
+                // {
+                //   $multiply: [
+                //     200,
+                //     {
+                //       $dateDiff: {
+                //         startDate: '$$NOW',
+                //         endDate: '$update_date',
+                //         unit: 'day',
+                //       },
+                //     },
+                //   ],
+                // },
               ],
             },
             {
               $add: [
                 '$score',
                 '$hot',
-                {
-                  $multiply: [
-                    200,
-                    {
-                      $dateDiff: {
-                        startDate: '$$NOW',
-                        endDate: '$update_date',
-                        unit: 'day',
-                      },
-                    },
-                  ],
-                },
+                // {
+                //   $multiply: [
+                //     200,
+                //     {
+                //       $dateDiff: {
+                //         startDate: '$$NOW',
+                //         endDate: '$update_date',
+                //         unit: 'day',
+                //       },
+                //     },
+                //   ],
+                // },
               ],
             },
           ],
@@ -335,7 +335,7 @@ export async function getCustomizedPostsFromDB(
               $in: [tag, '$tags'],
             },
             {
-              $add: ['$score', scoring * 5],
+              $add: ['$score', scoring * 20],
             },
             {
               $add: ['$score', 0],
@@ -372,36 +372,36 @@ export async function getCustomizedPostsFromDB(
                     },
                   ],
                 },
-                {
-                  $multiply: [
-                    200,
-                    {
-                      $dateDiff: {
-                        startDate: '$$NOW',
-                        endDate: '$update_date',
-                        unit: 'day',
-                      },
-                    },
-                  ],
-                },
+                // {
+                //   $multiply: [
+                //     200,
+                //     {
+                //       $dateDiff: {
+                //         startDate: '$$NOW',
+                //         endDate: '$update_date',
+                //         unit: 'day',
+                //       },
+                //     },
+                //   ],
+                // },
               ],
             },
             {
               $add: [
                 '$score',
                 '$hot',
-                {
-                  $multiply: [
-                    200,
-                    {
-                      $dateDiff: {
-                        startDate: '$$NOW',
-                        endDate: '$update_date',
-                        unit: 'day',
-                      },
-                    },
-                  ],
-                },
+                // {
+                //   $multiply: [
+                //     200,
+                //     {
+                //       $dateDiff: {
+                //         startDate: '$$NOW',
+                //         endDate: '$update_date',
+                //         unit: 'day',
+                //       },
+                //     },
+                //   ],
+                // },
               ],
             },
           ],
