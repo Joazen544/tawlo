@@ -88,11 +88,10 @@ function getRelevantTagsFromDB(tag) {
 exports.getRelevantTagsFromDB = getRelevantTagsFromDB;
 function getHotTagsFromDB() {
     return __awaiter(this, void 0, void 0, function* () {
-        const tagsInfo = yield Tag.find({}, { name: 1, _id: 0 })
+        const tagsInfo = yield Tag.find({}, { name: 1 })
             .sort({ post_num: -1 })
             .limit(20);
-        const returnArray = tagsInfo.map((tag) => tag.name);
-        return returnArray;
+        return tagsInfo;
     });
 }
 exports.getHotTagsFromDB = getHotTagsFromDB;
