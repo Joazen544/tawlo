@@ -195,6 +195,7 @@ export function updateUserAction(
         const replaceTarget = doc.preference_tags.length - 1;
         const tagsArray: string[] = [];
         tagsArray.concat(tags);
+        const newTagsArray: string[] = [];
 
         tags.forEach((tag) => {
           let ifExist = 0;
@@ -221,10 +222,10 @@ export function updateUserAction(
             console.log('nothing');
           } else if (len === 0) {
             doc.preference_tags.push({ name: tag, number: 20 });
-          } else if (len < 6) {
+          } else if (len < 10) {
             doc.preference_tags.push({ name: tag, number: 0 });
           } else {
-            doc.preference_tags[replaceTarget].name = tag;
+            newTagsArray.push(tag);
           }
         });
 
@@ -234,6 +235,15 @@ export function updateUserAction(
         }
 
         doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
+
+        if (doc.preference_tags.length > 6) {
+          for (let i = 6; i < doc.preference_tags.length; i += 1) {
+            if (newTagsArray.includes(doc.preference_tags[i].name)) {
+              doc.preference_tags[replaceTarget].name =
+                doc.preference_tags[i].name;
+            }
+          }
+        }
 
         doc.save();
       }

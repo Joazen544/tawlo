@@ -81,4 +81,10 @@ export async function getRelevantTagsFromDB(tag: string) {
   return tagsInfo.relevant;
 }
 
+export async function getHotTagsFromDB() {
+  const tagsInfo = await Tag.find().sort({ post_num: -1 }).limit(20);
+
+  return tagsInfo;
+}
+
 export default Tag;
