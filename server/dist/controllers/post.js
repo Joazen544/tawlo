@@ -809,6 +809,7 @@ function upvotePost(req, res) {
                         targetPost: upvoteTarget._id,
                     });
                 }
+                (0, user_1.updateUserAction)(userId, upvoteTarget.tags, upvoteTarget.board);
                 res.json({ message: `${message} post success` });
                 return;
             }

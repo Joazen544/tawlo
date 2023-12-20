@@ -210,11 +210,13 @@ export function updateUserAction(
               lessThan30 = false;
             }
           });
+          console.log('counting');
 
           if (ifExist && lessThan30) {
             doc.preference_tags.forEach((preference) => {
               preference.number = +preference.number - ifExist;
             });
+            console.log('not adding');
           } else if (ifExist) {
             console.log('nothing');
           } else if (len === 0) {

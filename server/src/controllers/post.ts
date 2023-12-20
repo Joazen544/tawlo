@@ -961,6 +961,8 @@ export async function upvotePost(req: Request, res: Response) {
         });
       }
 
+      updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
+
       res.json({ message: `${message} post success` });
       return;
     }
