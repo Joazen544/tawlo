@@ -10,7 +10,6 @@ import User, {
   getNotificationsFromDB,
   readNotificationsFromDB,
   addNotificationToUserDB,
-  // getUserImageFromDB,
   getUserInfoFromDB,
   refuseRequestFromDB,
   getUserFriendsFromDB,
@@ -75,9 +74,20 @@ export async function signUp(req: Request, res: Response) {
 export async function signIn(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
+    console.log('~~~~~~~~~~~');
+    console.log('email: ');
+    console.log(email);
+    console.log('password: ');
+    console.log(password);
+
     const userData: UserDocument = await User.findOne({ email }).select(
       '+password',
     );
+
+    console.log('user data: ');
+    console.log(userData);
+
+    console.log('~~~~~~~~~~~');
 
     if (
       !userData ||

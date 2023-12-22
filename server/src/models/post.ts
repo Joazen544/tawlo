@@ -77,7 +77,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
   ],
   board: ObjectId,
   mother_post: ObjectId,
-  // 3 tags the most
+  // 4 tags the most
   tags: {
     type: [String],
     required: [true, 'A post must contain a tag'],
@@ -91,9 +91,7 @@ const postSchema = new mongoose.Schema<PostDocument>({
   sum_upvotes: { type: Number, default: 0 },
   sum_comments: { type: Number, default: 0 },
   sum_reply: { type: Number, default: 0 },
-  // userId
   last_reply: ObjectId,
-  //
   upvote: {
     number: { type: Number, default: 0 },
     users: { type: [ObjectId], default: [] },

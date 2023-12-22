@@ -22,7 +22,6 @@ import uploadToS3 from '../middleware/uploadToS3';
 
 const router = Router();
 
-// router.route('/user/upload').post(uploadImage, uploadToS3);
 router.route('/user/signup').post(uploadImage, uploadToS3, signUp);
 router.route('/user/signin').post(signIn);
 router.route('/user/read').post(verifyJWT, updateUserRead);

@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
+import 'dotenv';
 
 const conn = mongoose
   .connect(process.env.DATABASE || 'fail', {})

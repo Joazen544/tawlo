@@ -20,7 +20,7 @@ import {
   getRelevantTagsFromDB,
   getHotTagsFromDB,
 } from '../models/tag';
-import { getIO } from './socket';
+import { sendSocketNotification } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
 async function calculateMotherPostHot(
@@ -81,6 +81,20 @@ export async function createPost(req: Request, res: Response) {
     const { category, user, title, content, board, motherPost } = req.body;
     const tags = req.body.tags as string;
 
+    if (!['native', 'mother', 'reply'].includes(category)) {
+      res.status(400).json({
+        error: 'The category should either be native, mother or reply',
+      });
+      return;
+    }
+
+    if (!content) {
+      res.status(400).json({
+        error: 'A post needs to have content',
+      });
+      return;
+    }
+
     let tagsArray: string[] = [];
     if (tags !== undefined) {
       tagsArray = Array.isArray(tags)
@@ -103,8 +117,17 @@ export async function createPost(req: Request, res: Response) {
         floor: 1,
       });
     } else if (category === 'mother') {
-      if (title === undefined) {
-        throw new Error('A mother post should contain title');
+      if (!title) {
+        res.status(400).json({
+          error: 'A mother post should have title',
+        });
+        return;
+      }
+      if (!board) {
+        res.status(400).json({
+          error: 'A mother post should have a board',
+        });
+        return;
       }
       postData = await Post.create({
         category,
@@ -125,7 +148,7 @@ export async function createPost(req: Request, res: Response) {
         res.status(400).json({ error: 'mother post does not exist' });
         return;
       }
-      const updateMotherResult = Post.updateOne(
+      const updateMotherResult = await Post.updateOne(
         { _id: motherPost },
         {
           $set: {
@@ -139,7 +162,7 @@ export async function createPost(req: Request, res: Response) {
       tagsArray = motherPostInfo.tags;
       const postBoard = motherPostInfo.board;
 
-      if ((await updateMotherResult).acknowledged === false) {
+      if (updateMotherResult.acknowledged === false) {
         throw new Error(
           'mother post deoes not exist or something is wrong updating it',
         );
@@ -163,22 +186,17 @@ export async function createPost(req: Request, res: Response) {
           postData._id,
         );
 
-        const io = getIO();
-
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
-        }
-
-        io.to(motherPostInfo.author.toString()).emit('notificate', {
-          category: 'reply_post',
-          message: '有人回覆了你的貼文',
-          actionUser: userId.toString(),
-          targetPost: postData._id,
-        });
+        sendSocketNotification(
+          motherPostInfo.author.toString(),
+          'reply_post',
+          '有人回覆了你的貼文',
+          userId.toString(),
+          postData._id.toString(),
+        );
       }
     } else {
       res.status(400).json({ error: 'The category of post is wrong' });
+      return;
     }
 
     try {
@@ -344,19 +362,13 @@ export async function commentPost(
         target._id,
       );
 
-      const io = getIO();
-
-      if (!io) {
-        res.status(500).json({ message: 'io connection fail' });
-        return;
-      }
-
-      io.to(target.author.toString()).emit('notificate', {
-        category: 'comment_post',
-        message: '有人在你的貼文留言',
-        actionUser: userId.toString(),
-        targetPost: target._id,
-      });
+      sendSocketNotification(
+        target.author.toString(),
+        'comment_post',
+        '有人在你的貼文留言',
+        userId.toString(),
+        target._id.toString(),
+      );
     }
 
     res.json({ message: 'Add comment success' });
@@ -381,22 +393,22 @@ export async function likeComment(req: Request, res: Response) {
     const commentTargetUser = `comments.data.${floor}.like.users`;
 
     // check if the post and comment exist
-    const likeTargetComment = await Post.findOne(
+    const targetPost = await Post.findOne(
       {
         _id: postId,
       },
       { _id: 1, comments: 1, tags: 1, board: 1 },
     );
 
-    if (likeTargetComment === null || !likeTargetComment.comments.data[floor]) {
+    if (targetPost === null || !targetPost.comments.data[floor]) {
       throw Error('like target post or comment floor does not exist');
     }
 
     // check if user already like the comment
     const ifAlreadyLike =
-      likeTargetComment.comments.data[floor].like.users.includes(userId);
+      targetPost.comments.data[floor].like.users.includes(userId);
 
-    updateUserAction(userId, likeTargetComment.tags, likeTargetComment.board);
+    updateUserAction(userId, targetPost.tags, targetPost.board);
 
     let result;
     if (like === true) {
@@ -417,32 +429,24 @@ export async function likeComment(req: Request, res: Response) {
       }
 
       if (
-        userId.toString() !==
-        likeTargetComment.comments.data[floor].user.toString()
+        userId.toString() !== targetPost.comments.data[floor].user.toString()
       ) {
         addNotificationToUserDB(
-          likeTargetComment.comments.data[floor].user,
+          targetPost.comments.data[floor].user,
           'like_comment',
           userId,
-          likeTargetComment._id,
+          targetPost._id,
         );
 
-        const io = getIO();
-
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
+        if (targetPost?.comments?.data[floor]?.user) {
+          sendSocketNotification(
+            targetPost.comments.data[floor].user.toString(),
+            'like_comment',
+            '有人喜歡你的留言',
+            userId.toString(),
+            targetPost._id.toString(),
+          );
         }
-
-        io.to(likeTargetComment.comments.data[floor].user.toString()).emit(
-          'notificate',
-          {
-            category: 'like_comment',
-            message: '有人喜歡你的留言',
-            actionUser: userId.toString(),
-            targetPost: likeTargetComment._id,
-          },
-        );
       }
 
       res.json({ message: 'like comment success' });
@@ -596,19 +600,13 @@ export async function likePost(req: Request, res: Response) {
           likeTarget._id,
         );
 
-        const io = getIO();
-
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
-        }
-
-        io.to(likeTarget.author.toString()).emit('notificate', {
-          category: 'like_post',
-          message: '有人喜歡你的貼文',
-          actionUser: userId.toString(),
-          targetPost: likeTarget._id,
-        });
+        sendSocketNotification(
+          likeTarget.author.toString(),
+          'like_post',
+          '有人喜歡你的貼文',
+          userId.toString(),
+          likeTarget._id.toString(),
+        );
       }
 
       res.json({ message: `${message} post success` });
@@ -824,19 +822,13 @@ export async function upvotePost(req: Request, res: Response) {
           upvoteTarget._id,
         );
 
-        const io = getIO();
-
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
-        }
-
-        io.to(upvoteTarget.author.toString()).emit('notificate', {
-          category: 'upvote_post',
-          message: '有人覺得你的貼文有用',
-          actionUser: userId.toString(),
-          targetPost: upvoteTarget._id,
-        });
+        sendSocketNotification(
+          upvoteTarget.author.toString(),
+          'upvote_post',
+          '有人覺得你的貼文有用',
+          userId.toString(),
+          upvoteTarget._id.toString(),
+        );
       }
 
       res.json({ message: `${message} post success` });
@@ -868,7 +860,6 @@ export async function upvotePost(req: Request, res: Response) {
         throw Error('calculate hot fail');
       }
 
-      // ////////////////////
       if (ifAlreadyDownVote && upvote) {
         // cancel the down vote
         // and cancel it from mother post
@@ -932,19 +923,14 @@ export async function upvotePost(req: Request, res: Response) {
           userId,
           upvoteTarget._id,
         );
-        const io = getIO();
 
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
-        }
-
-        io.to(upvoteTarget.author.toString()).emit('notificate', {
-          category: 'upvote_post',
-          message: '有人覺得你的貼文有用',
-          actionUser: userId.toString(),
-          targetPost: upvoteTarget._id,
-        });
+        sendSocketNotification(
+          upvoteTarget.author.toString(),
+          'upvote_post',
+          '有人覺得你的貼文有用',
+          userId.toString(),
+          upvoteTarget._id.toString(),
+        );
       }
 
       res.json({ message: `${message} post success` });

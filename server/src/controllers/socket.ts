@@ -161,6 +161,27 @@ export function initSocket(server: http.Server) {
   });
 }
 
+export function sendSocketNotification(
+  targetUser: string,
+  category: string,
+  message: string,
+  actionUser: string,
+  targetPost: string | undefined,
+) {
+  if (!io) {
+    return false;
+  }
+
+  io.to(targetUser).emit('notificate', {
+    category,
+    message,
+    actionUser,
+    targetPost,
+  });
+
+  return true;
+}
+
 export function getIO() {
   if (io) {
     return io;
