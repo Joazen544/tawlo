@@ -87,7 +87,7 @@ const CustomizeSearch = ({ handleCustomizeTags }: Props) => {
   };
 
   useEffect(() => {
-    if (searchTagsInput) {
+    if (searchTagsInput !== '') {
       axios
         .get(
           `${
@@ -103,7 +103,18 @@ const CustomizeSearch = ({ handleCustomizeTags }: Props) => {
           console.log(err);
         });
     } else {
-      setSearchTags([]);
+      axios
+        .get(`${import.meta.env.VITE_DOMAIN}/api/post/tags/hot`)
+        .then((res) => {
+          if (res.data.length > 0) {
+            setSearchTags(res.data);
+          }
+          console.log(res.data);
+          console.log('~~~~');
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     }
   }, [searchTagsInput]);
 
@@ -113,7 +124,7 @@ const CustomizeSearch = ({ handleCustomizeTags }: Props) => {
       <div
         style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
         id="customize_search"
-        className=" rounded-lg w-32 mt-3 flex justify-center relative border-2 border-solid border-gray-400 bg-white p-2"
+        className=" rounded-lg w-32 mt-3 flex justify-center relative z-20 border-2 border-solid border-gray-400 bg-white p-2"
       >
         <div className="w-full">
           <div className="flex justify-center">
@@ -163,7 +174,7 @@ const CustomizeSearch = ({ handleCustomizeTags }: Props) => {
           {ifTagsDropDown && (
             <div
               ref={dropdownRef}
-              className="absolute overflow-y-auto p-4 left-36 shadow-md -top-1 w-56 h-72 border-2 border-gray-300 border-solid bg-white rounded-lg"
+              className="absolute z-20 overflow-y-auto p-4 left-36 shadow-md -top-1 w-56 h-72 border-2 border-gray-300 border-solid bg-white rounded-lg"
             >
               <input
                 value={searchTagsInput}

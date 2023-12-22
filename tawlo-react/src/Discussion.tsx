@@ -134,7 +134,7 @@ const Discussion = () => {
             </Link>
           </div>
         )}
-        <div id="postsContainer" style={{ width: '60rem' }} className="mb-14">
+        <div id="postsContainer" className="mb-14">
           <InfiniteScroll
             dataLength={postsRender.length}
             next={() => renderNewPosts()}

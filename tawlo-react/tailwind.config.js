@@ -16,6 +16,7 @@ export default {
       'more-image': 'url(/src/assets/more.png)',
       'like-image': 'url(/src/assets/like.png)',
       'liked-image': 'url(/src/assets/liked.png)',
+      'landing-image': 'url(/src/assets/landing.png)',
     },
   },
   plugins: [],

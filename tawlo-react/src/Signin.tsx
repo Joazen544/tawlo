@@ -192,140 +192,175 @@ const Signin = () => {
   return (
     <>
       {ifSignIn && <Navigate to="/" replace={true}></Navigate>}
-      {/* <Header /> */}
-      <div className="max-w-3xl mx-auto mt-8 mb-8">
-        <h2 className="text-2xl font-bold mb-4">註冊</h2>
-        <form onSubmit={handleSignupSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              姓名:
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={signupData.name}
-              onChange={handleSignupChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
+      <div
+        style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
+        className=" min-h-screen flex justify-evenly items-center"
+      >
+        <div className="w-1/2 h-72 flex flex-col justify-center items-center ">
+          <div className="flex items-end mb-10">
+            <h2
+              style={{
+                color: import.meta.env.VITE_MAIN_STRING_COLOR,
+                fontSize: '5rem',
+              }}
+              className="ml-20"
+            >
+              Tawlo
+            </h2>
+            <h2
+              style={{
+                color: import.meta.env.VITE_MAIN_STRING_COLOR,
+                fontSize: '2rem',
+              }}
+              className="ml-3"
+            >
+              職涯社群
+            </h2>
+          </div>
+          <div className="ml-32 mt-14">
+            <img
+              style={{ maxWidth: '35rem' }}
+              src="/src/assets/landing.png"
+              alt=""
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Email:
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={signupData.email}
-              onChange={handleSignupChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              密碼（至少 8 個字）:
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={signupData.password}
-              onChange={handleSignupChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              個人照片:
-            </label>
-            <div className="flex">
-              <div className="flex flex-col">
-                <label
-                  htmlFor="image"
-                  className="mt-2 px-3 py-2 border rounded-md cursor-pointer text-sm w-28"
-                >
-                  自己上傳頭貼
+        </div>
+        <div
+          style={{ color: import.meta.env.VITE_THIRD_COLOR }}
+          className="w-3xl mx-auto mb-8 pt-8 flex"
+        >
+          <div>
+            <h2 className="text-2xl font-bold mb-4">註冊</h2>
+            <form onSubmit={handleSignupSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">姓名:</label>
+                <input
+                  style={{ color: import.meta.env.VITE_MAIN_COLOR }}
+                  type="text"
+                  name="name"
+                  value={signupData.name}
+                  onChange={handleSignupChange}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Email:</label>
+                <input
+                  style={{ color: import.meta.env.VITE_MAIN_COLOR }}
+                  type="email"
+                  name="email"
+                  value={signupData.email}
+                  onChange={handleSignupChange}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  密碼（至少 8 個字）:
                 </label>
                 <input
-                  id="image"
-                  type="file"
-                  style={{ display: 'none' }}
-                  accept=".png,.jpeg,.jpg"
-                  name="image"
-                  onChange={handleUserImageChange}
-                  className="w-48 px-3 py-2 border rounded-md"
+                  style={{ color: import.meta.env.VITE_MAIN_COLOR }}
+                  type="password"
+                  name="password"
+                  value={signupData.password}
+                  onChange={handleSignupChange}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
                 />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium ">個人照片:</label>
+                <div className="flex items-center">
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="image"
+                      className="mt-2 px-2 py-2 border text-center rounded-md cursor-pointer text-sm w-14"
+                    >
+                      上傳
+                    </label>
+                    <input
+                      id="image"
+                      type="file"
+                      style={{ display: 'none' }}
+                      accept=".png,.jpeg,.jpg"
+                      name="image"
+                      onChange={handleUserImageChange}
+                      className="w-48 px-3 py-2 border rounded-md"
+                    />
+                    <button
+                      onClick={fetchDogApi}
+                      className="mt-2 px-2 py-2 border rounded-md cursor-pointer text-sm w-14"
+                    >
+                      生成
+                    </button>
+                  </div>
+                  <div className="ml-10 h-32 w-32 ">
+                    {!previewImage ? null : isFetching ? (
+                      <img
+                        style={{ objectFit: 'cover' }}
+                        src={loading}
+                        alt="loading-image"
+                        className="h-32 w-32"
+                      />
+                    ) : (
+                      <img
+                        style={{ objectFit: 'cover' }}
+                        src={previewImage}
+                        alt="preview-image"
+                        className="h-32 w-32"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="mb-4">
                 <button
-                  onClick={fetchDogApi}
-                  className="mt-2 px-3 py-2 border rounded-md cursor-pointer text-sm w-28"
+                  type="submit"
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                 >
-                  生成狗狗頭貼
+                  註冊
                 </button>
               </div>
-              <div className="ml-10 h-32 w-32 border-solid border-2 border-gray-500">
-                {!previewImage ? null : isFetching ? (
-                  <img
-                    style={{ objectFit: 'cover' }}
-                    src={loading}
-                    alt="loading-image"
-                    className="h-32 w-32"
-                  />
-                ) : (
-                  <img
-                    style={{ objectFit: 'cover' }}
-                    src={previewImage}
-                    alt="preview-image"
-                    className="h-32 w-32"
-                  />
-                )}
-              </div>
-            </div>
+              {signupError && <p className="text-red-500">{signupError}</p>}
+            </form>
           </div>
-          <div className="mb-4">
-            <button
-              type="submit"
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              註冊
-            </button>
-          </div>
-          {signupError && <p className="text-red-500">{signupError}</p>}
-        </form>
 
-        <h2 className="text-2xl font-bold mb-4">登入</h2>
-        <form onSubmit={handleSigninSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Email:
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={signinData.email}
-              onChange={handleSigninChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
-            />
+          <div className="ml-20">
+            <h2 className="text-2xl font-bold mb-4">登入</h2>
+            <form onSubmit={handleSigninSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Email:</label>
+                <input
+                  style={{ color: import.meta.env.VITE_MAIN_COLOR }}
+                  type="email"
+                  name="email"
+                  value={signinData.email}
+                  onChange={handleSigninChange}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">密碼:</label>
+                <input
+                  style={{ color: import.meta.env.VITE_MAIN_COLOR }}
+                  type="password"
+                  name="password"
+                  value={signinData.password}
+                  onChange={handleSigninChange}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                >
+                  登入
+                </button>
+              </div>
+              {signinError && <p className="text-red-500">{signinError}</p>}
+            </form>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              密碼:
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={signinData.password}
-              onChange={handleSigninChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              登入
-            </button>
-          </div>
-          {signinError && <p className="text-red-500">{signinError}</p>}
-        </form>
+        </div>
       </div>
     </>
   );

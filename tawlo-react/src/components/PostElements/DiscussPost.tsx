@@ -55,7 +55,7 @@ const DisscussPost = ({
 
   return (
     <>
-      <div style={{ width: '60rem' }} className="mx-auto mt-14  relative ">
+      <div style={{ width: '60rem' }} className="mx-auto mt-14 z-0  relative ">
         <div
           style={{
             backgroundColor: import.meta.env.VITE_MAIN_STRING_COLOR,

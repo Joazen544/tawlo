@@ -634,8 +634,11 @@ const Meeting = () => {
                   </div>
                   <div id="comments" className="mt-5">
                     <div>他的評價</div>
-                    <div className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
-                      {targetComments.length &&
+                    <div
+                      style={{ minHeight: '2rem' }}
+                      className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center"
+                    >
+                      {targetComments.length > 0 &&
                         targetComments.map((comment) => <p>{comment}</p>)}
                     </div>
                   </div>
@@ -705,8 +708,11 @@ const Meeting = () => {
                   </div>
                   <div id="comments" className="mt-5">
                     <div>他的評價</div>
-                    <div className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
-                      {targetComments.length &&
+                    <div
+                      style={{ minHeight: '2rem' }}
+                      className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center"
+                    >
+                      {targetComments.length > 0 &&
                         targetComments.map((comment) => <p>{comment}</p>)}
                     </div>
                   </div>
@@ -788,8 +794,11 @@ const Meeting = () => {
                   </div>
                   <div id="comments" className="mt-5">
                     <div>他的評價</div>
-                    <div className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center">
-                      {targetComments.length &&
+                    <div
+                      style={{ minHeight: '2rem' }}
+                      className="bg-gray-300 text-black max-h-32 overflow-y-auto p-2 rounded-md mt-2 flex flex-col justify-center"
+                    >
+                      {targetComments.length > 0 &&
                         targetComments.map((comment) => <p>{comment}</p>)}
                     </div>
                   </div>

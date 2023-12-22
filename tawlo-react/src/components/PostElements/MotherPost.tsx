@@ -311,7 +311,7 @@ const MotherPost = ({
 
   return (
     <>
-      <div style={{ width: '60rem' }} className="w-full mx-auto mt-2 pb-6 flex">
+      <div className="w-full mx-auto mt-2 pb-6 flex">
         <div id="user_info">
           <div
             id="authorInfo"

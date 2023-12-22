@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { PostInterface } from '../../Home';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface Tag {
   id: number;
@@ -31,6 +31,8 @@ const SearchBar = ({ handleSearchResult }: Props) => {
   const [searchInput, setSearchInput] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResultInterface>();
 
+  const location = useLocation();
+
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const navigate = useNavigate();
@@ -44,6 +46,14 @@ const SearchBar = ({ handleSearchResult }: Props) => {
       setIfSelected(false);
     }
   };
+
+  useEffect(() => {
+    if (location.state) {
+      console.log(location.state.search);
+
+      setSearchInput(location.state.search);
+    }
+  }, []);
 
   useEffect(() => {
     if (searchResult && handleSearchResult) {
@@ -137,15 +147,13 @@ const SearchBar = ({ handleSearchResult }: Props) => {
       .then((res) => {
         console.log(res.data);
         setSearchResult(res.data);
-        navigate('/post/search', { state: { data: res.data } });
-        // if (handleSearchResult) {
-        //   handleSearchResult(res.data);
-        // }
+        navigate('/post/search', {
+          state: { data: res.data, search: searchInput },
+        });
       })
       .catch((err) => {
         console.log(err);
       });
-    console.log(stringArray);
   };
 
   const handleRemoveTag = (id: number, event: React.MouseEvent) => {
@@ -179,6 +187,7 @@ const SearchBar = ({ handleSearchResult }: Props) => {
             backgroundOrigin: 'content-box',
             paddingRight: '5px',
           }}
+          value={searchInput}
           onChange={handleSearchInputChange}
           className={`${
             ifSelected ? 'w-96' : 'w-52'

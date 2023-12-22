@@ -16,7 +16,7 @@ interface Props {
 
 const Comment = ({ index, name, comment, time, userId }: Props) => {
   return (
-    <div className="flex justify-between" key={index}>
+    <div className="flex justify-between mt-1" key={index}>
       <div className="flex">
         <Link
           to={`/user/profile/${userId}`}
@@ -25,7 +25,7 @@ const Comment = ({ index, name, comment, time, userId }: Props) => {
         >
           {name}
         </Link>
-        <p>{comment.content}</p>
+        <p style={{ width: '40rem' }}>{comment.content}</p>
       </div>
       <div className="flex w-52 justify-end">
         <p className="mr-1">{time.toLocaleString()}</p>

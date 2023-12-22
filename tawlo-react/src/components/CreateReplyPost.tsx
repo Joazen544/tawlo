@@ -272,7 +272,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
                 autoCompleteTags.map((tag) => <option key={tag}>{tag}</option>)}
             </datalist>
             <button
-              className="ml-2 border-2 border-solid border-black rounded-md bg-white p-1"
+              className="ml-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 p-1"
               onClick={handleAddToTags}
             >
               新增

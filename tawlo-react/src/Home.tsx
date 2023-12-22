@@ -194,6 +194,11 @@ const Home = () => {
           id="sideBar"
           style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
           className="flex-shrink-0 z-10 left-3 pt-32 w-48 p-4  flex flex-col items-center"
+        ></div>
+        <div
+          id="sideBar"
+          style={{ backgroundColor: import.meta.env.VITE_BACKGROUND_COLOR }}
+          className="flex-shrink-0 z-10 left-3 pt-32 w-48 p-4 fixed flex flex-col items-center"
         >
           <div>
             <div className="relative z-10">
