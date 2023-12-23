@@ -718,4 +718,59 @@ export async function commentPostToDB(
   }
 }
 
+export async function likePostToDB(
+  userId: string,
+  postId: string,
+  like: boolean,
+  category: string,
+) {
+  const increment = like ? 1 : -1;
+  const pushOrPull = like ? '$push' : '$pull';
+  let adjustUserArray;
+  if (like) {
+    adjustUserArray = {
+      'liked.users': {
+        $concatArrays: ['$liked.users', [userId]],
+      },
+    };
+  } else if (!like) {
+    adjustUserArray = {
+      'liked.users': {
+        $filter: {
+          input: '$liked.users',
+          as: 'user',
+          cond: { $ne: ['$$user', userId] },
+        },
+      },
+    };
+  }
+
+  if (category === 'mother' || category === 'native') {
+    const result = await Post.updateOne({ _id: postId }, [
+      {
+        $set: {
+          'liked.number': { $add: ['$liked.number', increment] },
+          adjustUserArray,
+        },
+      },
+      { $set: { sum_likes: { $add: ['$sum_likes', increment] } } },
+      CALCULATE_POST_HOT_QUERY,
+    ]);
+
+    if (result.acknowledged === false) throw Error('like a post fail');
+  }
+
+  if (category === 'reply') {
+    const result = await Post.updateOne(
+      { _id: postId },
+      {
+        $inc: { 'liked.number': increment },
+        [pushOrPull]: { 'liked.users': userId },
+      },
+    );
+
+    if (result.acknowledged === false) throw Error('like a post fail');
+  }
+}
+
 export default Post;

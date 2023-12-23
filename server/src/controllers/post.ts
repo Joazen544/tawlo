@@ -10,6 +10,7 @@ import Post, {
   calculateMotherPostHot,
   changeMotherPostLastUpdateTime,
   commentPostToDB,
+  likePostToDB,
 } from '../models/post';
 import {
   updateUserAction,
@@ -220,272 +221,61 @@ export async function commentPost(
   }
 }
 
-export async function likeComment(req: Request, res: Response) {
-  try {
-    let floor;
-    if (req.query.floor) floor = parseInt(req.query.floor as string, 10);
-    if (typeof floor !== 'number') {
-      throw Error('query floor should be a number');
-    }
-
-    const { postId } = req.params;
-    const { user, like } = req.body;
-    const userId = new ObjectId(user);
-
-    const commentTargetLike = `comments.data.${floor}.like.number`;
-    const commentTargetUser = `comments.data.${floor}.like.users`;
-
-    // check if the post and comment exist
-    const targetPost = await Post.findOne(
-      {
-        _id: postId,
-      },
-      { _id: 1, comments: 1, tags: 1, board: 1 },
-    );
-
-    if (targetPost === null || !targetPost.comments.data[floor]) {
-      throw Error('like target post or comment floor does not exist');
-    }
-
-    // check if user already like the comment
-    const ifAlreadyLike =
-      targetPost.comments.data[floor].like.users.includes(userId);
-
-    updateUserAction(userId, targetPost.tags, targetPost.board);
-
-    let result;
-    if (like === true) {
-      if (ifAlreadyLike === true) {
-        throw Error('user already liked the comment');
-      }
-
-      result = await Post.updateOne(
-        { _id: postId },
-        {
-          $inc: { [commentTargetLike]: 1 },
-          $push: { 'comments.data.0.like.users': userId },
-        },
-      );
-
-      if (result.acknowledged === false) {
-        throw Error('like comment fail');
-      }
-
-      if (
-        userId.toString() !== targetPost.comments.data[floor].user.toString()
-      ) {
-        addNotificationToUserDB(
-          targetPost.comments.data[floor].user,
-          'like_comment',
-          userId,
-          targetPost._id,
-        );
-
-        if (targetPost?.comments?.data[floor]?.user) {
-          sendNotificationThroughSocket(
-            targetPost.comments.data[floor].user.toString(),
-            'like_comment',
-            '有人喜歡你的留言',
-            userId.toString(),
-            targetPost._id.toString(),
-          );
-        }
-      }
-
-      res.json({ message: 'like comment success' });
-      return;
-    }
-
-    if (like === false) {
-      if (ifAlreadyLike === false) {
-        throw Error('user did not like the comment');
-      }
-      result = await Post.updateOne(
-        { _id: postId },
-        {
-          $inc: { [commentTargetLike]: -1 },
-          $pull: { [commentTargetUser]: userId },
-        },
-      );
-
-      if (result.acknowledged === false) {
-        throw Error('like comment fail');
-      }
-      res.json({ message: 'dislike comment success' });
-      return;
-    }
-
-    res
-      .status(500)
-      .json({ error: 'something is wrong creating like to comment' });
-  } catch (err) {
-    console.log(err);
-    if (err instanceof Error) {
-      res.status(400).json({ error: err.message });
-      return;
-    }
-    res.status(500).json({ error: 'Create comment fail' });
-  }
-}
-
 export async function likePost(req: Request, res: Response) {
-  // check if post exist
-  // check post category ??? which should be implement to some other api
-  // deal with like
-  // calculate hot
   try {
     const { postId } = req.params;
     const { user, like } = req.body;
     const userId = new ObjectId(user);
 
-    // check if the post exist
-    const likeTarget = await Post.findOne(
-      {
-        _id: postId,
-      },
-      {
-        _id: 1,
-        liked: 1,
-        category: 1,
-        mother_post: 1,
-        tags: 1,
-        board: 1,
-        author: 1,
-      },
-    );
+    if (![true, false].includes(like)) {
+      throw Error('like should be either true or false');
+    }
+
+    const likeTarget = await Post.findOne({ _id: postId });
 
     if (likeTarget === null) {
       throw Error('like target post does not exist');
     }
 
-    // check if user already like the post
-    const ifAlreadyLike = likeTarget.liked.users.includes(userId);
+    const ifAlreadyLike = likeTarget.liked?.users?.includes(userId);
 
-    let increment;
-    let pushOrPull;
-    let adjustUserArray;
-    let message;
-    if (like === true) {
-      increment = 1;
-      pushOrPull = '$push';
-      adjustUserArray = {
-        'liked.users': {
-          $concatArrays: ['$liked.users', [userId]],
-        },
-      };
-      message = 'like';
-
-      if (ifAlreadyLike === true) {
-        throw Error('user already liked the post');
-      }
-    } else if (like === false) {
-      increment = -1;
-      pushOrPull = '$pull';
-      adjustUserArray = {
-        'liked.users': {
-          $filter: {
-            input: '$liked.users',
-            as: 'user',
-            cond: { $ne: ['$$user', userId] },
-          },
-        },
-      };
-      message = 'dislike';
-
-      if (ifAlreadyLike === false) {
-        throw Error('user did not like the post');
-      }
-    } else {
-      throw Error('req body must contain like, and it should be boolean');
+    if (like && ifAlreadyLike) {
+      throw Error('user already liked the post');
     }
+    if (!like && !ifAlreadyLike) {
+      throw Error('user did not like the post');
+    }
+
+    await likePostToDB(user, postId, like, likeTarget.category);
 
     updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
-    let result;
+    if (likeTarget.author.toString() !== userId.toString() && like === true) {
+      addNotificationToUserDB(
+        likeTarget.author,
+        'like_post',
+        userId,
+        likeTarget._id,
+      );
 
-    if (likeTarget.category === 'mother' || likeTarget.category === 'native') {
-      // update like and calculate hot
-      result = await Post.updateOne({ _id: postId }, [
-        {
-          $set: { 'liked.number': { $add: ['$liked.number', increment] } },
-        },
-        {
-          $set: adjustUserArray,
-        },
-        {
-          $set: {
-            sum_likes: { $add: ['$sum_likes', increment] },
-          },
-        },
-        {
-          $set: {
-            hot: {
-              $multiply: [
-                100,
-                {
-                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-              ],
-            },
-          },
-        },
-      ]);
-
-      if (result.acknowledged === false) {
-        throw Error('like a post fail');
-      }
-
-      if (likeTarget.author.toString() !== userId.toString() && like === true) {
-        addNotificationToUserDB(
-          likeTarget.author,
-          'like_post',
-          userId,
-          likeTarget._id,
-        );
-
-        sendNotificationThroughSocket(
-          likeTarget.author.toString(),
-          'like_post',
-          '有人喜歡你的貼文',
-          userId.toString(),
-          likeTarget._id.toString(),
-        );
-      }
-
-      res.json({ message: `${message} post success` });
-      return;
+      sendNotificationThroughSocket(
+        likeTarget.author.toString(),
+        'like_post',
+        '有人喜歡你的貼文',
+        userId.toString(),
+        likeTarget._id.toString(),
+      );
     }
 
     if (likeTarget.category === 'reply') {
-      result = await Post.updateOne(
-        { _id: postId },
-        {
-          $inc: { 'liked.number': increment },
-          [pushOrPull]: { 'liked.users': userId },
-        },
-      );
-
-      if (result.acknowledged === false) {
-        throw Error('like a post fail');
-      }
-
-      const motherPost = likeTarget.mother_post.toString();
-
-      const calculateResult = await calculateMotherPostHot(
-        motherPost,
+      await calculateMotherPostHot(
+        likeTarget.mother_post.toString(),
         'like',
         like,
       );
-
-      if (calculateResult !== true) {
-        throw Error('calculate hot fail');
-      }
-
-      res.json({ message: `${message} post success` });
-      return;
     }
 
-    res.status(500).json({ error: 'something is wrong liking a post' });
+    res.json({ message: `like post success: ${like}` });
   } catch (err) {
     console.log(err);
     if (err instanceof Error) {
