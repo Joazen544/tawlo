@@ -15,7 +15,7 @@ import User, {
   getUserFriendsFromDB,
 } from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
-import { getIO } from './socket';
+import { sendNotificationThroughSocket } from './socket';
 import 'dotenv';
 import redisClient from '../utils/redis';
 
@@ -74,20 +74,10 @@ export async function signUp(req: Request, res: Response) {
 export async function signIn(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
-    console.log('~~~~~~~~~~~');
-    console.log('email: ');
-    console.log(email);
-    console.log('password: ');
-    console.log(password);
 
     const userData: UserDocument = await User.findOne({ email }).select(
       '+password',
     );
-
-    console.log('user data: ');
-    console.log(userData);
-
-    console.log('~~~~~~~~~~~');
 
     if (
       !userData ||
@@ -238,36 +228,35 @@ export async function sendRequest(
 ) {
   try {
     const { user } = req.body;
-    const id = req.query.id as string;
+    const targetId = req.query.id as string;
 
-    if (!id) {
+    if (!targetId) {
       res.status(500).json({ error: 'target id is missing' });
       return;
     }
 
-    const result = await createRelation(user, id);
+    const result = await createRelation(user, targetId);
     const userId = new ObjectId(user);
-    const targetUserId = new ObjectId(id);
+    const targetUserId = new ObjectId(targetId);
 
-    const io = getIO();
-    if (!io) {
-      res.status(500).json({ message: 'io connection fail' });
-      return;
-    }
     if (result === 'send') {
       addNotificationToUserDB(targetUserId, 'friend_request', userId, null);
-      io.to(id).emit('notificate', {
-        category: 'friend_request',
-        message: '有人發出交友邀請',
-        actionUser: user,
-      });
+      sendNotificationThroughSocket(
+        targetId,
+        'friend_request',
+        '有人發出交友邀請',
+        user,
+        undefined,
+      );
     } else if (result === 'accept') {
       addNotificationToUserDB(targetUserId, 'request_accepted', userId, null);
-      io.to(id).emit('notificate', {
-        category: 'request_accepted',
-        message: '有人接受你的邀請',
-        actionUser: user,
-      });
+      sendNotificationThroughSocket(
+        targetId,
+        'request_accepted',
+        '有人接受你的邀請',
+        user,
+        undefined,
+      );
     }
     if (result) {
       res.json({ status: 'send or accept request success' });

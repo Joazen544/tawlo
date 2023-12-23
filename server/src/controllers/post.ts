@@ -7,6 +7,7 @@ import Post, {
   getPostFromDB,
   searchPostsFromDB,
   getCustomizedPostsFromDB,
+  calculateMotherPostHot,
 } from '../models/post';
 import {
   updateUserAction,
@@ -22,59 +23,6 @@ import {
 } from '../models/tag';
 import { sendNotificationThroughSocket } from './socket';
 import { ValidationError } from '../utils/errorHandler';
-
-async function calculateMotherPostHot(
-  postId: string,
-  increaseField: string,
-  increase: boolean,
-) {
-  let field = '';
-  if (increaseField === 'comment') {
-    field = 'sum_comments';
-  } else if (increaseField === 'like') {
-    field = 'sum_likes';
-  } else if (increaseField === 'upvote') {
-    field = 'sum_upvotes';
-    // console.log('field is: ');
-    // console.log(field);
-  } else {
-    throw Error('the increase field sent to calculate hot function is wrong');
-  }
-
-  let num;
-  if (increase === true) {
-    num = 1;
-  } else {
-    num = -1;
-  }
-
-  const calculateResult = await Post.updateOne({ _id: postId }, [
-    {
-      $set: {
-        [field]: { $add: [`$${field}`, num] },
-      },
-    },
-    {
-      $set: {
-        hot: {
-          $multiply: [
-            100,
-            {
-              $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-            },
-          ],
-        },
-      },
-    },
-  ]);
-
-  // console.log(calculateResult);
-  if (calculateResult.modifiedCount !== 1) {
-    throw Error('calculate hot fail');
-  }
-
-  return true;
-}
 
 export async function createPost(req: Request, res: Response) {
   try {

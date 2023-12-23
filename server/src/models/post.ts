@@ -6,6 +6,8 @@ const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
 const SEARCH_POST_PER_PAGE = 20;
 
+const LIKE_COMMENT_UPVOTE_HOT_SCORE = 100;
+
 interface PostDocument {
   is_delete: boolean;
   category: string;
@@ -609,6 +611,52 @@ export async function searchPostsFromDB(
   }
 
   return { posts: returnPosts, ifNextPage };
+}
+
+export async function calculateMotherPostHot(
+  postId: string,
+  increaseField: string,
+  increase: boolean,
+) {
+  let field = '';
+
+  if (increaseField === 'comment') {
+    field = 'sum_comments';
+  } else if (increaseField === 'like') {
+    field = 'sum_likes';
+  } else if (increaseField === 'upvote') {
+    field = 'sum_upvotes';
+  } else {
+    throw Error('the increase field sent to calculate hot function is wrong');
+  }
+
+  const num = increase === true ? 1 : -1;
+
+  const calculateResult = await Post.updateOne({ _id: postId }, [
+    {
+      $set: {
+        [field]: { $add: [`$${field}`, num] },
+      },
+    },
+    {
+      $set: {
+        hot: {
+          $multiply: [
+            LIKE_COMMENT_UPVOTE_HOT_SCORE,
+            {
+              $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  if (calculateResult.modifiedCount !== 1) {
+    throw Error('calculate hot fail');
+  }
+
+  return true;
 }
 
 export default Post;
