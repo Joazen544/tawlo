@@ -7,7 +7,7 @@ import Meeting, {
   getSharingsFromDB,
   getAskingsFromDB,
 } from '../models/meeting';
-import { sendSocketNotification } from './socket';
+import { sendNotificationThroughSocket } from './socket';
 import User, { UserDocument, addNotificationToUserDB } from '../models/user';
 
 export async function accessMeeting(
@@ -85,7 +85,7 @@ export async function accessMeeting(
 
         addNotificationToUserDB(joinResult.users[0], 'meet_match', null, null);
 
-        sendSocketNotification(
+        sendNotificationThroughSocket(
           joinResult.users[0].toString(),
           'meet_match',
           '配對成功，看看對方的資訊吧',
@@ -329,7 +329,7 @@ export async function replyMeeting(
       addNotificationToUserDB(meeting.users[0], 'meet_success', null, null);
       addNotificationToUserDB(meeting.users[1], 'meet_success', null, null);
 
-      sendSocketNotification(
+      sendNotificationThroughSocket(
         meeting.users[0].toString(),
         'meet_success',
         '雙方都接受配對了，來跟對方聯絡吧！',
@@ -337,7 +337,7 @@ export async function replyMeeting(
         undefined,
       );
 
-      sendSocketNotification(
+      sendNotificationThroughSocket(
         meeting.users[1].toString(),
         'meet_success',
         '雙方都接受配對了，來跟對方聯絡吧！',
@@ -412,7 +412,7 @@ export async function replyMeeting(
           );
           addNotificationToUserDB(userId, 'meet_match', null, null);
 
-          sendSocketNotification(
+          sendNotificationThroughSocket(
             joinResult.users[0].toString(),
             'meet_match',
             '配對成功，看看對方的資訊吧',
@@ -420,7 +420,7 @@ export async function replyMeeting(
             undefined,
           );
 
-          sendSocketNotification(
+          sendNotificationThroughSocket(
             userId.toString(),
             'meet_match',
             '配對成功，看看對方的資訊吧',
@@ -453,7 +453,7 @@ export async function replyMeeting(
           { meeting: createResult._id, meeting_status: 'pending' },
         );
 
-        sendSocketNotification(
+        sendNotificationThroughSocket(
           userId.toString(),
           'meet_fail',
           '配對失敗，自動重新配對',

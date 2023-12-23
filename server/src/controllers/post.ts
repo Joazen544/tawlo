@@ -20,7 +20,7 @@ import {
   getRelevantTagsFromDB,
   getHotTagsFromDB,
 } from '../models/tag';
-import { sendSocketNotification } from './socket';
+import { sendNotificationThroughSocket } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
 async function calculateMotherPostHot(
@@ -186,7 +186,7 @@ export async function createPost(req: Request, res: Response) {
           postData._id,
         );
 
-        sendSocketNotification(
+        sendNotificationThroughSocket(
           motherPostInfo.author.toString(),
           'reply_post',
           '有人回覆了你的貼文',
@@ -362,7 +362,7 @@ export async function commentPost(
         target._id,
       );
 
-      sendSocketNotification(
+      sendNotificationThroughSocket(
         target.author.toString(),
         'comment_post',
         '有人在你的貼文留言',
@@ -439,7 +439,7 @@ export async function likeComment(req: Request, res: Response) {
         );
 
         if (targetPost?.comments?.data[floor]?.user) {
-          sendSocketNotification(
+          sendNotificationThroughSocket(
             targetPost.comments.data[floor].user.toString(),
             'like_comment',
             '有人喜歡你的留言',
@@ -600,7 +600,7 @@ export async function likePost(req: Request, res: Response) {
           likeTarget._id,
         );
 
-        sendSocketNotification(
+        sendNotificationThroughSocket(
           likeTarget.author.toString(),
           'like_post',
           '有人喜歡你的貼文',
@@ -822,7 +822,7 @@ export async function upvotePost(req: Request, res: Response) {
           upvoteTarget._id,
         );
 
-        sendSocketNotification(
+        sendNotificationThroughSocket(
           upvoteTarget.author.toString(),
           'upvote_post',
           '有人覺得你的貼文有用',
@@ -924,7 +924,7 @@ export async function upvotePost(req: Request, res: Response) {
           upvoteTarget._id,
         );
 
-        sendSocketNotification(
+        sendNotificationThroughSocket(
           upvoteTarget.author.toString(),
           'upvote_post',
           '有人覺得你的貼文有用',

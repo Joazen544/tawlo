@@ -12,7 +12,7 @@ import {
   makeAllMessagesRead,
 } from '../models/message';
 
-import { getIO } from './socket';
+import { sendMessageThroughSocket } from './socket';
 
 async function getMessagesFromDB(
   lastMessage: ObjectId | null,
@@ -215,24 +215,9 @@ export async function sendMessage(
   try {
     const { user, messageTo, messageGroup, content } = req.body;
 
-    const io = getIO();
-
-    if (!io) {
-      res.status(500).json({ message: 'io connection fail' });
-      return;
-    }
-
     await createMessage(messageGroup, user, content);
-    io.to(user).emit('myself', {
-      message: content,
-      group: messageGroup,
-    });
 
-    io.to(messageTo).emit('message', {
-      message: content,
-      from: user,
-      group: messageGroup,
-    });
+    sendMessageThroughSocket(user, content, messageTo, messageGroup);
 
     res.json({ message: 'message sent' });
   } catch (err) {

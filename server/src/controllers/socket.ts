@@ -161,7 +161,28 @@ export function initSocket(server: http.Server) {
   });
 }
 
-export function sendSocketNotification(
+export function sendMessageThroughSocket(
+  user: string,
+  content: string,
+  messageTo: string,
+  messageGroup: string,
+) {
+  if (!io) {
+    throw new Error('socket io not working');
+  }
+  io.to(user).emit('myself', {
+    message: content,
+    group: messageGroup,
+  });
+
+  io.to(messageTo).emit('message', {
+    message: content,
+    from: user,
+    group: messageGroup,
+  });
+}
+
+export function sendNotificationThroughSocket(
   targetUser: string,
   category: string,
   message: string,
@@ -169,7 +190,7 @@ export function sendSocketNotification(
   targetPost: string | undefined,
 ) {
   if (!io) {
-    return false;
+    throw new Error('socket io not working');
   }
 
   io.to(targetUser).emit('notificate', {
