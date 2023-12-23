@@ -686,7 +686,7 @@ export async function changeMotherPostLastUpdateTime(
 
 export async function commentPostToDB(
   postId: string,
-  userId: string,
+  userId: ObjectId,
   content: string,
   publishDate: Date,
 ) {
@@ -719,7 +719,7 @@ export async function commentPostToDB(
 }
 
 export async function likePostToDB(
-  userId: string,
+  userId: ObjectId,
   postId: string,
   like: boolean,
   category: string,
@@ -747,12 +747,8 @@ export async function likePostToDB(
 
   if (category === 'mother' || category === 'native') {
     const result = await Post.updateOne({ _id: postId }, [
-      {
-        $set: {
-          'liked.number': { $add: ['$liked.number', increment] },
-          adjustUserArray,
-        },
-      },
+      { $set: { 'liked.number': { $add: ['$liked.number', increment] } } },
+      { $set: adjustUserArray },
       { $set: { sum_likes: { $add: ['$sum_likes', increment] } } },
       CALCULATE_POST_HOT_QUERY,
     ]);

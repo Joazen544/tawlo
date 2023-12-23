@@ -186,7 +186,7 @@ export async function commentPost(
 
     updateUserAction(userId, commentTarget.tags, commentTarget.board);
 
-    await commentPostToDB(postId, user, content, publishDate);
+    await commentPostToDB(postId, userId, content, publishDate);
 
     if (postCategory === 'reply') {
       if (!motherPost) {
@@ -232,22 +232,14 @@ export async function likePost(req: Request, res: Response) {
     }
 
     const likeTarget = await Post.findOne({ _id: postId });
-
-    if (likeTarget === null) {
-      throw Error('like target post does not exist');
-    }
+    if (likeTarget === null) throw Error('like target post does not exist');
 
     const ifAlreadyLike = likeTarget.liked?.users?.includes(userId);
 
-    if (like && ifAlreadyLike) {
-      throw Error('user already liked the post');
-    }
-    if (!like && !ifAlreadyLike) {
-      throw Error('user did not like the post');
-    }
+    if (like && ifAlreadyLike) throw Error('user already liked the post');
+    if (!like && !ifAlreadyLike) throw Error('user did not like the post');
 
-    await likePostToDB(user, postId, like, likeTarget.category);
-
+    await likePostToDB(userId, postId, like, likeTarget.category);
     updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
     if (likeTarget.author.toString() !== userId.toString() && like === true) {
