@@ -7,7 +7,7 @@ import Meeting, {
   getSharingsFromDB,
   getAskingsFromDB,
 } from '../models/meeting';
-import { getIO } from './socket';
+import { sendSocketNotification } from './socket';
 import User, { UserDocument, addNotificationToUserDB } from '../models/user';
 
 export async function accessMeeting(
@@ -85,26 +85,13 @@ export async function accessMeeting(
 
         addNotificationToUserDB(joinResult.users[0], 'meet_match', null, null);
 
-        const io = getIO();
-
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
-        }
-
-        // console.log('send io 1');
-
-        io.to(joinResult.users[0].toString()).emit('notificate', {
-          category: 'meet_match',
-          message: '配對成功，看看對方的資訊吧 ouo',
-        });
-
-        io.to(joinResult.users[0].toString()).emit('notificate_2', {
-          category: 'meet_match',
-          message: '配對成功，看看對方的資訊吧 ouo',
-        });
-
-        // console.log('send io 2');
+        sendSocketNotification(
+          joinResult.users[0].toString(),
+          'meet_match',
+          '配對成功，看看對方的資訊吧',
+          undefined,
+          undefined,
+        );
 
         await User.updateOne(
           { _id: user },
@@ -114,8 +101,6 @@ export async function accessMeeting(
             $push: { met_users: joinResult.users[0] },
           },
         );
-
-        // addNotificationToUserDB(userId, 'meet_match', null, null);
       } catch (err) {
         throw new Error(
           `something wrong updating meeting info for users: ${err}`,
@@ -344,32 +329,21 @@ export async function replyMeeting(
       addNotificationToUserDB(meeting.users[0], 'meet_success', null, null);
       addNotificationToUserDB(meeting.users[1], 'meet_success', null, null);
 
-      const io = getIO();
+      sendSocketNotification(
+        meeting.users[0].toString(),
+        'meet_success',
+        '雙方都接受配對了，來跟對方聯絡吧！',
+        undefined,
+        undefined,
+      );
 
-      if (!io) {
-        res.status(500).json({ message: 'io connection fail' });
-        return;
-      }
-
-      io.to(meeting.users[0].toString()).emit('notificate', {
-        category: 'meet_success',
-        message: '雙方都接受配對了，來跟對方聯絡吧！',
-      });
-
-      io.to(meeting.users[1].toString()).emit('notificate', {
-        category: 'meet_success',
-        message: '雙方都接受配對了，來跟對方聯絡吧！',
-      });
-
-      io.to(meeting.users[0].toString()).emit('notificate_2', {
-        category: 'meet_success',
-        message: '雙方都接受配對了，來跟對方聯絡吧！',
-      });
-
-      io.to(meeting.users[1].toString()).emit('notificate_2', {
-        category: 'meet_success',
-        message: '雙方都接受配對了，來跟對方聯絡吧！',
-      });
+      sendSocketNotification(
+        meeting.users[1].toString(),
+        'meet_success',
+        '雙方都接受配對了，來跟對方聯絡吧！',
+        undefined,
+        undefined,
+      );
 
       // open a chat for them
       req.query.target = meeting.accept[0].toString();
@@ -438,32 +412,21 @@ export async function replyMeeting(
           );
           addNotificationToUserDB(userId, 'meet_match', null, null);
 
-          const io = getIO();
+          sendSocketNotification(
+            joinResult.users[0].toString(),
+            'meet_match',
+            '配對成功，看看對方的資訊吧',
+            undefined,
+            undefined,
+          );
 
-          if (!io) {
-            res.status(500).json({ message: 'io connection fail' });
-            return;
-          }
-
-          io.to(joinResult.users[0].toString()).emit('notificate', {
-            category: 'meet_match',
-            message: '配對成功，看看對方的資訊吧 OAO',
-          });
-
-          io.to(userId.toString()).emit('notificate', {
-            category: 'meet_match',
-            message: '配對成功，看看對方的資訊吧 XDD',
-          });
-
-          io.to(joinResult.users[0].toString()).emit('notificate_2', {
-            category: 'meet_match',
-            message: '配對成功，看看對方的資訊吧 OAO',
-          });
-
-          io.to(userId.toString()).emit('notificate_2', {
-            category: 'meet_match',
-            message: '配對成功，看看對方的資訊吧 XDD',
-          });
+          sendSocketNotification(
+            userId.toString(),
+            'meet_match',
+            '配對成功，看看對方的資訊吧',
+            undefined,
+            undefined,
+          );
         } catch (err) {
           throw new Error(
             `something wrong updating meeting info for users: ${err}`,
@@ -482,6 +445,7 @@ export async function replyMeeting(
           meeting.to_ask[index],
         );
 
+        // notificate the user the result
         addNotificationToUserDB(userId, 'meet_fail', null, null);
 
         await User.updateOne(
@@ -489,24 +453,13 @@ export async function replyMeeting(
           { meeting: createResult._id, meeting_status: 'pending' },
         );
 
-        // notificate the user the result
-
-        const io = getIO();
-
-        if (!io) {
-          res.status(500).json({ message: 'io connection fail' });
-          return;
-        }
-
-        io.to(userId.toString()).emit('notificate', {
-          category: 'meet_fail',
-          message: '配對失敗，自動重新配對',
-        });
-
-        io.to(userId.toString()).emit('notificate_2', {
-          category: 'meet_fail',
-          message: '配對失敗，自動重新配對',
-        });
+        sendSocketNotification(
+          userId.toString(),
+          'meet_fail',
+          '配對失敗，自動重新配對',
+          undefined,
+          undefined,
+        );
       }
     });
     res.json({ message: 'create or join new meeting for users' });

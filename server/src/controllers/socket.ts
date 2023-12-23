@@ -165,7 +165,7 @@ export function sendSocketNotification(
   targetUser: string,
   category: string,
   message: string,
-  actionUser: string,
+  actionUser: string | undefined,
   targetPost: string | undefined,
 ) {
   if (!io) {
@@ -178,6 +178,15 @@ export function sendSocketNotification(
     actionUser,
     targetPost,
   });
+
+  if (['meet_match', 'meet_success', 'meet_fail'].includes(category)) {
+    io.to(targetUser).emit('notificate_2', {
+      category,
+      message,
+      actionUser,
+      targetPost,
+    });
+  }
 
   return true;
 }
