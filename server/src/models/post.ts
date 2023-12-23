@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { AggregationInterface } from './meeting';
 
+// { PipelineStage }
+
 const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
 const SEARCH_POST_PER_PAGE = 20;
@@ -121,6 +123,17 @@ const postSchema = new mongoose.Schema<PostDocument>({
 });
 
 const Post = mongoose.model('Post', postSchema);
+
+const CALCULATE_POST_HOT_QUERY = {
+  $set: {
+    hot: {
+      $multiply: [
+        LIKE_COMMENT_UPVOTE_HOT_SCORE,
+        { $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1] },
+      ],
+    },
+  },
+};
 
 export async function getAutoRecommendedPosts(
   preferenceTags: string[],
@@ -638,18 +651,7 @@ export async function calculateMotherPostHot(
         [field]: { $add: [`$${field}`, num] },
       },
     },
-    {
-      $set: {
-        hot: {
-          $multiply: [
-            LIKE_COMMENT_UPVOTE_HOT_SCORE,
-            {
-              $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-            },
-          ],
-        },
-      },
-    },
+    CALCULATE_POST_HOT_QUERY,
   ]);
 
   if (calculateResult.modifiedCount !== 1) {
@@ -657,6 +659,63 @@ export async function calculateMotherPostHot(
   }
 
   return true;
+}
+
+export async function changeMotherPostLastUpdateTime(
+  motherPost: string,
+  updateDate: Date,
+  lastReplier: string,
+) {
+  const updateMotherResult = await Post.updateOne(
+    { _id: motherPost },
+    {
+      $set: {
+        update_date: updateDate,
+        last_reply: lastReplier,
+      },
+      $inc: { sum_reply: 1 },
+    },
+  );
+
+  if (updateMotherResult.acknowledged === false) {
+    throw new Error(
+      'mother post deoes not exist or something is wrong updating it',
+    );
+  }
+}
+
+export async function commentPostToDB(
+  postId: string,
+  userId: string,
+  content: string,
+  publishDate: Date,
+) {
+  const commentResult = await Post.updateOne({ _id: postId }, [
+    {
+      $set: {
+        'comments.data': {
+          $concatArrays: [
+            '$comments.data',
+            [
+              {
+                user: userId,
+                content,
+                time: publishDate,
+                like: { number: 0, users: [] },
+              },
+            ],
+          ],
+        },
+        'comments.number': { $add: ['$comments.number', 1] },
+        sum_comments: { $add: ['$sum_comments', 1] },
+      },
+    },
+    CALCULATE_POST_HOT_QUERY,
+  ]);
+
+  if (commentResult.acknowledged === false) {
+    throw new Error('Create comment fail');
+  }
 }
 
 export default Post;

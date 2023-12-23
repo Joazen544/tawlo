@@ -8,6 +8,8 @@ import Post, {
   searchPostsFromDB,
   getCustomizedPostsFromDB,
   calculateMotherPostHot,
+  changeMotherPostLastUpdateTime,
+  commentPostToDB,
 } from '../models/post';
 import {
   updateUserAction,
@@ -43,18 +45,22 @@ export async function createPost(req: Request, res: Response) {
       return;
     }
 
-    let tagsArray: string[] = [];
-    if (tags !== undefined) {
-      tagsArray = Array.isArray(tags)
-        ? tags.map((tag) => tag.toLowerCase())
-        : [tags.toLowerCase()].filter(Boolean);
-    }
-
     const userId = new ObjectId(user);
     const publishDate = new Date();
 
     let postData;
+    let tagsArray: string[] = [];
+
     if (category === 'native') {
+      if (!tags) {
+        res.status(400).json({ error: 'A mother post should have tag' });
+        return;
+      }
+
+      tagsArray = Array.isArray(tags)
+        ? tags.map((tag) => tag.toLowerCase())
+        : [tags.toLowerCase()].filter(Boolean);
+
       postData = await Post.create({
         category,
         author: userId,
@@ -62,21 +68,25 @@ export async function createPost(req: Request, res: Response) {
         publish_date: publishDate,
         update_date: publishDate,
         tags: tagsArray,
-        floor: 1,
       });
     } else if (category === 'mother') {
       if (!title) {
-        res.status(400).json({
-          error: 'A mother post should have title',
-        });
+        res.status(400).json({ error: 'A mother post should have title' });
         return;
       }
       if (!board) {
-        res.status(400).json({
-          error: 'A mother post should have a board',
-        });
+        res.status(400).json({ error: 'A mother post should have a board' });
         return;
       }
+      if (!tags) {
+        res.status(400).json({ error: 'A mother post should have tag' });
+        return;
+      }
+
+      tagsArray = Array.isArray(tags)
+        ? tags.map((tag) => tag.toLowerCase())
+        : [tags.toLowerCase()].filter(Boolean);
+
       postData = await Post.create({
         category,
         author: userId,
@@ -86,7 +96,6 @@ export async function createPost(req: Request, res: Response) {
         update_date: publishDate,
         tags: tagsArray,
         board,
-        floor: 1,
       });
     } else if (category === 'reply') {
       const motherPostInfo = await Post.findOne({ _id: motherPost });
@@ -96,25 +105,12 @@ export async function createPost(req: Request, res: Response) {
         res.status(400).json({ error: 'mother post does not exist' });
         return;
       }
-      const updateMotherResult = await Post.updateOne(
-        { _id: motherPost },
-        {
-          $set: {
-            update_date: publishDate,
-            last_reply: userId,
-          },
-          $inc: { sum_reply: 1 },
-        },
-      );
+
+      await changeMotherPostLastUpdateTime(motherPost, publishDate, user);
 
       tagsArray = motherPostInfo.tags;
       const postBoard = motherPostInfo.board;
 
-      if (updateMotherResult.acknowledged === false) {
-        throw new Error(
-          'mother post deoes not exist or something is wrong updating it',
-        );
-      }
       postData = await Post.create({
         category,
         author: userId,
@@ -142,9 +138,6 @@ export async function createPost(req: Request, res: Response) {
           postData._id.toString(),
         );
       }
-    } else {
-      res.status(400).json({ error: 'The category of post is wrong' });
-      return;
     }
 
     try {
@@ -176,146 +169,48 @@ export async function commentPost(
     const { postId } = req.params;
     const { content, user } = req.body;
     const userId = new ObjectId(user);
-
-    // need to check post category in future
     const publishDate = new Date();
 
-    const target = await Post.findOne(
-      {
-        _id: postId,
-      },
-      {
-        _id: 1,
-        liked: 1,
-        category: 1,
-        mother_post: 1,
-        tags: 1,
-        board: 1,
-        author: 1,
-      },
-    );
+    const commentTarget = await Post.findOne({ _id: postId });
 
-    if (target === null) {
+    if (commentTarget === null) {
       throw Error('Comment post does not exist');
     }
 
-    const postCategory = target.category;
+    const postCategory = commentTarget.category;
     let motherPost;
-    if (target.mother_post) {
-      motherPost = target.mother_post.toString();
+    if (commentTarget.mother_post) {
+      motherPost = commentTarget.mother_post.toString();
     }
 
-    updateUserAction(userId, target.tags, target.board);
+    updateUserAction(userId, commentTarget.tags, commentTarget.board);
 
-    let result;
-    if (postCategory === 'mother' || postCategory === 'native') {
-      result = await Post.updateOne({ _id: postId }, [
-        {
-          $set: {
-            'comments.data': {
-              $concatArrays: [
-                '$comments.data',
-                [
-                  {
-                    user: userId,
-                    content,
-                    time: publishDate,
-                    like: {
-                      number: 0,
-                      users: [],
-                    },
-                  },
-                ],
-              ],
-            },
-          },
-        },
-        {
-          $set: {
-            'comments.number': { $add: ['$comments.number', 1] },
-          },
-        },
-        {
-          $set: {
-            sum_comments: { $add: ['$sum_comments', 1] },
-          },
-        },
-        {
-          $set: {
-            hot: {
-              $multiply: [
-                100,
-                {
-                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-              ],
-            },
-          },
-        },
-      ]);
+    await commentPostToDB(postId, user, content, publishDate);
 
-      if (result.acknowledged === false) {
-        throw new Error('Create comment fail');
-      }
-    } else {
-      if (!motherPost) throw Error('reply comment must have mother post id');
-
-      result = await Post.updateOne({ _id: postId }, [
-        {
-          $set: {
-            'comments.data': {
-              $concatArrays: [
-                '$comments.data',
-                [
-                  {
-                    user: userId,
-                    content,
-                    time: publishDate,
-                  },
-                ],
-              ],
-            },
-          },
-        },
-        {
-          $set: {
-            'comments.number': { $add: ['$comments.number', 1] },
-          },
-        },
-      ]);
-
-      if (result.acknowledged === false) {
-        throw new Error('Create comment fail');
+    if (postCategory === 'reply') {
+      if (!motherPost) {
+        throw Error('reply post must have mother post id');
       }
 
-      // ??? the type of motherPost should be fixed
-      const calculateResult = await calculateMotherPostHot(
-        motherPost,
-        'comment',
-        true,
-      );
-
-      if (calculateResult !== true) {
-        throw Error('calculate hot fail');
-      }
+      await calculateMotherPostHot(motherPost, 'comment', true);
     }
 
     // create notification to author
 
-    if (target.author.toString() !== userId.toString()) {
+    if (commentTarget.author.toString() !== userId.toString()) {
       addNotificationToUserDB(
-        target.author,
+        commentTarget.author,
         'comment_post',
         userId,
-        target._id,
+        commentTarget._id,
       );
 
       sendNotificationThroughSocket(
-        target.author.toString(),
+        commentTarget.author.toString(),
         'comment_post',
         '有人在你的貼文留言',
         userId.toString(),
-        target._id.toString(),
+        commentTarget._id.toString(),
       );
     }
 
