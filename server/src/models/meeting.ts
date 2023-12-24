@@ -113,34 +113,21 @@ export async function joinMeeting(
   const creatorShouldShare: AggregationInterface[] = [];
   toAsk.forEach((ask) => {
     creatorShouldShare.push({
-      phrase: {
-        query: `${ask}`,
-        path: 'to_share',
-      },
+      phrase: { query: `${ask}`, path: 'to_share' },
     });
   });
 
   const creatorShouldAsk: AggregationInterface[] = [];
   toShare.forEach((share) => {
     creatorShouldAsk.push({
-      phrase: {
-        query: `${share}`,
-        path: 'to_ask',
-      },
+      phrase: { query: `${share}`, path: 'to_ask' },
     });
   });
 
   let mustNotArray: MustNotObj[] = [];
 
   if (metUsers.length > 0) {
-    mustNotArray = [
-      {
-        in: {
-          path: 'users',
-          value: metUsers,
-        },
-      },
-    ];
+    mustNotArray = [{ in: { path: 'users', value: metUsers } }];
   }
 
   const result = await Meeting.aggregate<MeetingDocument>([
@@ -149,54 +136,29 @@ export async function joinMeeting(
         index: 'meeting',
         compound: {
           must: [
-            {
-              compound: {
-                should: creatorShouldShare,
-              },
-            },
-            {
-              compound: {
-                should: creatorShouldAsk,
-              },
-            },
+            { compound: { should: creatorShouldShare } },
+            { compound: { should: creatorShouldAsk } },
           ],
           should: [],
           mustNot: mustNotArray,
           filter: [
             {
-              phrase: {
-                query: 'pending',
-                path: 'status',
-              },
+              phrase: { query: 'pending', path: 'status' },
             },
           ],
         },
       },
     },
     {
-      $addFields: {
-        score: {
-          $meta: 'searchScore',
-        },
-      },
+      $addFields: { score: { $meta: 'searchScore' } },
     },
-    {
-      $sort: {
-        score: -1,
-      },
-    },
-    {
-      $limit: 1,
-    },
+    { $sort: { score: -1 } },
+    { $limit: 1 },
   ]);
 
-  // console.log(result);
-
   if (!result[0]) {
-    // create a new one
     return false;
   }
-  // else joing the meeting
 
   const meetingId = result[0]._id;
   const userId = new ObjectId(user);
@@ -217,35 +179,21 @@ export async function joinMeeting(
     },
   );
 
-  // console.log(result);
-
   return result[0];
 }
 
-export async function getSharingsFromDB(search: string) {
+export async function getSharings(search: string) {
   const results = await Meeting.aggregate([
     {
-      $match: {
-        status: 'pending',
-      },
+      $match: { status: 'pending' },
     },
     {
-      $unwind: {
-        path: '$to_share',
-      },
+      $unwind: { path: '$to_share' },
     },
     {
-      $match: {
-        to_share: {
-          $regex: search,
-        },
-      },
+      $match: { to_share: { $regex: search } },
     },
-    {
-      $project: {
-        to_share: 1,
-      },
-    },
+    { $project: { to_share: 1 } },
   ]);
 
   const map = new Map();
@@ -263,7 +211,7 @@ export async function getSharingsFromDB(search: string) {
   return returnArray;
 }
 
-export async function getAskingsFromDB(search: string) {
+export async function getAskings(search: string) {
   const results = await Meeting.aggregate([
     {
       $match: {

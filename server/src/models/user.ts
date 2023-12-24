@@ -306,7 +306,7 @@ export async function getUserPreference(userId: ObjectId) {
   }
 }
 
-export async function getUserRelationFromDB(user: string, targetId: string) {
+export async function getUserRelation(user: string, targetId: string) {
   // try {
   const userInfo = await User.findOne(
     {
@@ -329,7 +329,7 @@ export async function createRelation(user: string, target: string) {
   let result: string;
   try {
     session.startTransaction();
-    const relation = await getUserRelationFromDB(user, target);
+    const relation = await getUserRelation(user, target);
     if (relation === null) {
       await User.updateOne(
         { _id: user },
@@ -369,12 +369,12 @@ export async function createRelation(user: string, target: string) {
   return result;
 }
 
-export async function cancelRequestFromDB(user: string, target: string) {
+export async function cancelRequest(user: string, target: string) {
   const session = await User.startSession();
   let result;
   try {
     session.startTransaction();
-    const relation = await getUserRelationFromDB(user, target);
+    const relation = await getUserRelation(user, target);
     if (relation === null) {
       throw Error('the relation does not exist');
     } else if (relation === 'friends') {
@@ -405,7 +405,7 @@ export async function cancelRequestFromDB(user: string, target: string) {
   return result;
 }
 
-export async function addNotificationToUserDB(
+export async function addNotification(
   userId: ObjectId,
   category: string,
   actionUser: ObjectId | null,
@@ -554,7 +554,7 @@ export async function addNotificationToUserDB(
   return 'error';
 }
 
-export async function getNotificationsFromDB(userId: ObjectId) {
+export async function getNotifications(userId: ObjectId) {
   const userInfo = await User.findOne({ _id: userId });
 
   if (!userInfo) {
@@ -563,7 +563,7 @@ export async function getNotificationsFromDB(userId: ObjectId) {
   return userInfo.notification;
 }
 
-export async function readNotificationsFromDB(userId: ObjectId) {
+export async function readNotifications(userId: ObjectId) {
   const userUpdate = await User.updateOne(
     { _id: userId, 'notification.read': false },
     { $set: { 'notification.$[].read': true } },
@@ -575,24 +575,24 @@ export async function readNotificationsFromDB(userId: ObjectId) {
   return true;
 }
 
-export async function getUserImageFromDB(user: string) {
+export async function getUserImage(user: string) {
   const userInfo = await User.findOne({ _id: user }, { image: 1 });
 
   return userInfo;
 }
 
-export async function getUserInfoFromDB(user: string) {
+export async function getUserInfo(user: string) {
   const userInfo = await User.findOne({ _id: user });
 
   return userInfo;
 }
 
-export async function refuseRequestFromDB(user: string, target: string) {
+export async function refuseRequest(user: string, target: string) {
   const session = await User.startSession();
   let result;
   try {
     session.startTransaction();
-    const relation = await getUserRelationFromDB(user, target);
+    const relation = await getUserRelation(user, target);
     if (relation === null) {
       throw Error('the relation does not exist');
     } else if (relation !== 'received') {
@@ -623,7 +623,7 @@ export async function refuseRequestFromDB(user: string, target: string) {
   return result;
 }
 
-export async function getUserFriendsFromDB(user: string) {
+export async function getUserFriends(user: string) {
   const userInfo = await User.findOne({ _id: user });
 
   if (!userInfo) {

@@ -61,7 +61,7 @@ export async function createPost(req: Request, res: Response) {
       });
 
       if (motherPostInfo.author.toString() !== userId.toString()) {
-        userModel.addNotificationToUserDB(
+        userModel.addNotification(
           motherPostInfo.author,
           'reply_post',
           userId,
@@ -184,7 +184,7 @@ export async function commentPost(
     }
 
     if (commentTarget.author.toString() !== userId.toString()) {
-      userModel.addNotificationToUserDB(
+      userModel.addNotification(
         commentTarget.author,
         'comment_post',
         userId,
@@ -229,7 +229,7 @@ export async function likePost(req: Request, res: Response) {
     userModel.updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
     if (likeTarget.author.toString() !== userId.toString() && like === true) {
-      userModel.addNotificationToUserDB(
+      userModel.addNotification(
         likeTarget.author,
         'like_post',
         userId,
@@ -291,7 +291,7 @@ export async function upvotePost(req: Request, res: Response) {
     );
 
     if (upvoteTarget.author.toString() !== userId.toString()) {
-      userModel.addNotificationToUserDB(
+      userModel.addNotification(
         upvoteTarget.author,
         'upvote_post',
         userId,

@@ -158,7 +158,7 @@ export async function getUserInfo(
       console.log('something is wrong getting user info from redis');
     }
 
-    const userInfo = await userModel.getUserInfoFromDB(id);
+    const userInfo = await userModel.getUserInfo(id);
 
     if (!userInfo) {
       res.status(400).json({ error: 'user does not exist' });
@@ -201,7 +201,7 @@ export async function getUserRelation(
       return;
     }
 
-    const relation = await userModel.getUserRelationFromDB(user, id);
+    const relation = await userModel.getUserRelation(user, id);
 
     res.json({ relation });
   } catch (err) {
@@ -228,12 +228,7 @@ export async function sendRequest(
     const targetUserId = new ObjectId(targetId);
 
     if (result === 'send') {
-      userModel.addNotificationToUserDB(
-        targetUserId,
-        'friend_request',
-        userId,
-        null,
-      );
+      userModel.addNotification(targetUserId, 'friend_request', userId, null);
       sendNotificationThroughSocket(
         targetId,
         'friend_request',
@@ -242,12 +237,7 @@ export async function sendRequest(
         undefined,
       );
     } else if (result === 'accept') {
-      userModel.addNotificationToUserDB(
-        targetUserId,
-        'request_accepted',
-        userId,
-        null,
-      );
+      userModel.addNotification(targetUserId, 'request_accepted', userId, null);
       sendNotificationThroughSocket(
         targetId,
         'request_accepted',
@@ -280,7 +270,7 @@ export async function cancelRequest(
       return;
     }
 
-    const result = await userModel.cancelRequestFromDB(user, id);
+    const result = await userModel.cancelRequest(user, id);
     if (result) {
       res.json({ status: 'cancel request success' });
       return;
@@ -300,7 +290,7 @@ export async function getNotifications(
     const { user } = req.body;
     const userId = new ObjectId(user);
 
-    const notifications = await userModel.getNotificationsFromDB(userId);
+    const notifications = await userModel.getNotifications(userId);
     if (notifications === false) {
       res.status(400).json({ error: 'no such user' });
       return;
@@ -361,7 +351,7 @@ export async function readAllNotifications(
     const { user } = req.body;
     const userId = new ObjectId(user);
 
-    const updateResult = await userModel.readNotificationsFromDB(userId);
+    const updateResult = await userModel.readNotifications(userId);
     if (updateResult === false) {
       res.status(400).json({
         error:
@@ -422,7 +412,7 @@ export async function getFriendsList(
       return;
     }
 
-    const userFriends = await userModel.getUserFriendsFromDB(user);
+    const userFriends = await userModel.getUserFriends(user);
 
     res.json(userFriends);
   } catch (err) {
@@ -483,7 +473,7 @@ export async function refuseRequest(
       return;
     }
 
-    const result = await userModel.refuseRequestFromDB(user, id);
+    const result = await userModel.refuseRequest(user, id);
     if (result) {
       res.json({ status: 'refuse request success' });
       return;

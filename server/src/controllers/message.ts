@@ -121,7 +121,7 @@ export async function clickChatRoom(
   }
 }
 
-export async function getNativeMessageGroups(
+export async function getMessageGroups(
   req: Request,
   res: Response,
   next: NextFunction,

@@ -1,14 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
-import Meeting, {
-  createMeeting,
-  joinMeeting,
-  MeetingDocument,
-  getSharingsFromDB,
-  getAskingsFromDB,
-} from '../models/meeting';
+import Meeting, * as meetingModel from '../models/meeting';
 import { sendNotificationThroughSocket } from './socket';
-import User, { UserDocument, addNotificationToUserDB } from '../models/user';
+import User, { UserDocument, addNotification } from '../models/user';
 
 export async function accessMeeting(
   req: Request,
@@ -28,7 +22,6 @@ export async function accessMeeting(
       { _id: user },
       { met_users: 1, rating: 1, meeting_comments: 1, meeting_status: 1 },
     );
-    // console.log('22222');
 
     if (!metUsersResult) {
       res.status(500).json({ error: 'user not found' });
@@ -56,7 +49,7 @@ export async function accessMeeting(
       return;
     }
 
-    const joinResult = await joinMeeting(
+    const joinResult = await meetingModel.joinMeeting(
       metUsers,
       user,
       role,
@@ -83,7 +76,7 @@ export async function accessMeeting(
           },
         );
 
-        addNotificationToUserDB(joinResult.users[0], 'meet_match', null, null);
+        addNotification(joinResult.users[0], 'meet_match', null, null);
 
         sendNotificationThroughSocket(
           joinResult.users[0].toString(),
@@ -115,7 +108,7 @@ export async function accessMeeting(
     }
     // else, if false: create a new one
 
-    const createResult = await createMeeting(
+    const createResult = await meetingModel.createMeeting(
       user,
       role,
       rating,
@@ -272,7 +265,9 @@ export async function replyMeeting(
     if (reply !== 'accept' && reply !== 'deny') {
       res.status(400).json({ error: 'reply must be accept or deny' });
     }
-    const meeting = await Meeting.findOne<MeetingDocument>({ _id: meetingId });
+    const meeting = await Meeting.findOne<meetingModel.MeetingDocument>({
+      _id: meetingId,
+    });
 
     if (!meeting) {
       res.status(400).json({ error: 'meeting does not exist' });
@@ -288,8 +283,6 @@ export async function replyMeeting(
       res.status(400).json({ error: 'the meeting is not checking' });
       return;
     }
-
-    // console.log(meeting);
 
     if (reply === 'accept') {
       // update the status of users, meeting to meeting
@@ -324,10 +317,8 @@ export async function replyMeeting(
         { $set: { meeting_status: 'end' } },
       );
 
-      // notificate them
-
-      addNotificationToUserDB(meeting.users[0], 'meet_success', null, null);
-      addNotificationToUserDB(meeting.users[1], 'meet_success', null, null);
+      addNotification(meeting.users[0], 'meet_success', null, null);
+      addNotification(meeting.users[1], 'meet_success', null, null);
 
       sendNotificationThroughSocket(
         meeting.users[0].toString(),
@@ -370,7 +361,7 @@ export async function replyMeeting(
 
       const metUsers = metUsersResult.met_users || [];
 
-      const joinResult = await joinMeeting(
+      const joinResult = await meetingModel.joinMeeting(
         metUsers,
         userId.toString(),
         meeting.role[index],
@@ -404,13 +395,8 @@ export async function replyMeeting(
             },
           );
 
-          addNotificationToUserDB(
-            joinResult.users[0],
-            'meet_match',
-            null,
-            null,
-          );
-          addNotificationToUserDB(userId, 'meet_match', null, null);
+          addNotification(joinResult.users[0], 'meet_match', null, null);
+          addNotification(userId, 'meet_match', null, null);
 
           sendNotificationThroughSocket(
             joinResult.users[0].toString(),
@@ -435,7 +421,7 @@ export async function replyMeeting(
       } else {
         // else, if false: create a new one
 
-        const createResult = await createMeeting(
+        const createResult = await meetingModel.createMeeting(
           userId.toString(),
           meeting.role[index],
           meeting.ratings[index],
@@ -445,8 +431,7 @@ export async function replyMeeting(
           meeting.to_ask[index],
         );
 
-        // notificate the user the result
-        addNotificationToUserDB(userId, 'meet_fail', null, null);
+        addNotification(userId, 'meet_fail', null, null);
 
         await User.updateOne(
           { _id: userId },
@@ -589,7 +574,7 @@ export async function getSharings(
       return;
     }
 
-    const tags = await getSharingsFromDB(search);
+    const tags = await meetingModel.getSharings(search);
 
     res.json(tags);
   } catch (err) {
@@ -610,7 +595,7 @@ export async function getAskings(
       return;
     }
 
-    const tags = await getAskingsFromDB(search);
+    const tags = await meetingModel.getAskings(search);
 
     res.json(tags);
   } catch (err) {
