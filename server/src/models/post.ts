@@ -277,7 +277,7 @@ export async function getRecommendedPosts(
   return posts;
 }
 
-export async function getBoardPostsFromDB(boardId: string, paging: number) {
+export async function getBoardPosts(boardId: string, paging: number) {
   const board = new ObjectId(boardId);
 
   const postsOnBoard = await Post.find({
@@ -301,7 +301,7 @@ export async function getBoardPostsFromDB(boardId: string, paging: number) {
   return { posts, nextPage };
 }
 
-export async function getMotherAndReplyPostsFromDB(
+export async function getMotherAndReplyPosts(
   motherPostId: ObjectId,
   paging: number,
 ) {
@@ -324,12 +324,12 @@ export async function getMotherAndReplyPostsFromDB(
   return { posts, nextPage };
 }
 
-export async function getPostFromDB(post: string) {
+export async function getPost(post: string) {
   const postInfo = await Post.findOne({ _id: post });
   return postInfo;
 }
 
-export async function searchPostsFromDB(
+export async function searchPosts(
   mustArray: string[],
   shouldArray: string[],
   tagArray: string[],
@@ -458,7 +458,7 @@ export async function changeMotherPostLastUpdateTime(
   }
 }
 
-export async function commentPostToDB(
+export async function commentPost(
   postId: string,
   userId: ObjectId,
   content: string,
@@ -492,7 +492,7 @@ export async function commentPostToDB(
   }
 }
 
-export async function handlelikePostToDB(
+export async function handlelikePost(
   userId: ObjectId,
   postId: string,
   like: boolean,
@@ -527,7 +527,7 @@ export async function handlelikePostToDB(
   if (result.acknowledged === false) throw Error('like a post fail');
 }
 
-export async function handleVotePostToDB(
+export async function handleVotePost(
   userId: ObjectId,
   postId: ObjectId,
   upOrDownVote: boolean,

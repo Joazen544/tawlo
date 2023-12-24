@@ -1,17 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
-import Post, {
-  getRecommendedPosts,
-  getBoardPostsFromDB,
-  getMotherAndReplyPostsFromDB,
-  getPostFromDB,
-  searchPostsFromDB,
-  calculateMotherPostHot,
-  changeMotherPostLastUpdateTime,
-  commentPostToDB,
-  handlelikePostToDB,
-  handleVotePostToDB,
-} from '../models/post';
+import Post, * as postModel from '../models/post';
 import {
   updateUserAction,
   getUserPreference,
@@ -61,7 +50,11 @@ export async function createPost(req: Request, res: Response) {
         return;
       }
 
-      await changeMotherPostLastUpdateTime(motherPost, publishDate, userId);
+      await postModel.changeMotherPostLastUpdateTime(
+        motherPost,
+        publishDate,
+        userId,
+      );
 
       tagsArray = motherPostInfo.tags;
       const postBoard = motherPostInfo.board;
@@ -190,17 +183,15 @@ export async function commentPost(
 
     updateUserAction(userId, commentTarget.tags, commentTarget.board);
 
-    await commentPostToDB(postId, userId, content, publishDate);
+    await postModel.commentPost(postId, userId, content, publishDate);
 
     if (postCategory === 'reply') {
       if (!motherPost) {
         throw Error('reply post must have mother post id');
       }
 
-      await calculateMotherPostHot(motherPost, 'comment', true);
+      await postModel.calculateMotherPostHot(motherPost, 'comment', true);
     }
-
-    // create notification to author
 
     if (commentTarget.author.toString() !== userId.toString()) {
       addNotificationToUserDB(
@@ -244,7 +235,7 @@ export async function likePost(req: Request, res: Response) {
     if (like && ifAlreadyLike) throw Error('user already liked the post');
     if (!like && !ifAlreadyLike) throw Error('user did not like the post');
 
-    await handlelikePostToDB(userId, postId, like);
+    await postModel.handlelikePost(userId, postId, like);
     updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
     if (likeTarget.author.toString() !== userId.toString() && like === true) {
@@ -299,7 +290,7 @@ export async function upvotePost(req: Request, res: Response) {
 
     const motherPost = upvoteTarget.mother_post?.toString();
 
-    await handleVotePostToDB(
+    await postModel.handleVotePost(
       userId,
       upvoteTarget._id,
       true,
@@ -361,7 +352,7 @@ export async function downvotePost(req: Request, res: Response) {
 
     const motherPost = downvoteTarget.mother_post?.toString();
 
-    await handleVotePostToDB(
+    await postModel.handleVotePost(
       userId,
       downvoteTarget._id,
       false,
@@ -398,7 +389,7 @@ export async function getRecommendPosts(req: Request, res: Response) {
       throw Error('No such user, something wrong getting tags');
     }
 
-    const posts = await getRecommendedPosts(
+    const posts = await postModel.getRecommendedPosts(
       preferenceTags,
       userInfo.read_posts,
       'auto',
@@ -435,7 +426,7 @@ export async function getCustomizedPosts(req: Request, res: Response) {
       (tag) => tag.name,
     ) as string[];
 
-    const posts = await getRecommendedPosts(
+    const posts = await postModel.getRecommendedPosts(
       preferenceTags,
       userInfo.read_posts,
       'customized',
@@ -469,7 +460,7 @@ export async function getPostsOnBoard(
       paging = 0;
     }
 
-    const result = await getBoardPostsFromDB(boardId, paging);
+    const result = await postModel.getBoardPosts(boardId, paging);
 
     res.json({ posts: result.posts, nextPage: result.nextPage });
   } catch (err) {
@@ -511,7 +502,10 @@ export async function getMotherAndReplies(
 
     const motherPostId = new ObjectId(motherPost);
 
-    const postsInfo = await getMotherAndReplyPostsFromDB(motherPostId, paging);
+    const postsInfo = await postModel.getMotherAndReplyPosts(
+      motherPostId,
+      paging,
+    );
 
     postsInfo.posts = postsInfo.posts.filter(
       (post) => post.is_delete === false,
@@ -532,7 +526,7 @@ export async function getPost(req: Request, res: Response, next: NextFunction) {
       return;
     }
 
-    const postInfo = await getPostFromDB(id);
+    const postInfo = await postModel.getPost(id);
     if (!postInfo) {
       res.status(400).json({ error: 'post does not exist' });
       return;
@@ -721,7 +715,7 @@ export async function searchPost(
       return;
     }
 
-    const result = await searchPostsFromDB(
+    const result = await postModel.searchPosts(
       mustArray,
       shouldArray,
       tagArray,
