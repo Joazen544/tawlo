@@ -10,7 +10,8 @@ import Post, {
   calculateMotherPostHot,
   changeMotherPostLastUpdateTime,
   commentPostToDB,
-  likePostToDB,
+  handlelikePostToDB,
+  handleVotePostToDB,
 } from '../models/post';
 import {
   updateUserAction,
@@ -107,7 +108,7 @@ export async function createPost(req: Request, res: Response) {
         return;
       }
 
-      await changeMotherPostLastUpdateTime(motherPost, publishDate, user);
+      await changeMotherPostLastUpdateTime(motherPost, publishDate, userId);
 
       tagsArray = motherPostInfo.tags;
       const postBoard = motherPostInfo.board;
@@ -233,13 +234,14 @@ export async function likePost(req: Request, res: Response) {
 
     const likeTarget = await Post.findOne({ _id: postId });
     if (likeTarget === null) throw Error('like target post does not exist');
+    if (likeTarget.category !== 'native') throw Error('target not native');
 
     const ifAlreadyLike = likeTarget.liked?.users?.includes(userId);
 
     if (like && ifAlreadyLike) throw Error('user already liked the post');
     if (!like && !ifAlreadyLike) throw Error('user did not like the post');
 
-    await likePostToDB(userId, postId, like, likeTarget.category);
+    await handlelikePostToDB(userId, postId, like);
     updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
     if (likeTarget.author.toString() !== userId.toString() && like === true) {
@@ -259,14 +261,6 @@ export async function likePost(req: Request, res: Response) {
       );
     }
 
-    if (likeTarget.category === 'reply') {
-      await calculateMotherPostHot(
-        likeTarget.mother_post.toString(),
-        'like',
-        like,
-      );
-    }
-
     res.json({ message: `like post success: ${like}` });
   } catch (err) {
     console.log(err);
@@ -279,290 +273,57 @@ export async function likePost(req: Request, res: Response) {
 }
 
 export async function upvotePost(req: Request, res: Response) {
-  // check if post exist
-  // check post category
-  // deal with upvote
-  // calculate hot
   try {
     const { postId } = req.params;
     const { user, upvote } = req.body;
     const userId = new ObjectId(user);
 
-    // check if the post exist
-    const upvoteTarget = await Post.findOne(
-      {
-        _id: postId,
-      },
-      {
-        _id: 1,
-        upvote: 1,
-        category: 1,
-        mother_post: 1,
-        downvote: 1,
-        tags: 1,
-        board: 1,
-        author: 1,
-      },
-    );
-
-    if (upvoteTarget === null) {
-      throw Error('upvote target post does not exist');
+    if (![true, false].includes(upvote)) {
+      throw Error('upvote should be either true or false');
     }
+
+    const upvoteTarget = await Post.findOne({ _id: postId });
+
+    if (upvoteTarget === null) throw Error('upvote target post does not exist');
 
     updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
 
-    // check if user already upvote the post
     const ifAlreadyUpvote = upvoteTarget.upvote.users.includes(userId);
     const ifAlreadyDownVote = upvoteTarget.downvote.users.includes(userId);
 
-    let increment;
-    let pushOrPull;
-    let adjustUserArray;
-    let message;
-    if (upvote === true) {
-      increment = 1;
-      pushOrPull = '$push';
-      adjustUserArray = {
-        'upvote.users': {
-          $concatArrays: ['$upvote.users', [userId]],
-        },
-      };
-      message = 'upvote';
+    if (upvote && ifAlreadyUpvote) throw Error('user already upvoted the post');
+    if (!upvote && !ifAlreadyUpvote) throw Error('user not upvote the post');
 
-      if (ifAlreadyUpvote === true) {
-        throw Error('user already upvoted the post');
-      }
-    } else if (upvote === false) {
-      increment = -1;
-      pushOrPull = '$pull';
-      adjustUserArray = {
-        'upvote.users': {
-          $filter: {
-            input: '$upvote.users',
-            as: 'user',
-            cond: { $ne: ['$$user', userId] },
-          },
-        },
-      };
-      message = 'disupvote';
+    const motherPost = upvoteTarget.mother_post?.toString();
 
-      if (ifAlreadyUpvote === false) {
-        throw Error('user did not upvote the post');
-      }
-    } else {
-      throw Error('req body must contain key upvote, and it should be boolean');
-    }
+    await handleVotePostToDB(
+      userId,
+      upvoteTarget._id,
+      true,
+      upvote,
+      upvoteTarget.category,
+      ifAlreadyDownVote,
+      motherPost,
+    );
 
-    let result;
-
-    if (
-      upvoteTarget.category === 'mother' ||
-      upvoteTarget.category === 'native'
-    ) {
-      // update upvote and calculate hot
-      result = await Post.updateOne({ _id: postId }, [
-        {
-          $set: { 'upvote.number': { $add: ['$upvote.number', increment] } },
-        },
-        {
-          $set: adjustUserArray,
-        },
-        {
-          $set: {
-            sum_upvotes: { $add: ['$sum_upvotes', increment] },
-          },
-        },
-        {
-          $set: {
-            hot: {
-              $multiply: [
-                100,
-                {
-                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-              ],
-            },
-          },
-        },
-      ]);
-
-      if (result.acknowledged === false) {
-        throw Error(`${message} a post fail`);
-      }
-
-      let cancelDownVoteResult;
-      if (ifAlreadyDownVote && upvote) {
-        // cancel the down vote
-        cancelDownVoteResult = await Post.updateOne({ _id: postId }, [
-          {
-            $set: {
-              'downvote.number': { $add: ['$downvote.number', -1] },
-            },
-          },
-          {
-            $set: {
-              'downvote.users': {
-                $filter: {
-                  input: '$downvote.users',
-                  as: 'user',
-                  cond: {
-                    $ne: ['$$user', userId],
-                  },
-                },
-              },
-            },
-          },
-          {
-            $set: {
-              sum_upvotes: { $add: ['$sum_upvotes', 1] },
-            },
-          },
-          {
-            $set: {
-              hot: {
-                $multiply: [
-                  100,
-                  {
-                    $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                  },
-                ],
-              },
-            },
-          },
-        ]);
-
-        if (cancelDownVoteResult.acknowledged === false) {
-          throw new Error('cancel downvote fail');
-        }
-      }
-
-      if (
-        upvoteTarget.author.toString() !== userId.toString() &&
-        upvote === true
-      ) {
-        addNotificationToUserDB(
-          upvoteTarget.author,
-          'upvote_post',
-          userId,
-          upvoteTarget._id,
-        );
-
-        sendNotificationThroughSocket(
-          upvoteTarget.author.toString(),
-          'upvote_post',
-          '有人覺得你的貼文有用',
-          userId.toString(),
-          upvoteTarget._id.toString(),
-        );
-      }
-
-      res.json({ message: `${message} post success` });
-      return;
-    }
-
-    if (upvoteTarget.category === 'reply') {
-      result = await Post.updateOne(
-        { _id: postId },
-        {
-          $inc: { 'upvote.number': increment },
-          [pushOrPull]: { 'upvote.users': userId },
-        },
+    if (upvoteTarget.author.toString() !== userId.toString()) {
+      addNotificationToUserDB(
+        upvoteTarget.author,
+        'upvote_post',
+        userId,
+        upvoteTarget._id,
       );
 
-      if (result.acknowledged === false) {
-        throw Error('upvote a post fail');
-      }
-
-      const motherPost = upvoteTarget.mother_post.toString();
-
-      const calculateResult = await calculateMotherPostHot(
-        motherPost,
-        'upvote',
-        upvote,
+      sendNotificationThroughSocket(
+        upvoteTarget.author.toString(),
+        'upvote_post',
+        '有人覺得你的貼文有用',
+        userId.toString(),
+        upvoteTarget._id.toString(),
       );
-
-      if (calculateResult !== true) {
-        throw Error('calculate hot fail');
-      }
-
-      if (ifAlreadyDownVote && upvote) {
-        // cancel the down vote
-        // and cancel it from mother post
-        const cancelDownVoteResult = await Post.updateOne({ _id: postId }, [
-          {
-            $set: {
-              'downvote.number': { $add: ['$downvote.number', -1] },
-            },
-          },
-          {
-            $set: {
-              'downvote.users': {
-                $filter: {
-                  input: '$downvote.users',
-                  as: 'user',
-                  cond: {
-                    $ne: ['$$user', userId],
-                  },
-                },
-              },
-            },
-          },
-        ]);
-
-        if (cancelDownVoteResult.acknowledged === false) {
-          throw new Error('cancel downvote fail');
-        }
-
-        const cancelDownVoteFromMotherResult = await Post.updateOne(
-          { _id: motherPost },
-          [
-            {
-              $set: {
-                sum_upvotes: { $add: ['$sum_upvotes', 1] },
-              },
-            },
-            {
-              $set: {
-                hot: {
-                  $multiply: [
-                    100,
-                    {
-                      $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        );
-
-        if (cancelDownVoteFromMotherResult.acknowledged === false) {
-          throw new Error('cancel downvote from mother fail');
-        }
-      }
-
-      if (upvoteTarget.author.toString() !== userId.toString()) {
-        addNotificationToUserDB(
-          upvoteTarget.author,
-          'upvote_post',
-          userId,
-          upvoteTarget._id,
-        );
-
-        sendNotificationThroughSocket(
-          upvoteTarget.author.toString(),
-          'upvote_post',
-          '有人覺得你的貼文有用',
-          userId.toString(),
-          upvoteTarget._id.toString(),
-        );
-      }
-
-      res.json({ message: `${message} post success` });
-      return;
     }
 
-    res.status(500).json({ error: 'something is wrong upvoting a post' });
+    res.json({ message: `upvote post success ${upvote}` });
   } catch (err) {
     console.log(err);
     if (err instanceof Error) {
@@ -574,261 +335,38 @@ export async function upvotePost(req: Request, res: Response) {
 }
 
 export async function downvotePost(req: Request, res: Response) {
-  // check if post exist
-  // check post category
-  // deal with downvote
-  // calculate hot
   try {
     const { postId } = req.params;
     const { user, downvote } = req.body;
     const userId = new ObjectId(user);
 
-    // check if the post exist
-    const downvoteTarget = await Post.findOne(
-      {
-        _id: postId,
-      },
-      {
-        _id: 1,
-        upvote: 1,
-        category: 1,
-        mother_post: 1,
-        downvote: 1,
-        tags: 1,
-        board: 1,
-      },
-    );
-
-    if (downvoteTarget === null) {
-      throw Error('downvote target post does not exist');
+    if (![true, false].includes(downvote)) {
+      throw Error('upvote should be either true or false');
     }
+
+    const downvoteTarget = await Post.findOne({ _id: postId });
+
+    if (downvoteTarget === null) throw Error('target post does not exist');
 
     updateUserAction(userId, downvoteTarget.tags, downvoteTarget.board);
 
-    // check if user already upvote the post
     const ifAlreadyUpvote = downvoteTarget.upvote.users.includes(userId);
     const ifAlreadyDownVote = downvoteTarget.downvote.users.includes(userId);
 
-    let increment;
-    let pushOrPull;
-    let adjustUserArray;
-    let message;
+    if (downvote && ifAlreadyDownVote) throw Error('already downvoted');
+    if (!downvote && !ifAlreadyDownVote) throw Error('not downvoted the post');
 
-    if (downvote === true) {
-      increment = 1;
-      pushOrPull = '$push';
-      adjustUserArray = {
-        'downvote.users': {
-          $concatArrays: ['$downvote.users', [userId]],
-        },
-      };
-      message = 'downvote';
+    const motherPost = downvoteTarget.mother_post?.toString();
 
-      if (ifAlreadyDownVote === true) {
-        throw Error('user already downvoted the post');
-      }
-    } else if (downvote === false) {
-      increment = -1;
-      pushOrPull = '$pull';
-      adjustUserArray = {
-        'downvote.users': {
-          $filter: {
-            input: '$downvote.users',
-            as: 'user',
-            cond: { $ne: ['$$user', userId] },
-          },
-        },
-      };
-      message = 'disdownvote';
-
-      if (ifAlreadyDownVote === false) {
-        throw Error('user did not upvote the post');
-      }
-    } else {
-      throw Error(
-        'req body must contain key downvote, and it should be boolean',
-      );
-    }
-
-    let result;
-
-    if (
-      downvoteTarget.category === 'mother' ||
-      downvoteTarget.category === 'native'
-    ) {
-      // update upvote and calculate hot
-      result = await Post.updateOne({ _id: postId }, [
-        {
-          $set: {
-            'downvote.number': { $add: ['$downvote.number', increment] },
-          },
-        },
-        {
-          $set: adjustUserArray,
-        },
-        {
-          $set: {
-            sum_downvotes: { $add: ['$sum_downvotes', increment] },
-          },
-        },
-        {
-          $set: {
-            hot: {
-              $divide: [
-                {
-                  $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                },
-                {
-                  $add: [
-                    1,
-                    {
-                      $dateDiff: {
-                        startDate: '$publish_date',
-                        endDate: '$$NOW',
-                        unit: 'day',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-        },
-      ]);
-
-      if (result.acknowledged === false) {
-        throw Error(`${message} a post fail`);
-      }
-
-      let cancelUpvoteResult;
-      if (ifAlreadyUpvote && downvote) {
-        // cancel the down vote
-        cancelUpvoteResult = await Post.updateOne({ _id: postId }, [
-          {
-            $set: {
-              'upvote.number': { $add: ['$upvote.number', -1] },
-            },
-          },
-          {
-            $set: {
-              'upvote.users': {
-                $filter: {
-                  input: '$upvote.users',
-                  as: 'user',
-                  cond: {
-                    $ne: ['$$user', userId],
-                  },
-                },
-              },
-            },
-          },
-          {
-            $set: {
-              sum_upvotes: { $add: ['$sum_upvotes', -1] },
-            },
-          },
-          {
-            $set: {
-              hot: {
-                $divide: [
-                  {
-                    $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1],
-                  },
-                  {
-                    $add: [
-                      1,
-                      {
-                        $dateDiff: {
-                          startDate: '$publish_date',
-                          endDate: '$$NOW',
-                          unit: 'day',
-                        },
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-        ]);
-
-        if (cancelUpvoteResult.acknowledged === false) {
-          throw new Error('cancel upvote fail');
-        }
-      }
-
-      res.json({ message: `${message} post success` });
-      return;
-    }
-
-    if (downvoteTarget.category === 'reply') {
-      result = await Post.updateOne(
-        { _id: postId },
-        {
-          $inc: { 'downvote.number': increment },
-          [pushOrPull]: { 'downvote.users': userId },
-        },
-      );
-
-      if (result.acknowledged === false) {
-        throw Error('downvote a post fail');
-      }
-
-      const motherPost = downvoteTarget.mother_post.toString();
-
-      const calculateResult = await calculateMotherPostHot(
-        motherPost,
-        'upvote',
-        !downvote,
-      );
-
-      if (calculateResult !== true) {
-        throw Error('calculate hot fail');
-      }
-
-      let cancelUpvoteResult;
-      // ////////////////////
-      if (ifAlreadyUpvote && downvote) {
-        // cancel the down vote
-        cancelUpvoteResult = await Post.updateOne({ _id: postId }, [
-          {
-            $set: {
-              'upvote.number': { $add: ['$upvote.number', -1] },
-            },
-          },
-          {
-            $set: {
-              'upvote.users': {
-                $filter: {
-                  input: '$upvote.users',
-                  as: 'user',
-                  cond: {
-                    $ne: ['$$user', userId],
-                  },
-                },
-              },
-            },
-          },
-        ]);
-
-        if (cancelUpvoteResult.acknowledged === false) {
-          throw new Error('cancel downvote fail');
-        }
-
-        const cancelUpvoteFromMotherResult = await calculateMotherPostHot(
-          motherPost,
-          'upvote',
-          false,
-        );
-
-        if (cancelUpvoteFromMotherResult === false) {
-          throw new Error('cancel downvote from mother fail');
-        }
-      }
-
-      res.json({ message: `${message} post success` });
-      return;
-    }
+    await handleVotePostToDB(
+      userId,
+      downvoteTarget._id,
+      false,
+      downvote,
+      downvoteTarget.category,
+      ifAlreadyUpvote,
+      motherPost,
+    );
 
     res.status(500).json({ error: 'something is wrong downvoting a post' });
   } catch (err) {
@@ -852,14 +390,12 @@ export async function getRecommendPosts(req: Request, res: Response) {
     const userInfo = (await getUserPreference(userId)) as UserDocument;
 
     let preferenceTags;
-    // let recommendMode;
     if (userInfo) {
       preferenceTags = userInfo.preference_tags.map(
         (tag) => tag.name,
       ) as string[];
-      // recommendMode = userInfo.recommend_mode;
     } else {
-      throw Error('No such user, something wrong getting posts');
+      throw Error('No such user, something wrong getting tags');
     }
 
     const posts = await getAutoRecommendedPosts(

@@ -1,8 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { AggregationInterface } from './meeting';
-
-// { PipelineStage }
 
 const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
@@ -135,29 +133,16 @@ const CALCULATE_POST_HOT_QUERY = {
   },
 };
 
+const RECOMMENDATION_TAG_MAX_SCORE = 100;
+
 export async function getAutoRecommendedPosts(
   preferenceTags: string[],
   read_posts: ObjectId[],
 ) {
-  const aggregateArray = [];
+  const aggregateArray: PipelineStage[] = [];
   aggregateArray.push(
-    {
-      $match: {
-        is_delete: false,
-      },
-    },
-    {
-      $match: {
-        $or: [
-          {
-            category: 'mother',
-          },
-          {
-            category: 'native',
-          },
-        ],
-      },
-    },
+    { $match: { is_delete: false } },
+    { $match: { $or: [{ category: 'mother' }, { category: 'native' }] } },
     {
       $addFields: {
         score: 0,
@@ -172,7 +157,7 @@ export async function getAutoRecommendedPosts(
     },
   );
 
-  let scoring = 100;
+  let scoring = RECOMMENDATION_TAG_MAX_SCORE;
 
   preferenceTags.forEach((tag) => {
     aggregateArray.push({
@@ -292,7 +277,6 @@ export async function getAutoRecommendedPosts(
     },
   );
 
-  // @ts-ignore
   const posts = await Post.aggregate(aggregateArray);
 
   return posts;
@@ -337,7 +321,7 @@ export async function getCustomizedPostsFromDB(
     },
   );
 
-  let scoring = 100;
+  let scoring = RECOMMENDATION_TAG_MAX_SCORE;
 
   preferenceTags.forEach((tag) => {
     aggregateArray.push({
@@ -664,7 +648,7 @@ export async function calculateMotherPostHot(
 export async function changeMotherPostLastUpdateTime(
   motherPost: string,
   updateDate: Date,
-  lastReplier: string,
+  lastReplier: ObjectId,
 ) {
   const updateMotherResult = await Post.updateOne(
     { _id: motherPost },
@@ -718,14 +702,12 @@ export async function commentPostToDB(
   }
 }
 
-export async function likePostToDB(
+export async function handlelikePostToDB(
   userId: ObjectId,
   postId: string,
   like: boolean,
-  category: string,
 ) {
   const increment = like ? 1 : -1;
-  const pushOrPull = like ? '$push' : '$pull';
   let adjustUserArray;
   if (like) {
     adjustUserArray = {
@@ -745,27 +727,106 @@ export async function likePostToDB(
     };
   }
 
-  if (category === 'mother' || category === 'native') {
-    const result = await Post.updateOne({ _id: postId }, [
-      { $set: { 'liked.number': { $add: ['$liked.number', increment] } } },
-      { $set: adjustUserArray },
-      { $set: { sum_likes: { $add: ['$sum_likes', increment] } } },
-      CALCULATE_POST_HOT_QUERY,
-    ]);
+  const result = await Post.updateOne({ _id: postId }, [
+    { $set: { 'liked.number': { $add: ['$liked.number', increment] } } },
+    { $set: adjustUserArray },
+    { $set: { sum_likes: { $add: ['$sum_likes', increment] } } },
+    CALCULATE_POST_HOT_QUERY,
+  ]);
 
-    if (result.acknowledged === false) throw Error('like a post fail');
+  if (result.acknowledged === false) throw Error('like a post fail');
+}
+
+export async function handleVotePostToDB(
+  userId: ObjectId,
+  postId: ObjectId,
+  upOrDownVote: boolean,
+  voteOrCancel: boolean,
+  category: string,
+  ifAlreadyOppositeVote: boolean,
+  motherPost: string | undefined,
+) {
+  const increment = voteOrCancel ? 1 : -1;
+  let adjustUserArray;
+
+  const USERS = upOrDownVote ? 'upvote.users' : 'downvote.users';
+  const OPPOSITE_USERS = upOrDownVote ? 'downvote.users' : 'upvote.users';
+
+  const NUMBER = upOrDownVote ? 'upvote.number' : 'downvote.number';
+  const OPPOSITE_NUMBER = upOrDownVote ? 'downvote.number' : 'upvote.number';
+
+  if (voteOrCancel) {
+    adjustUserArray = {
+      [USERS]: {
+        $concatArrays: [`$${USERS}`, [userId]],
+      },
+    };
+  } else {
+    adjustUserArray = {
+      [USERS]: {
+        $filter: {
+          input: `$${USERS}`,
+          as: 'user',
+          cond: { $ne: ['$$user', userId] },
+        },
+      },
+    };
+  }
+
+  let sumIncrement = ifAlreadyOppositeVote ? increment * 2 : increment;
+  sumIncrement = upOrDownVote ? sumIncrement : -sumIncrement;
+
+  const aggregateArray: PipelineStage[] = [
+    { $set: { [NUMBER]: { $add: [`$${NUMBER}`, increment] } } },
+    { $set: adjustUserArray },
+  ];
+
+  if (ifAlreadyOppositeVote && voteOrCancel) {
+    aggregateArray.push({
+      $set: { [OPPOSITE_NUMBER]: { $add: [`$${OPPOSITE_NUMBER}`, -1] } },
+    });
+    aggregateArray.push({
+      $set: {
+        [OPPOSITE_USERS]: {
+          $filter: {
+            input: `$${OPPOSITE_USERS}`,
+            as: 'user',
+            cond: { $ne: ['$$user', userId] },
+          },
+        },
+      },
+    });
+  }
+
+  if (category === 'mother' || category === 'native') {
+    aggregateArray.push({
+      $set: { sum_upvotes: { $add: ['$sum_upvotes', sumIncrement] } },
+    });
+
+    aggregateArray.push(CALCULATE_POST_HOT_QUERY);
+  }
+
+  const result = await Post.updateOne({ _id: postId }, aggregateArray);
+
+  if (result.acknowledged === false) {
+    throw Error(`upvote a post fail: ${voteOrCancel}`);
   }
 
   if (category === 'reply') {
-    const result = await Post.updateOne(
-      { _id: postId },
-      {
-        $inc: { 'liked.number': increment },
-        [pushOrPull]: { 'liked.users': userId },
-      },
+    if (!motherPost) {
+      throw new Error('no mother post id updating upvote');
+    }
+    const cancelDownVoteFromMotherResult = await Post.updateOne(
+      { _id: motherPost },
+      [
+        { $set: { sum_upvotes: { $add: ['$sum_upvotes', sumIncrement] } } },
+        CALCULATE_POST_HOT_QUERY,
+      ],
     );
 
-    if (result.acknowledged === false) throw Error('like a post fail');
+    if (cancelDownVoteFromMotherResult.acknowledged === false) {
+      throw new Error('cancel downvote from mother fail');
+    }
   }
 }
 
