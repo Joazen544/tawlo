@@ -1,12 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import Post, {
-  getAutoRecommendedPosts,
+  getRecommendedPosts,
   getBoardPostsFromDB,
   getMotherAndReplyPostsFromDB,
   getPostFromDB,
   searchPostsFromDB,
-  getCustomizedPostsFromDB,
   calculateMotherPostHot,
   changeMotherPostLastUpdateTime,
   commentPostToDB,
@@ -53,53 +52,7 @@ export async function createPost(req: Request, res: Response) {
     let postData;
     let tagsArray: string[] = [];
 
-    if (category === 'native') {
-      if (!tags) {
-        res.status(400).json({ error: 'A mother post should have tag' });
-        return;
-      }
-
-      tagsArray = Array.isArray(tags)
-        ? tags.map((tag) => tag.toLowerCase())
-        : [tags.toLowerCase()].filter(Boolean);
-
-      postData = await Post.create({
-        category,
-        author: userId,
-        content,
-        publish_date: publishDate,
-        update_date: publishDate,
-        tags: tagsArray,
-      });
-    } else if (category === 'mother') {
-      if (!title) {
-        res.status(400).json({ error: 'A mother post should have title' });
-        return;
-      }
-      if (!board) {
-        res.status(400).json({ error: 'A mother post should have a board' });
-        return;
-      }
-      if (!tags) {
-        res.status(400).json({ error: 'A mother post should have tag' });
-        return;
-      }
-
-      tagsArray = Array.isArray(tags)
-        ? tags.map((tag) => tag.toLowerCase())
-        : [tags.toLowerCase()].filter(Boolean);
-
-      postData = await Post.create({
-        category,
-        author: userId,
-        title,
-        content,
-        publish_date: publishDate,
-        update_date: publishDate,
-        tags: tagsArray,
-        board,
-      });
-    } else if (category === 'reply') {
+    if (category === 'reply') {
       const motherPostInfo = await Post.findOne({ _id: motherPost });
 
       if (!motherPostInfo) {
@@ -140,6 +93,56 @@ export async function createPost(req: Request, res: Response) {
           postData._id.toString(),
         );
       }
+    }
+
+    if (category === 'native') {
+      if (!tags) {
+        res.status(400).json({ error: 'A native post should have tag' });
+        return;
+      }
+
+      tagsArray = Array.isArray(tags)
+        ? tags.map((tag) => tag.toLowerCase())
+        : [tags.toLowerCase()].filter(Boolean);
+
+      postData = await Post.create({
+        category,
+        author: userId,
+        content,
+        publish_date: publishDate,
+        update_date: publishDate,
+        tags: tagsArray,
+      });
+    }
+
+    if (category === 'mother') {
+      if (!title) {
+        res.status(400).json({ error: 'A mother post should have title' });
+        return;
+      }
+      if (!board) {
+        res.status(400).json({ error: 'A mother post should have a board' });
+        return;
+      }
+      if (!tags) {
+        res.status(400).json({ error: 'A mother post should have tag' });
+        return;
+      }
+
+      tagsArray = Array.isArray(tags)
+        ? tags.map((tag) => tag.toLowerCase())
+        : [tags.toLowerCase()].filter(Boolean);
+
+      postData = await Post.create({
+        category,
+        author: userId,
+        title,
+        content,
+        publish_date: publishDate,
+        update_date: publishDate,
+        tags: tagsArray,
+        board,
+      });
     }
 
     try {
@@ -380,9 +383,6 @@ export async function downvotePost(req: Request, res: Response) {
 }
 
 export async function getRecommendPosts(req: Request, res: Response) {
-  // take user preference info, recommend mode
-  // take posts from post model using the info
-
   try {
     const { user } = req.body;
 
@@ -398,9 +398,11 @@ export async function getRecommendPosts(req: Request, res: Response) {
       throw Error('No such user, something wrong getting tags');
     }
 
-    const posts = await getAutoRecommendedPosts(
+    const posts = await getRecommendedPosts(
       preferenceTags,
       userInfo.read_posts,
+      'auto',
+      undefined,
     );
 
     res.json(posts);
@@ -433,10 +435,11 @@ export async function getCustomizedPosts(req: Request, res: Response) {
       (tag) => tag.name,
     ) as string[];
 
-    const posts = await getCustomizedPostsFromDB(
-      tagsArray,
+    const posts = await getRecommendedPosts(
       preferenceTags,
       userInfo.read_posts,
+      'customized',
+      tagsArray,
     );
 
     res.json(posts);
@@ -467,7 +470,6 @@ export async function getPostsOnBoard(
     }
 
     const result = await getBoardPostsFromDB(boardId, paging);
-    // console.log(result);
 
     res.json({ posts: result.posts, nextPage: result.nextPage });
   } catch (err) {

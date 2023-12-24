@@ -36,7 +36,3 @@ export async function getBoardName(
     next(err);
   }
 }
-
-export async function createBoard() {
-  return 0;
-}

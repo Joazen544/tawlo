@@ -4,9 +4,21 @@ import { AggregationInterface } from './meeting';
 
 const MOTHER_POST_PER_PAGE = 20;
 const REPLY_POST_PER_PAGE = 10;
+const RECOMMENDATION_POSTS_PER_CALCULATE = 50;
 const SEARCH_POST_PER_PAGE = 20;
 
 const LIKE_COMMENT_UPVOTE_HOT_SCORE = 100;
+
+const CALCULATE_POST_HOT_QUERY = {
+  $set: {
+    hot: {
+      $multiply: [
+        LIKE_COMMENT_UPVOTE_HOT_SCORE,
+        { $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1] },
+      ],
+    },
+  },
+};
 
 interface PostDocument {
   is_delete: boolean;
@@ -122,40 +134,56 @@ const postSchema = new mongoose.Schema<PostDocument>({
 
 const Post = mongoose.model('Post', postSchema);
 
-const CALCULATE_POST_HOT_QUERY = {
-  $set: {
-    hot: {
-      $multiply: [
-        LIKE_COMMENT_UPVOTE_HOT_SCORE,
-        { $add: ['$sum_likes', '$sum_upvotes', '$sum_comments', 1] },
-      ],
-    },
-  },
-};
-
-const RECOMMENDATION_TAG_MAX_SCORE = 100;
-
-export async function getAutoRecommendedPosts(
+export async function getRecommendedPosts(
   preferenceTags: string[],
   read_posts: ObjectId[],
+  category: string,
+  tags: string[] | undefined,
 ) {
+  const TIME_SCORE = 50;
+
+  const CALCULATE_TIME_SCORE_QUERY = {
+    $multiply: [
+      TIME_SCORE,
+      {
+        $dateDiff: {
+          startDate: '$$NOW',
+          endDate: '$update_date',
+          unit: 'day',
+        },
+      },
+    ],
+  };
+
+  const RECOMMENDATION_TAG_MAX_SCORE = 100;
+  const RECOMMENDATION_TAG_EACH_MULTIPLE_SCORE = 20;
+  const RECOMMENDATION_TAG_EACH_REDUCE_SCORE = 10;
   const aggregateArray: PipelineStage[] = [];
+
   aggregateArray.push(
     { $match: { is_delete: false } },
     { $match: { $or: [{ category: 'mother' }, { category: 'native' }] } },
-    {
-      $addFields: {
-        score: 0,
-        time: {
-          $dateDiff: {
-            startDate: '$$NOW',
-            endDate: '$publish_date',
-            unit: 'hour',
-          },
+  );
+
+  if (category === 'customized') {
+    if (!tags || tags.length === 0) {
+      throw new Error('customized recommendation should have tags');
+    }
+    aggregateArray.push({ $match: { tags: { $in: tags } } });
+  }
+
+  aggregateArray.push({
+    $addFields: {
+      score: 0,
+      time: {
+        $dateDiff: {
+          startDate: '$$NOW',
+          endDate: '$publish_date',
+          unit: 'hour',
         },
       },
     },
-  );
+  });
 
   let scoring = RECOMMENDATION_TAG_MAX_SCORE;
 
@@ -164,21 +192,20 @@ export async function getAutoRecommendedPosts(
       $set: {
         score: {
           $cond: [
+            { $in: [tag, '$tags'] },
             {
-              $in: [tag, '$tags'],
+              $add: [
+                '$score',
+                scoring * RECOMMENDATION_TAG_EACH_MULTIPLE_SCORE,
+              ],
             },
-            {
-              $add: ['$score', scoring * 20],
-            },
-            {
-              $add: ['$score', 0],
-            },
+            { $add: ['$score', 0] },
           ],
         },
       },
     });
 
-    scoring -= 10;
+    scoring -= RECOMMENDATION_TAG_EACH_REDUCE_SCORE;
   });
 
   aggregateArray.push(
@@ -205,50 +232,18 @@ export async function getAutoRecommendedPosts(
                     },
                   ],
                 },
-                // {
-                //   $multiply: [
-                //     200,
-                //     {
-                //       $dateDiff: {
-                //         startDate: '$$NOW',
-                //         endDate: '$update_date',
-                //         unit: 'day',
-                //       },
-                //     },
-                //   ],
-                // },
+                CALCULATE_TIME_SCORE_QUERY,
               ],
             },
             {
-              $add: [
-                '$score',
-                '$hot',
-                // {
-                //   $multiply: [
-                //     200,
-                //     {
-                //       $dateDiff: {
-                //         startDate: '$$NOW',
-                //         endDate: '$update_date',
-                //         unit: 'day',
-                //       },
-                //     },
-                //   ],
-                // },
-              ],
+              $add: ['$score', '$hot', CALCULATE_TIME_SCORE_QUERY],
             },
           ],
         },
       },
     },
-    {
-      $sort: {
-        score: -1,
-      },
-    },
-    {
-      $limit: 50,
-    },
+    { $sort: { score: -1 } },
+    { $limit: RECOMMENDATION_POSTS_PER_CALCULATE },
     {
       $project: {
         _id: 1,
@@ -277,171 +272,6 @@ export async function getAutoRecommendedPosts(
     },
   );
 
-  const posts = await Post.aggregate(aggregateArray);
-
-  return posts;
-}
-
-export async function getCustomizedPostsFromDB(
-  tags: string[],
-  preferenceTags: string[],
-  read_posts: ObjectId[],
-) {
-  const aggregateArray = [];
-  aggregateArray.push(
-    {
-      $match: {
-        is_delete: false,
-      },
-    },
-    {
-      $match: {
-        $or: [
-          {
-            category: 'mother',
-          },
-          {
-            category: 'native',
-          },
-        ],
-        tags: { $in: tags },
-      },
-    },
-    {
-      $addFields: {
-        score: 0,
-        time: {
-          $dateDiff: {
-            startDate: '$$NOW',
-            endDate: '$publish_date',
-            unit: 'hour',
-          },
-        },
-      },
-    },
-  );
-
-  let scoring = RECOMMENDATION_TAG_MAX_SCORE;
-
-  preferenceTags.forEach((tag) => {
-    aggregateArray.push({
-      $set: {
-        score: {
-          $cond: [
-            {
-              $in: [tag, '$tags'],
-            },
-            {
-              $add: ['$score', scoring * 20],
-            },
-            {
-              $add: ['$score', 0],
-            },
-          ],
-        },
-      },
-    });
-
-    scoring -= 10;
-  });
-
-  aggregateArray.push(
-    {
-      $set: {
-        score: {
-          $cond: [
-            { $in: ['$_id', read_posts] },
-            {
-              $add: [
-                '$score',
-                '$hot',
-                {
-                  $multiply: [
-                    -300,
-                    {
-                      $size: {
-                        $filter: {
-                          input: read_posts,
-                          as: 'post',
-                          cond: { $eq: ['$$post', '$_id'] },
-                        },
-                      },
-                    },
-                  ],
-                },
-                // {
-                //   $multiply: [
-                //     200,
-                //     {
-                //       $dateDiff: {
-                //         startDate: '$$NOW',
-                //         endDate: '$update_date',
-                //         unit: 'day',
-                //       },
-                //     },
-                //   ],
-                // },
-              ],
-            },
-            {
-              $add: [
-                '$score',
-                '$hot',
-                // {
-                //   $multiply: [
-                //     200,
-                //     {
-                //       $dateDiff: {
-                //         startDate: '$$NOW',
-                //         endDate: '$update_date',
-                //         unit: 'day',
-                //       },
-                //     },
-                //   ],
-                // },
-              ],
-            },
-          ],
-        },
-      },
-    },
-    {
-      $sort: {
-        score: -1,
-      },
-    },
-    {
-      $limit: 50,
-    },
-    {
-      $project: {
-        _id: 1,
-        category: 1,
-        board: 1,
-        hot: 1,
-        score: 1,
-        tags: 1,
-        time: 1,
-        title: 1,
-        author: 1,
-        publish_date: 1,
-        update_date: 1,
-        content: 1,
-        edit: 1,
-        liked: 1,
-        sum_likes: 1,
-        sum_upvotes: 1,
-        sum_comments: 1,
-        sum_reply: 1,
-        last_reply: 1,
-        upvote: 1,
-        downvote: 1,
-        comments: 1,
-      },
-    },
-  );
-
-  // @ts-ignore
   const posts = await Post.aggregate(aggregateArray);
 
   return posts;
@@ -512,31 +342,19 @@ export async function searchPostsFromDB(
 
   mustArray.forEach((must) => {
     postContentMustArray.push({
-      phrase: {
-        query: `${must}`,
-        path: 'content',
-      },
+      phrase: { query: `${must}`, path: 'content' },
     });
     postTitleShouldArray.push({
-      phrase: {
-        query: `${must}`,
-        path: 'title',
-      },
+      phrase: { query: `${must}`, path: 'title' },
     });
   });
 
   shouldArray.forEach((should) => {
     postContentShouldArray.push({
-      phrase: {
-        query: `${should}`,
-        path: 'content',
-      },
+      phrase: { query: `${should}`, path: 'content' },
     });
     postTitleShouldArray.push({
-      phrase: {
-        query: `${should}`,
-        path: 'title',
-      },
+      phrase: { query: `${should}`, path: 'title' },
     });
   });
 
@@ -547,29 +365,16 @@ export async function searchPostsFromDB(
   ];
 
   tagArray.forEach((tag) => {
-    tagShouldArray.push({
-      phrase: {
-        query: `${tag}`,
-        path: 'tags',
-      },
-    });
+    tagShouldArray.push({ phrase: { query: `${tag}`, path: 'tags' } });
   });
 
   const mustAllArray = [];
   if (tagShouldArray.length > 0) {
-    mustAllArray.push({
-      compound: {
-        should: tagShouldArray,
-      },
-    });
+    mustAllArray.push({ compound: { should: tagShouldArray } });
   }
 
   if (postContentMustArray.length > 0) {
-    mustAllArray.push({
-      compound: {
-        must: postContentMustArray,
-      },
-    });
+    mustAllArray.push({ compound: { must: postContentMustArray } });
   }
 
   const result = await Post.aggregate<PostDocument>([
@@ -583,18 +388,9 @@ export async function searchPostsFromDB(
         },
       },
     },
-    {
-      $match: {
-        is_delete: false,
-        category: { $ne: 'reply' },
-      },
-    },
-    {
-      $skip: SEARCH_POST_PER_PAGE * paging,
-    },
-    {
-      $limit: SEARCH_POST_PER_PAGE + 1,
-    },
+    { $match: { is_delete: false, category: { $ne: 'reply' } } },
+    { $skip: SEARCH_POST_PER_PAGE * paging },
+    { $limit: SEARCH_POST_PER_PAGE + 1 },
   ]);
 
   let ifNextPage = false;
@@ -615,17 +411,11 @@ export async function calculateMotherPostHot(
   increaseField: string,
   increase: boolean,
 ) {
-  let field = '';
-
-  if (increaseField === 'comment') {
-    field = 'sum_comments';
-  } else if (increaseField === 'like') {
-    field = 'sum_likes';
-  } else if (increaseField === 'upvote') {
-    field = 'sum_upvotes';
-  } else {
+  if (!['comment', 'like', 'upvote'].includes(increaseField)) {
     throw Error('the increase field sent to calculate hot function is wrong');
   }
+
+  const field = `sum_${increaseField}s`; // 不過可能會要處理英文不規則變化? XD
 
   const num = increase === true ? 1 : -1;
 
