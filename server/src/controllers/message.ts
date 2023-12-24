@@ -41,6 +41,12 @@ export async function clickChatRoom(
     const target = req.query.target as string;
     const group = req.query.group as string;
 
+    if (!target && !group) {
+      throw new ValidationError(
+        'There must be target user id or chat room id in the query',
+      );
+    }
+
     const userId = new ObjectId(user);
 
     let targetId;
@@ -56,8 +62,6 @@ export async function clickChatRoom(
         users: { $all: [userId, targetId] },
       });
 
-      // console.log(messageGroup);
-
       if (messageGroup === null) {
         const messageGroupCreated = await MessageGroup.create({
           users: [userId, targetId],
@@ -66,8 +70,6 @@ export async function clickChatRoom(
           update_time: new Date(),
           last_message: 'No message yet',
         });
-
-        // console.log(messageGroupCreated);
 
         res.json({
           situation: 'second',
@@ -78,18 +80,13 @@ export async function clickChatRoom(
         });
         return;
       }
-    } else if (group) {
+    } else {
       const groupId = new ObjectId(group);
 
       messageGroup = await MessageGroup.findOne({
         _id: groupId,
       });
-    } else {
-      throw new ValidationError(
-        'There must be target user id or chat room id in the query',
-      );
     }
-    // console.log(messageGroup);
 
     if (messageGroup === null) {
       throw new ValidationError('This chat room does not exist');

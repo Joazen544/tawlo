@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import http from 'http';
 import { verify } from '../utils/JWT';
-import { getUserFriendsFromDB } from '../models/user';
+import { getUserFriends } from '../models/user';
 import redisClient from '../utils/redis';
 
 interface UserConnected {
@@ -78,7 +78,7 @@ export function initSocket(server: http.Server) {
 
       // get user friends and notify them
       try {
-        const friendsArray = await getUserFriendsFromDB(data.userId);
+        const friendsArray = await getUserFriends(data.userId);
         redisClient.set(`${data.userId}friends`, JSON.stringify(friendsArray));
         const onlineFriends: string[] = [];
         friendsArray.forEach((friendId) => {

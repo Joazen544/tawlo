@@ -141,6 +141,7 @@ export async function getRecommendedPosts(
   tags: string[] | undefined,
 ) {
   const TIME_SCORE = 50;
+  const READ_POST_MINUS = -500;
 
   const CALCULATE_TIME_SCORE_QUERY = {
     $multiply: [
@@ -220,7 +221,7 @@ export async function getRecommendedPosts(
                 '$hot',
                 {
                   $multiply: [
-                    -300,
+                    READ_POST_MINUS,
                     {
                       $size: {
                         $filter: {

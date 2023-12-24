@@ -155,8 +155,6 @@ export async function getMeeting(
       { $project: { meeting: 1, meeting_status: 1 } },
     ]);
 
-    // console.log(result[0].meeting_status);
-
     if (result[0] && result[0].meeting_status === 'none') {
       res.json({ status: 'none', message: 'no meeting now' });
       return;
@@ -164,7 +162,6 @@ export async function getMeeting(
 
     let targetIndex: number = -1;
     let userIndex: number = -1;
-    // console.log(result[0]);
 
     if (!result[0].meeting[0]) {
       res.status(400).json({ error: 'the meeting does not exist' });
@@ -173,12 +170,8 @@ export async function getMeeting(
 
     result[0].meeting[0].users.forEach((userInfo: ObjectId, index: number) => {
       if (userInfo.toString() === user) {
-        // console.log('weee');
-
         userIndex = index;
       } else {
-        // console.log('aaaa');
-
         targetIndex = index;
       }
     });
@@ -203,8 +196,6 @@ export async function getMeeting(
       });
       return;
     }
-
-    // console.log(JSON.stringify(result[0], null, 4));
 
     if (userIndex >= 0 && targetIndex >= 0) {
       res.json({
@@ -253,8 +244,6 @@ export async function replyMeeting(
     const { user, reply } = req.body;
     const { meetingId } = req.params;
 
-    // reply: accept, deny
-
     if (!reply || !meetingId) {
       res
         .status(400)
@@ -262,8 +251,9 @@ export async function replyMeeting(
       return;
     }
 
-    if (reply !== 'accept' && reply !== 'deny') {
+    if (!['accept', 'deny'].includes(reply)) {
       res.status(400).json({ error: 'reply must be accept or deny' });
+      return;
     }
     const meeting = await Meeting.findOne<meetingModel.MeetingDocument>({
       _id: meetingId,
@@ -338,6 +328,7 @@ export async function replyMeeting(
 
       // open a chat for them
       req.query.target = meeting.accept[0].toString();
+
       next();
       return;
     }
