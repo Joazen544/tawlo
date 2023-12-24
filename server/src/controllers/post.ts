@@ -1,18 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import Post, * as postModel from '../models/post';
-import {
-  updateUserAction,
-  getUserPreference,
-  UserDocument,
-  addNotificationToUserDB,
-} from '../models/user';
-import {
-  addPostTagsToDB,
-  getAutoCompleteTags,
-  getRelevantTagsFromDB,
-  getHotTagsFromDB,
-} from '../models/tag';
+import * as userModel from '../models/user';
+import * as tagModel from '../models/tag';
 import { sendNotificationThroughSocket } from './socket';
 import { ValidationError } from '../utils/errorHandler';
 
@@ -71,7 +61,7 @@ export async function createPost(req: Request, res: Response) {
       });
 
       if (motherPostInfo.author.toString() !== userId.toString()) {
-        addNotificationToUserDB(
+        userModel.addNotificationToUserDB(
           motherPostInfo.author,
           'reply_post',
           userId,
@@ -139,7 +129,7 @@ export async function createPost(req: Request, res: Response) {
     }
 
     try {
-      addPostTagsToDB(tagsArray);
+      tagModel.addPostTagsToDB(tagsArray);
     } catch (err) {
       console.log(err);
       console.log('something goes wrong adding post tags to DB');
@@ -181,7 +171,7 @@ export async function commentPost(
       motherPost = commentTarget.mother_post.toString();
     }
 
-    updateUserAction(userId, commentTarget.tags, commentTarget.board);
+    userModel.updateUserAction(userId, commentTarget.tags, commentTarget.board);
 
     await postModel.commentPost(postId, userId, content, publishDate);
 
@@ -194,7 +184,7 @@ export async function commentPost(
     }
 
     if (commentTarget.author.toString() !== userId.toString()) {
-      addNotificationToUserDB(
+      userModel.addNotificationToUserDB(
         commentTarget.author,
         'comment_post',
         userId,
@@ -236,10 +226,10 @@ export async function likePost(req: Request, res: Response) {
     if (!like && !ifAlreadyLike) throw Error('user did not like the post');
 
     await postModel.handlelikePost(userId, postId, like);
-    updateUserAction(userId, likeTarget.tags, likeTarget.board);
+    userModel.updateUserAction(userId, likeTarget.tags, likeTarget.board);
 
     if (likeTarget.author.toString() !== userId.toString() && like === true) {
-      addNotificationToUserDB(
+      userModel.addNotificationToUserDB(
         likeTarget.author,
         'like_post',
         userId,
@@ -280,7 +270,7 @@ export async function upvotePost(req: Request, res: Response) {
 
     if (upvoteTarget === null) throw Error('upvote target post does not exist');
 
-    updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
+    userModel.updateUserAction(userId, upvoteTarget.tags, upvoteTarget.board);
 
     const ifAlreadyUpvote = upvoteTarget.upvote.users.includes(userId);
     const ifAlreadyDownVote = upvoteTarget.downvote.users.includes(userId);
@@ -301,7 +291,7 @@ export async function upvotePost(req: Request, res: Response) {
     );
 
     if (upvoteTarget.author.toString() !== userId.toString()) {
-      addNotificationToUserDB(
+      userModel.addNotificationToUserDB(
         upvoteTarget.author,
         'upvote_post',
         userId,
@@ -342,7 +332,11 @@ export async function downvotePost(req: Request, res: Response) {
 
     if (downvoteTarget === null) throw Error('target post does not exist');
 
-    updateUserAction(userId, downvoteTarget.tags, downvoteTarget.board);
+    userModel.updateUserAction(
+      userId,
+      downvoteTarget.tags,
+      downvoteTarget.board,
+    );
 
     const ifAlreadyUpvote = downvoteTarget.upvote.users.includes(userId);
     const ifAlreadyDownVote = downvoteTarget.downvote.users.includes(userId);
@@ -378,7 +372,9 @@ export async function getRecommendPosts(req: Request, res: Response) {
     const { user } = req.body;
 
     const userId = new ObjectId(user);
-    const userInfo = (await getUserPreference(userId)) as UserDocument;
+    const userInfo = (await userModel.getUserPreference(
+      userId,
+    )) as userModel.UserDocument;
 
     let preferenceTags;
     if (userInfo) {
@@ -415,7 +411,9 @@ export async function getCustomizedPosts(req: Request, res: Response) {
       res.status(400).json({ error: 'no tags' });
       return;
     }
-    const userInfo = (await getUserPreference(user)) as UserDocument;
+    const userInfo = (await userModel.getUserPreference(
+      user,
+    )) as userModel.UserDocument;
 
     let tagsArray: string[] = [];
     if (tags !== undefined) {
@@ -599,7 +597,7 @@ export async function getAutoTags(
       return;
     }
 
-    const tags = await getAutoCompleteTags(search);
+    const tags = await tagModel.getAutoCompleteTags(search);
 
     res.json(tags);
   } catch (err) {
@@ -613,7 +611,7 @@ export async function getHotTags(
   next: NextFunction,
 ) {
   try {
-    const tags = await getHotTagsFromDB();
+    const tags = await tagModel.getHotTagsFromDB();
 
     res.json(tags);
   } catch (err) {
@@ -639,7 +637,7 @@ export async function getRelevantTags(
       return;
     }
 
-    const tags = await getRelevantTagsFromDB(tag);
+    const tags = await tagModel.getRelevantTagsFromDB(tag);
 
     if (tags === 'error') {
       res.status(400).json({ error: 'tag not found' });

@@ -1,19 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import fs from 'fs';
-import User, {
-  UserDocument,
-  updateUserReadPosts,
-  getUserRelationFromDB,
-  createRelation,
-  cancelRequestFromDB,
-  getNotificationsFromDB,
-  readNotificationsFromDB,
-  addNotificationToUserDB,
-  getUserInfoFromDB,
-  refuseRequestFromDB,
-  getUserFriendsFromDB,
-} from '../models/user';
+import User, * as userModel from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
 import { sendNotificationThroughSocket } from './socket';
 import 'dotenv';
@@ -75,9 +63,9 @@ export async function signIn(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
 
-    const userData: UserDocument = await User.findOne({ email }).select(
-      '+password',
-    );
+    const userData: userModel.UserDocument = await User.findOne({
+      email,
+    }).select('+password');
 
     if (
       !userData ||
@@ -120,7 +108,7 @@ export async function updateUserRead(req: Request, res: Response) {
 
     const userId = new ObjectId(user);
 
-    updateUserReadPosts(userId, postsId);
+    userModel.updateUserReadPosts(userId, postsId);
 
     res.json({ message: 'Update success' });
   } catch (err) {
@@ -170,7 +158,7 @@ export async function getUserInfo(
       console.log('something is wrong getting user info from redis');
     }
 
-    const userInfo = await getUserInfoFromDB(id);
+    const userInfo = await userModel.getUserInfoFromDB(id);
 
     if (!userInfo) {
       res.status(400).json({ error: 'user does not exist' });
@@ -213,7 +201,7 @@ export async function getUserRelation(
       return;
     }
 
-    const relation = await getUserRelationFromDB(user, id);
+    const relation = await userModel.getUserRelationFromDB(user, id);
 
     res.json({ relation });
   } catch (err) {
@@ -235,12 +223,17 @@ export async function sendRequest(
       return;
     }
 
-    const result = await createRelation(user, targetId);
+    const result = await userModel.createRelation(user, targetId);
     const userId = new ObjectId(user);
     const targetUserId = new ObjectId(targetId);
 
     if (result === 'send') {
-      addNotificationToUserDB(targetUserId, 'friend_request', userId, null);
+      userModel.addNotificationToUserDB(
+        targetUserId,
+        'friend_request',
+        userId,
+        null,
+      );
       sendNotificationThroughSocket(
         targetId,
         'friend_request',
@@ -249,7 +242,12 @@ export async function sendRequest(
         undefined,
       );
     } else if (result === 'accept') {
-      addNotificationToUserDB(targetUserId, 'request_accepted', userId, null);
+      userModel.addNotificationToUserDB(
+        targetUserId,
+        'request_accepted',
+        userId,
+        null,
+      );
       sendNotificationThroughSocket(
         targetId,
         'request_accepted',
@@ -282,7 +280,7 @@ export async function cancelRequest(
       return;
     }
 
-    const result = await cancelRequestFromDB(user, id);
+    const result = await userModel.cancelRequestFromDB(user, id);
     if (result) {
       res.json({ status: 'cancel request success' });
       return;
@@ -302,7 +300,7 @@ export async function getNotifications(
     const { user } = req.body;
     const userId = new ObjectId(user);
 
-    const notifications = await getNotificationsFromDB(userId);
+    const notifications = await userModel.getNotificationsFromDB(userId);
     if (notifications === false) {
       res.status(400).json({ error: 'no such user' });
       return;
@@ -363,7 +361,7 @@ export async function readAllNotifications(
     const { user } = req.body;
     const userId = new ObjectId(user);
 
-    const updateResult = await readNotificationsFromDB(userId);
+    const updateResult = await userModel.readNotificationsFromDB(userId);
     if (updateResult === false) {
       res.status(400).json({
         error:
@@ -424,7 +422,7 @@ export async function getFriendsList(
       return;
     }
 
-    const userFriends = await getUserFriendsFromDB(user);
+    const userFriends = await userModel.getUserFriendsFromDB(user);
 
     res.json(userFriends);
   } catch (err) {
@@ -485,7 +483,7 @@ export async function refuseRequest(
       return;
     }
 
-    const result = await refuseRequestFromDB(user, id);
+    const result = await userModel.refuseRequestFromDB(user, id);
     if (result) {
       res.json({ status: 'refuse request success' });
       return;
