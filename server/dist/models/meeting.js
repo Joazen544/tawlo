@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAskingsFromDB = exports.getSharingsFromDB = exports.joinMeeting = exports.createMeeting = void 0;
+exports.getAskings = exports.getSharings = exports.joinMeeting = exports.createMeeting = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const meetingSchema = new mongoose_1.default.Schema({
@@ -83,31 +83,18 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
         const creatorShouldShare = [];
         toAsk.forEach((ask) => {
             creatorShouldShare.push({
-                phrase: {
-                    query: `${ask}`,
-                    path: 'to_share',
-                },
+                phrase: { query: `${ask}`, path: 'to_share' },
             });
         });
         const creatorShouldAsk = [];
         toShare.forEach((share) => {
             creatorShouldAsk.push({
-                phrase: {
-                    query: `${share}`,
-                    path: 'to_ask',
-                },
+                phrase: { query: `${share}`, path: 'to_ask' },
             });
         });
         let mustNotArray = [];
         if (metUsers.length > 0) {
-            mustNotArray = [
-                {
-                    in: {
-                        path: 'users',
-                        value: metUsers,
-                    },
-                },
-            ];
+            mustNotArray = [{ in: { path: 'users', value: metUsers } }];
         }
         const result = yield Meeting.aggregate([
             {
@@ -115,52 +102,28 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
                     index: 'meeting',
                     compound: {
                         must: [
-                            {
-                                compound: {
-                                    should: creatorShouldShare,
-                                },
-                            },
-                            {
-                                compound: {
-                                    should: creatorShouldAsk,
-                                },
-                            },
+                            { compound: { should: creatorShouldShare } },
+                            { compound: { should: creatorShouldAsk } },
                         ],
                         should: [],
                         mustNot: mustNotArray,
                         filter: [
                             {
-                                phrase: {
-                                    query: 'pending',
-                                    path: 'status',
-                                },
+                                phrase: { query: 'pending', path: 'status' },
                             },
                         ],
                     },
                 },
             },
             {
-                $addFields: {
-                    score: {
-                        $meta: 'searchScore',
-                    },
-                },
+                $addFields: { score: { $meta: 'searchScore' } },
             },
-            {
-                $sort: {
-                    score: -1,
-                },
-            },
-            {
-                $limit: 1,
-            },
+            { $sort: { score: -1 } },
+            { $limit: 1 },
         ]);
-        // console.log(result);
         if (!result[0]) {
-            // create a new one
             return false;
         }
-        // else joing the meeting
         const meetingId = result[0]._id;
         const userId = new mongodb_1.ObjectId(user);
         yield Meeting.updateOne({ _id: meetingId }, {
@@ -175,36 +138,23 @@ function joinMeeting(metUsers, user, role, rating, meetingComments, userIntro, t
             },
             status: 'checking',
         });
-        // console.log(result);
         return result[0];
     });
 }
 exports.joinMeeting = joinMeeting;
-function getSharingsFromDB(search) {
+function getSharings(search) {
     return __awaiter(this, void 0, void 0, function* () {
         const results = yield Meeting.aggregate([
             {
-                $match: {
-                    status: 'pending',
-                },
+                $match: { status: 'pending' },
             },
             {
-                $unwind: {
-                    path: '$to_share',
-                },
+                $unwind: { path: '$to_share' },
             },
             {
-                $match: {
-                    to_share: {
-                        $regex: search,
-                    },
-                },
+                $match: { to_share: { $regex: search } },
             },
-            {
-                $project: {
-                    to_share: 1,
-                },
-            },
+            { $project: { to_share: 1 } },
         ]);
         const map = new Map();
         // eslint-disable-next-line array-callback-return, consistent-return
@@ -218,8 +168,8 @@ function getSharingsFromDB(search) {
         return returnArray;
     });
 }
-exports.getSharingsFromDB = getSharingsFromDB;
-function getAskingsFromDB(search) {
+exports.getSharings = getSharings;
+function getAskings(search) {
     return __awaiter(this, void 0, void 0, function* () {
         const results = yield Meeting.aggregate([
             {
@@ -257,5 +207,5 @@ function getAskingsFromDB(search) {
         return returnArray;
     });
 }
-exports.getAskingsFromDB = getAskingsFromDB;
+exports.getAskings = getAskings;
 exports.default = Meeting;

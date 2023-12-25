@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBoardNameFromDB = exports.getAllBoardsFromDB = void 0;
+exports.getBoardName = exports.getAllBoards = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const boardSchema = new mongoose_1.default.Schema({
@@ -24,18 +24,18 @@ const boardSchema = new mongoose_1.default.Schema({
     admin: mongodb_1.ObjectId,
 });
 const Board = mongoose_1.default.model('Board', boardSchema);
-function getAllBoardsFromDB() {
+function getAllBoards() {
     return __awaiter(this, void 0, void 0, function* () {
         const allBoards = yield Board.find();
         return allBoards;
     });
 }
-exports.getAllBoardsFromDB = getAllBoardsFromDB;
-function getBoardNameFromDB(id) {
+exports.getAllBoards = getAllBoards;
+function getBoardName(id) {
     return __awaiter(this, void 0, void 0, function* () {
         const name = yield Board.findOne({ _id: id });
         return name;
     });
 }
-exports.getBoardNameFromDB = getBoardNameFromDB;
+exports.getBoardName = getBoardName;
 exports.default = Board;

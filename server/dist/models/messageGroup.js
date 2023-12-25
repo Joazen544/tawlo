@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateLatestMessageToGroup = exports.getNativeMessageGroupsFromDB = void 0;
+exports.updateLatestMessageToGroup = exports.getNativeMessageGroups = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const GROUPS_PER_PAGE = 10;
@@ -45,13 +45,13 @@ const messageGroupSchema = new mongoose_1.default.Schema({
     },
 });
 const MessageGroup = mongoose_1.default.model('MessageGroup', messageGroupSchema);
-function getNativeMessageGroupsFromDB(userId, lastGroup) {
+function getNativeMessageGroups(userId, lastGroup) {
     return __awaiter(this, void 0, void 0, function* () {
         let groups;
         if (lastGroup) {
             const lastGroupInfo = yield MessageGroup.findOne({ _id: lastGroup });
             if (!lastGroupInfo) {
-                return new Error('last message group does not exist');
+                throw Error('last message group does not exist');
             }
             const lastGroupUpdateTime = lastGroupInfo.update_time;
             groups = yield MessageGroup.find({
@@ -73,7 +73,7 @@ function getNativeMessageGroupsFromDB(userId, lastGroup) {
         return groups;
     });
 }
-exports.getNativeMessageGroupsFromDB = getNativeMessageGroupsFromDB;
+exports.getNativeMessageGroups = getNativeMessageGroups;
 function updateLatestMessageToGroup(group, lastUser, lastMessage, updateTime) {
     return __awaiter(this, void 0, void 0, function* () {
         yield MessageGroup.updateOne({ _id: group }, {

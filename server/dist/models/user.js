@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserFriendsFromDB = exports.refuseRequestFromDB = exports.getUserInfoFromDB = exports.getUserImageFromDB = exports.readNotificationsFromDB = exports.getNotificationsFromDB = exports.addNotificationToUserDB = exports.cancelRequestFromDB = exports.createRelation = exports.getUserRelationFromDB = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
+exports.getUserFriends = exports.refuseRequest = exports.getUserInfo = exports.getUserImage = exports.readNotifications = exports.getNotifications = exports.addNotification = exports.cancelRequest = exports.createRelation = exports.getUserRelation = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const validator_1 = __importDefault(require("validator"));
@@ -153,68 +153,83 @@ userSchema.methods.correctPassword = function (candidatePassword, userPassword) 
 };
 const User = mongoose_1.default.model('User', userSchema);
 function updateUserAction(userId, tags, board) {
-    try {
-        User.findOne({ _id: userId }).then((doc) => {
-            if (doc) {
-                const replaceTarget = doc.preference_tags.length - 1;
-                const tagsArray = [];
-                tagsArray.concat(tags);
-                const newTagsArray = [];
-                tags.forEach((tag) => {
-                    let ifExist = 0;
-                    let lessThan30;
-                    const len = doc.preference_tags.length;
-                    doc.preference_tags.forEach((preference) => {
-                        if (preference.name === tag && +preference.number <= 30) {
-                            preference.number = +preference.number + len;
-                            ifExist += 1;
-                            lessThan30 = true;
-                        }
-                        else if (preference.name === tag) {
-                            lessThan30 = false;
-                        }
-                    });
-                    console.log('counting');
-                    if (ifExist && lessThan30) {
-                        doc.preference_tags.forEach((preference) => {
-                            preference.number = +preference.number - ifExist;
-                        });
-                        console.log('not adding');
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const REPLACE_TAG_TARGET = 5;
+            const TAG_LARGEST_POINT = 30;
+            const userData = yield User.findOne({ _id: userId });
+            if (!userData) {
+                throw new Error('user does not exist');
+            }
+            const preferenceTags = userData.preference_tags;
+            let newPreferenceTags;
+            if (!preferenceTags) {
+                throw new Error('user preference does not exist');
+            }
+            const newTagsArray = [];
+            tags.forEach((tag) => {
+                let ifExist = 0;
+                let ifScoreLessThanLargestPoint;
+                const userPreferenceLength = preferenceTags.length;
+                preferenceTags.forEach((preference) => {
+                    if (preference.name === tag &&
+                        +preference.number <= TAG_LARGEST_POINT) {
+                        preference.number = +preference.number + userPreferenceLength;
+                        ifExist += 1;
+                        ifScoreLessThanLargestPoint = true;
                     }
-                    else if (ifExist) {
-                        console.log('nothing');
-                    }
-                    else if (len === 0) {
-                        doc.preference_tags.push({ name: tag, number: 20 });
-                    }
-                    else if (len < 10) {
-                        doc.preference_tags.push({ name: tag, number: 0 });
-                    }
-                    else {
-                        newTagsArray.push(tag);
+                    else if (preference.name === tag) {
+                        ifScoreLessThanLargestPoint = false;
                     }
                 });
-                if (board)
-                    doc.read_board.push(board);
-                if (doc.read_board.length > 4) {
-                    doc.read_board = doc.read_board.slice(1, 5);
-                }
-                doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
-                if (doc.preference_tags.length > 6) {
-                    for (let i = 6; i < doc.preference_tags.length; i += 1) {
-                        if (newTagsArray.includes(doc.preference_tags[i].name)) {
-                            doc.preference_tags[replaceTarget].name =
-                                doc.preference_tags[i].name;
-                        }
+                if (ifExist) {
+                    if (ifScoreLessThanLargestPoint) {
+                        preferenceTags.forEach((preference) => {
+                            preference.number = +preference.number - ifExist;
+                        });
                     }
                 }
-                doc.save();
+                else if (preferenceTags.length === 0) {
+                    preferenceTags.push({ name: tag, number: 20 });
+                }
+                else if (preferenceTags.length < 10) {
+                    preferenceTags.push({ name: tag, number: 0 });
+                }
+                else {
+                    newTagsArray.push(tag);
+                }
+            });
+            if (newTagsArray.length > 0) {
+                for (let i = 6; i < preferenceTags.length; i += 1) {
+                    newTagsArray.forEach((tag, index) => {
+                        if (tag === preferenceTags[i].name) {
+                            preferenceTags[REPLACE_TAG_TARGET].name = preferenceTags[i].name;
+                            newTagsArray[index] = undefined;
+                        }
+                    });
+                }
+                newPreferenceTags = preferenceTags.slice(0, 9 - newTagsArray.length);
+                newTagsArray.forEach((tag) => {
+                    if (tag !== undefined) {
+                        newPreferenceTags.push({ name: tag, number: 0 });
+                    }
+                });
             }
-        });
-    }
-    catch (err) {
-        console.log(err);
-    }
+            else {
+                newPreferenceTags = preferenceTags;
+            }
+            newPreferenceTags.sort((aTag, bTag) => +bTag.number - +aTag.number);
+            const readBoard = userData.read_board;
+            readBoard.push(board);
+            const newReadBoard = readBoard.length > 4 ? readBoard.slice(1, 5) : readBoard;
+            yield User.updateOne({ _id: userId }, {
+                $set: { preference_tags: newPreferenceTags, read_board: newReadBoard },
+            });
+        }
+        catch (err) {
+            console.log(err);
+        }
+    });
 }
 exports.updateUserAction = updateUserAction;
 function updateUserReadPosts(userId, readPosts) {
@@ -253,7 +268,7 @@ function getUserPreference(userId) {
     });
 }
 exports.getUserPreference = getUserPreference;
-function getUserRelationFromDB(user, targetId) {
+function getUserRelation(user, targetId) {
     return __awaiter(this, void 0, void 0, function* () {
         // try {
         const userInfo = yield User.findOne({
@@ -269,14 +284,14 @@ function getUserRelationFromDB(user, targetId) {
         return userInfo.friends[0].status;
     });
 }
-exports.getUserRelationFromDB = getUserRelationFromDB;
+exports.getUserRelation = getUserRelation;
 function createRelation(user, target) {
     return __awaiter(this, void 0, void 0, function* () {
         const session = yield User.startSession();
         let result;
         try {
             session.startTransaction();
-            const relation = yield getUserRelationFromDB(user, target);
+            const relation = yield getUserRelation(user, target);
             if (relation === null) {
                 yield User.updateOne({ _id: user }, { $push: { friends: { user: target, status: 'requested' } } }, { session });
                 yield User.updateOne({ _id: target }, { $push: { friends: { user, status: 'received' } } }, { session });
@@ -305,13 +320,13 @@ function createRelation(user, target) {
     });
 }
 exports.createRelation = createRelation;
-function cancelRequestFromDB(user, target) {
+function cancelRequest(user, target) {
     return __awaiter(this, void 0, void 0, function* () {
         const session = yield User.startSession();
         let result;
         try {
             session.startTransaction();
-            const relation = yield getUserRelationFromDB(user, target);
+            const relation = yield getUserRelation(user, target);
             if (relation === null) {
                 throw Error('the relation does not exist');
             }
@@ -334,8 +349,8 @@ function cancelRequestFromDB(user, target) {
         return result;
     });
 }
-exports.cancelRequestFromDB = cancelRequestFromDB;
-function addNotificationToUserDB(userId, category, actionUser, targetPost) {
+exports.cancelRequest = cancelRequest;
+function addNotification(userId, category, actionUser, targetPost) {
     return __awaiter(this, void 0, void 0, function* () {
         // time: Date;
         // category: string;
@@ -451,8 +466,8 @@ function addNotificationToUserDB(userId, category, actionUser, targetPost) {
         return 'error';
     });
 }
-exports.addNotificationToUserDB = addNotificationToUserDB;
-function getNotificationsFromDB(userId) {
+exports.addNotification = addNotification;
+function getNotifications(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const userInfo = yield User.findOne({ _id: userId });
         if (!userInfo) {
@@ -461,8 +476,8 @@ function getNotificationsFromDB(userId) {
         return userInfo.notification;
     });
 }
-exports.getNotificationsFromDB = getNotificationsFromDB;
-function readNotificationsFromDB(userId) {
+exports.getNotifications = getNotifications;
+function readNotifications(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const userUpdate = yield User.updateOne({ _id: userId, 'notification.read': false }, { $set: { 'notification.$[].read': true } });
         if (userUpdate.acknowledged === false) {
@@ -471,28 +486,28 @@ function readNotificationsFromDB(userId) {
         return true;
     });
 }
-exports.readNotificationsFromDB = readNotificationsFromDB;
-function getUserImageFromDB(user) {
+exports.readNotifications = readNotifications;
+function getUserImage(user) {
     return __awaiter(this, void 0, void 0, function* () {
         const userInfo = yield User.findOne({ _id: user }, { image: 1 });
         return userInfo;
     });
 }
-exports.getUserImageFromDB = getUserImageFromDB;
-function getUserInfoFromDB(user) {
+exports.getUserImage = getUserImage;
+function getUserInfo(user) {
     return __awaiter(this, void 0, void 0, function* () {
         const userInfo = yield User.findOne({ _id: user });
         return userInfo;
     });
 }
-exports.getUserInfoFromDB = getUserInfoFromDB;
-function refuseRequestFromDB(user, target) {
+exports.getUserInfo = getUserInfo;
+function refuseRequest(user, target) {
     return __awaiter(this, void 0, void 0, function* () {
         const session = yield User.startSession();
         let result;
         try {
             session.startTransaction();
-            const relation = yield getUserRelationFromDB(user, target);
+            const relation = yield getUserRelation(user, target);
             if (relation === null) {
                 throw Error('the relation does not exist');
             }
@@ -515,8 +530,8 @@ function refuseRequestFromDB(user, target) {
         return result;
     });
 }
-exports.refuseRequestFromDB = refuseRequestFromDB;
-function getUserFriendsFromDB(user) {
+exports.refuseRequest = refuseRequest;
+function getUserFriends(user) {
     return __awaiter(this, void 0, void 0, function* () {
         const userInfo = yield User.findOne({ _id: user });
         if (!userInfo) {
@@ -527,5 +542,5 @@ function getUserFriendsFromDB(user) {
         return returnArray;
     });
 }
-exports.getUserFriendsFromDB = getUserFriendsFromDB;
+exports.getUserFriends = getUserFriends;
 exports.default = User;

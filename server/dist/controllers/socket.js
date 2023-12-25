@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getIO = exports.initSocket = void 0;
+exports.sendNotificationThroughSocket = exports.sendMessageThroughSocket = exports.initSocket = void 0;
 const socket_io_1 = require("socket.io");
 const JWT_1 = require("../utils/JWT");
 const user_1 = require("../models/user");
@@ -67,7 +67,7 @@ function initSocket(server) {
             console.log(`User connected now: ${usersId}`);
             // get user friends and notify them
             try {
-                const friendsArray = yield (0, user_1.getUserFriendsFromDB)(data.userId);
+                const friendsArray = yield (0, user_1.getUserFriends)(data.userId);
                 redis_1.default.set(`${data.userId}friends`, JSON.stringify(friendsArray));
                 const onlineFriends = [];
                 friendsArray.forEach((friendId) => {
@@ -137,10 +137,45 @@ function initSocket(server) {
     });
 }
 exports.initSocket = initSocket;
-function getIO() {
-    if (io) {
-        return io;
+function sendMessageThroughSocket(user, content, messageTo, messageGroup) {
+    if (!io) {
+        throw new Error('socket io not working');
     }
-    return null;
+    io.to(user).emit('myself', {
+        message: content,
+        group: messageGroup,
+    });
+    io.to(messageTo).emit('message', {
+        message: content,
+        from: user,
+        group: messageGroup,
+    });
 }
-exports.getIO = getIO;
+exports.sendMessageThroughSocket = sendMessageThroughSocket;
+function sendNotificationThroughSocket(targetUser, category, message, actionUser, targetPost) {
+    if (!io) {
+        throw new Error('socket io not working');
+    }
+    io.to(targetUser).emit('notificate', {
+        category,
+        message,
+        actionUser,
+        targetPost,
+    });
+    if (['meet_match', 'meet_success', 'meet_fail'].includes(category)) {
+        io.to(targetUser).emit('notificate_2', {
+            category,
+            message,
+            actionUser,
+            targetPost,
+        });
+    }
+    return true;
+}
+exports.sendNotificationThroughSocket = sendNotificationThroughSocket;
+// export function getIO() {
+//   if (io) {
+//     return io;
+//   }
+//   return null;
+// }

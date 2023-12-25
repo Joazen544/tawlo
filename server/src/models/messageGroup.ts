@@ -52,7 +52,7 @@ export async function getNativeMessageGroups(
   if (lastGroup) {
     const lastGroupInfo = await MessageGroup.findOne({ _id: lastGroup });
     if (!lastGroupInfo) {
-      throw new Error('last message group does not exist');
+      throw Error('last message group does not exist');
     }
     const lastGroupUpdateTime = lastGroupInfo.update_time;
     groups = await MessageGroup.find({

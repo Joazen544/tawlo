@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,46 +31,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBoard = exports.getBoardName = exports.getBoards = void 0;
-const board_1 = require("../models/board");
+exports.getBoardName = exports.getBoards = void 0;
+const boardModel = __importStar(require("../models/board"));
 const errorHandler_1 = require("../utils/errorHandler");
-function getBoards(_req, res, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const boards = yield (0, board_1.getAllBoardsFromDB)();
-            res.json({ boards });
-        }
-        catch (err) {
-            next(err);
-        }
-    });
-}
-exports.getBoards = getBoards;
-function getBoardName(req, res, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const id = req.query.id;
-            if (!id) {
-                next(new errorHandler_1.ValidationError('board id is needed'));
-            }
-            const boardInfo = yield (0, board_1.getBoardNameFromDB)(id);
-            if (boardInfo) {
-                res.json({ name: boardInfo.name });
-            }
-            else {
-                next(new Error('no such board'));
-            }
-        }
-        catch (err) {
-            next(err);
-        }
-    });
-}
-exports.getBoardName = getBoardName;
-function createBoard() {
-    return __awaiter(this, void 0, void 0, function* () {
-        return 0;
-    });
-}
-exports.createBoard = createBoard;
+const catchAsync_1 = __importDefault(require("../utils/catchAsync"));
+exports.getBoards = (0, catchAsync_1.default)((_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const boards = yield boardModel.getAllBoards();
+    res.json({ boards });
+}));
+exports.getBoardName = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.query.id;
+    if (!id) {
+        throw new errorHandler_1.ValidationError('board id is needed');
+    }
+    const boardInfo = yield boardModel.getBoardName(id);
+    if (boardInfo) {
+        res.json({ name: boardInfo.name });
+    }
+    else {
+        throw new Error('no such board');
+    }
+}));

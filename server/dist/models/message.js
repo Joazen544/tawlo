@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.makeAllMessagesRead = exports.createMessageToDB = exports.getEarlierMessages = exports.getLatestMessages = void 0;
+exports.makeAllMessagesRead = exports.createMessage = exports.getEarlierMessages = exports.getLatestMessages = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const messageGroup_1 = __importDefault(require("./messageGroup"));
@@ -65,7 +65,7 @@ function getEarlierMessages(group, lastMessage) {
     });
 }
 exports.getEarlierMessages = getEarlierMessages;
-function createMessageToDB(group, from, content, time) {
+function createMessage(group, from, content, time) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield Message.create({
             group,
@@ -78,7 +78,7 @@ function createMessageToDB(group, from, content, time) {
         return result;
     });
 }
-exports.createMessageToDB = createMessageToDB;
+exports.createMessage = createMessage;
 function makeAllMessagesRead(userId, messageGroupId, last_sender) {
     return __awaiter(this, void 0, void 0, function* () {
         try {

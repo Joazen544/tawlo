@@ -23,6 +23,5 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// eslint-disable-next-line import/no-extraneous-dependencies
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();

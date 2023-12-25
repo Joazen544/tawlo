@@ -133,7 +133,7 @@ const Signin = () => {
       .catch((err) => {
         console.log(err);
 
-        setSigninError('Invalid email or password');
+        setSigninError('信箱或密碼錯誤');
       })
       .finally(() => {
         setSigninData({ email: '', password: '' });

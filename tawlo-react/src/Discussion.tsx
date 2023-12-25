@@ -127,7 +127,7 @@ const Discussion = () => {
           <div style={{ width: '37rem' }} className="h-6">
             <Link
               style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
-              className="px-4 w-20 h-16 mt-3 py-2 text-white rounded-md hover:underline text-sm"
+              className="px-4 w-20 h-16 ml-14 mt-3 py-2 text-white rounded-md hover:underline text-sm"
               to={`/board?id=${postsRender[0].board}`}
             >
               回到討論版
