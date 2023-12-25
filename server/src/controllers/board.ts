@@ -1,26 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
 import { getAllBoardsFromDB, getBoardNameFromDB } from '../models/board';
 import { ValidationError } from '../utils/errorHandler';
+import catchAsync from '../utils/catchAsync';
 
-export async function getBoards(
-  _req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const boards = await getAllBoardsFromDB();
-    res.json({ boards });
-  } catch (err) {
-    next(err);
-  }
-}
+export const getBoards = catchAsync(async (_req: Request, res: Response) => {
+  const boards = await getAllBoardsFromDB();
+  res.json({ boards });
+});
 
-export async function getBoardName(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+export const getBoardName = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const id = req.query.id as string;
     if (!id) {
       next(new ValidationError('board id is needed'));
@@ -32,7 +21,5 @@ export async function getBoardName(
     } else {
       next(new Error('no such board'));
     }
-  } catch (err) {
-    next(err);
-  }
-}
+  },
+);

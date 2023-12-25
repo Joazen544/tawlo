@@ -1,8 +1,9 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import fs from 'fs';
 import User, * as userModel from '../models/user';
 import { EXPIRE_TIME, signJWT } from '../utils/JWT';
+import catchAsync from '../utils/catchAsync';
 import { sendNotificationThroughSocket } from './socket';
 import 'dotenv';
 import redisClient from '../utils/redis';
@@ -10,100 +11,77 @@ import redisClient from '../utils/redis';
 const CDN_DOMAIN = process.env.DISTRIBUTION_DOMAIN;
 const USER_INFO_EXPIRE_SECONDS = 21600;
 
-export async function signUp(req: Request, res: Response) {
-  try {
-    const { name, email, password, passwordConfirm } = req.body;
-    let image;
-    if (req.file) {
-      image = req.file.filename;
-    }
+export const signUp = catchAsync(async (req: Request, res: Response) => {
+  const { name, email, password, passwordConfirm } = req.body;
+  let image;
+  if (req.file) {
+    image = req.file.filename;
+  }
 
-    const userData = await User.create({
-      name,
-      email,
-      password,
-      image,
-      password_confirm: passwordConfirm,
+  const userData = await User.create({
+    name,
+    email,
+    password,
+    image,
+    password_confirm: passwordConfirm,
+  });
+
+  const token = await signJWT(userData._id.toString());
+
+  if (image) {
+    fs.unlink(`${__dirname}/../../public/userImage/${image}`, () => {});
+  }
+
+  res
+    .cookie('jwtToken', token)
+    .status(200)
+    .json({
+      access_token: token,
+      access_expired: EXPIRE_TIME,
+      user: {
+        id: userData._id,
+        name,
+        email,
+        picture: '',
+      },
     });
+});
 
-    const token = await signJWT(userData._id.toString());
+export const signIn = catchAsync(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-    if (image) {
-      fs.unlink(`${__dirname}/../../public/userImage/${image}`, () => {});
-    }
+  const userData: userModel.UserDocument = await User.findOne({
+    email,
+  }).select('+password');
 
-    res
-      .cookie('jwtToken', token)
-      .status(200)
-      .json({
-        access_token: token,
-        access_expired: EXPIRE_TIME,
-        user: {
-          id: userData._id,
-          name,
-          email,
-          picture: '',
-        },
-      });
-  } catch (err) {
-    console.log(err);
-    if (err instanceof Error && err.message.slice(0, 6) === 'E11000') {
-      res.status(400).json({ errors: 'This email already exist' });
-      return;
-    }
-    if (err instanceof Error) {
-      res.status(400).json({ errors: err.message });
-      return;
-    }
-    res.status(500).json({ errors: 'sign up failed' });
+  if (
+    !userData ||
+    !(await userData.correctPassword(password, userData.password))
+  ) {
+    res.status(401).json({ error: 'Incorrect email or password' });
+    return;
   }
-}
 
-export async function signIn(req: Request, res: Response) {
-  try {
-    const { email, password } = req.body;
+  const token = await signJWT(userData._id.toString());
 
-    const userData: userModel.UserDocument = await User.findOne({
-      email,
-    }).select('+password');
+  res
+    .cookie('jwtToken', token)
+    .status(200)
+    .json({
+      access_token: token,
+      access_expired: EXPIRE_TIME,
+      user: {
+        id: userData._id,
+        name: userData.name,
+        email,
+        picture: '',
+      },
+    });
+});
 
-    if (
-      !userData ||
-      !(await userData.correctPassword(password, userData.password))
-    ) {
-      res.status(401).json({ error: 'Incorrect email or password' });
-      return;
-    }
-
-    const token = await signJWT(userData._id.toString());
-
-    res
-      .cookie('jwtToken', token)
-      .status(200)
-      .json({
-        access_token: token,
-        access_expired: EXPIRE_TIME,
-        user: {
-          id: userData._id,
-          name: userData.name,
-          email,
-          picture: '',
-        },
-      });
-  } catch (err) {
-    console.log(err);
-    if (err instanceof Error) {
-      res.status(400).json({ errors: err.message });
-      return;
-    }
-    res.status(500).json({ errors: 'sign in failed' });
-  }
-}
-
-export async function updateUserRead(req: Request, res: Response) {
-  try {
+export const updateUserRead = catchAsync(
+  async (req: Request, res: Response) => {
     const { user, posts } = req.body;
-
     const postsId = posts.map((post: string) => new ObjectId(post));
 
     const userId = new ObjectId(user);
@@ -111,88 +89,68 @@ export async function updateUserRead(req: Request, res: Response) {
     userModel.updateUserReadPosts(userId, postsId);
 
     res.json({ message: 'Update success' });
+  },
+);
+
+export const getUserInfo = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.query;
+  if (!id) {
+    res.status(400).json({ error: 'user id is not in req body' });
+    return;
+  }
+
+  if (typeof id !== 'string') {
+    res.status(400).json({ error: 'user id is not string' });
+    return;
+  }
+
+  try {
+    const result = await redisClient.hGetAll(`${id}info`);
+    if (result.name && result.image !== undefined) {
+      // is saved in redis
+      let imageUrl;
+      if (result.image === '') {
+        imageUrl = '';
+      } else {
+        imageUrl = `${CDN_DOMAIN}/user-image/${result.image}`;
+      }
+      // console.log('get user info from redis');
+
+      res.json({ image: imageUrl, name: result.name });
+      return;
+    }
   } catch (err) {
     console.log(err);
-    if (err instanceof Error) {
-      res.status(400).json({ errors: err.message });
-      return;
-    }
-    res.status(500).json({ errors: 'sign in failed' });
+    console.log('something is wrong getting user info from redis');
   }
-}
 
-export async function getUserInfo(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+  const userInfo = await userModel.getUserInfo(id);
+
+  if (!userInfo) {
+    res.status(400).json({ error: 'user does not exist' });
+    return;
+  }
+
+  let imageUrl;
+  if (userInfo.image === '') {
+    imageUrl = '';
+  } else {
+    imageUrl = `${CDN_DOMAIN}/user-image/${userInfo.image}`;
+  }
+
   try {
-    const { id } = req.query;
-    if (!id) {
-      res.status(400).json({ error: 'user id is not in req body' });
-      return;
-    }
-
-    if (typeof id !== 'string') {
-      res.status(400).json({ error: 'user id is not string' });
-      return;
-    }
-
-    try {
-      const result = await redisClient.hGetAll(`${id}info`);
-      if (result.name && result.image !== undefined) {
-        // is saved in redis
-        let imageUrl;
-        if (result.image === '') {
-          imageUrl = '';
-        } else {
-          imageUrl = `${CDN_DOMAIN}/user-image/${result.image}`;
-        }
-        // console.log('get user info from redis');
-
-        res.json({ image: imageUrl, name: result.name });
-        return;
-      }
-    } catch (err) {
-      console.log(err);
-      console.log('something is wrong getting user info from redis');
-    }
-
-    const userInfo = await userModel.getUserInfo(id);
-
-    if (!userInfo) {
-      res.status(400).json({ error: 'user does not exist' });
-      return;
-    }
-
-    let imageUrl;
-    if (userInfo.image === '') {
-      imageUrl = '';
-    } else {
-      imageUrl = `${CDN_DOMAIN}/user-image/${userInfo.image}`;
-    }
-
-    try {
-      await redisClient.hSet(`${id}info`, 'name', userInfo.name);
-      await redisClient.hSet(`${id}info`, 'image', userInfo.image);
-      await redisClient.expire(`${id}info`, USER_INFO_EXPIRE_SECONDS);
-      console.log('set user name and image to redis');
-    } catch (err) {
-      console.log(err);
-    }
-
-    res.json({ image: imageUrl, name: userInfo.name });
+    await redisClient.hSet(`${id}info`, 'name', userInfo.name);
+    await redisClient.hSet(`${id}info`, 'image', userInfo.image);
+    await redisClient.expire(`${id}info`, USER_INFO_EXPIRE_SECONDS);
   } catch (err) {
-    next(err);
+    console.log(err);
   }
-}
 
-export async function getUserRelation(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+  res.json({ image: imageUrl, name: userInfo.name });
+});
+
+export const getUserRelation = catchAsync(
+  async (req: Request, res: Response) => {
     const { user } = req.body;
     const id = req.query.id as string;
 
@@ -204,89 +162,67 @@ export async function getUserRelation(
     const relation = await userModel.getUserRelation(user, id);
 
     res.json({ relation });
-  } catch (err) {
-    next(err);
+  },
+);
+
+export const sendRequest = catchAsync(async (req: Request, res: Response) => {
+  const { user } = req.body;
+  const targetId = req.query.id as string;
+
+  if (!targetId) {
+    res.status(500).json({ error: 'target id is missing' });
+    return;
   }
-}
 
-export async function sendRequest(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { user } = req.body;
-    const targetId = req.query.id as string;
+  const result = await userModel.createRelation(user, targetId);
+  const userId = new ObjectId(user);
+  const targetUserId = new ObjectId(targetId);
 
-    if (!targetId) {
-      res.status(500).json({ error: 'target id is missing' });
-      return;
-    }
-
-    const result = await userModel.createRelation(user, targetId);
-    const userId = new ObjectId(user);
-    const targetUserId = new ObjectId(targetId);
-
-    if (result === 'send') {
-      userModel.addNotification(targetUserId, 'friend_request', userId, null);
-      sendNotificationThroughSocket(
-        targetId,
-        'friend_request',
-        '有人發出交友邀請',
-        user,
-        undefined,
-      );
-    } else if (result === 'accept') {
-      userModel.addNotification(targetUserId, 'request_accepted', userId, null);
-      sendNotificationThroughSocket(
-        targetId,
-        'request_accepted',
-        '有人接受你的邀請',
-        user,
-        undefined,
-      );
-    }
-    if (result) {
-      res.json({ status: 'send or accept request success' });
-      return;
-    }
-    res.status(500).json({ error: 'create friend relation fail' });
-  } catch (err) {
-    next(err);
+  if (result === 'send') {
+    userModel.addNotification(targetUserId, 'friend_request', userId, null);
+    sendNotificationThroughSocket(
+      targetId,
+      'friend_request',
+      '有人發出交友邀請',
+      user,
+      undefined,
+    );
+  } else if (result === 'accept') {
+    userModel.addNotification(targetUserId, 'request_accepted', userId, null);
+    sendNotificationThroughSocket(
+      targetId,
+      'request_accepted',
+      '有人接受你的邀請',
+      user,
+      undefined,
+    );
   }
-}
-
-export async function cancelRequest(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { user } = req.body;
-    const id = req.query.id as string;
-
-    if (!id) {
-      res.status(500).json({ error: 'target id is missing' });
-      return;
-    }
-
-    const result = await userModel.cancelRequest(user, id);
-    if (result) {
-      res.json({ status: 'cancel request success' });
-      return;
-    }
-    res.status(500).json({ error: 'cancel request fail' });
-  } catch (err) {
-    next(err);
+  if (result) {
+    res.json({ status: 'send or accept request success' });
+    return;
   }
-}
+  res.status(500).json({ error: 'create friend relation fail' });
+});
 
-export async function getNotifications(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+export const cancelRequest = catchAsync(async (req: Request, res: Response) => {
+  const { user } = req.body;
+  const id = req.query.id as string;
+
+  if (!id) {
+    res.status(500).json({ error: 'target id is missing' });
+    return;
+  }
+
+  const result = await userModel.cancelRequest(user, id);
+  if (result) {
+    res.json({ status: 'cancel request success' });
+    return;
+  }
+  res.status(500).json({ error: 'cancel request fail' });
+});
+
+export const getNotifications = catchAsync(
+  async (req: Request, res: Response) => {
     const { user } = req.body;
     const userId = new ObjectId(user);
 
@@ -337,17 +273,11 @@ export async function getNotifications(
     });
 
     res.json(notifications.reverse());
-  } catch (err) {
-    next(err);
-  }
-}
+  },
+);
 
-export async function readAllNotifications(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+export const readAllNotifications = catchAsync(
+  async (req: Request, res: Response) => {
     const { user } = req.body;
     const userId = new ObjectId(user);
 
@@ -361,50 +291,35 @@ export async function readAllNotifications(
     }
 
     res.json({ message: 'read all notifications' });
-  } catch (err) {
-    next(err);
+  },
+);
+
+export const changeImage = catchAsync(async (req: Request, res: Response) => {
+  const { user } = req.body;
+  let imageName;
+  if (req.file) {
+    imageName = req.file.filename;
+  } else {
+    res.status(400).json({ error: 'no image in req' });
   }
-}
 
-export async function changeImage(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+  await User.updateOne({ _id: user }, { $set: { image: imageName } });
+
   try {
-    const { user } = req.body;
-    let imageName;
-    if (req.file) {
-      imageName = req.file.filename;
-    } else {
-      res.status(400).json({ error: 'no image in req' });
-    }
-
-    await User.updateOne({ _id: user }, { $set: { image: imageName } });
-
-    try {
-      await redisClient.del(`${user}info`);
-      // console.log('delete user info from redis');
-    } catch (err) {
-      console.log(err);
-    }
-
-    if (imageName) {
-      fs.unlink(`${__dirname}/../../public/userImage/${imageName}`, () => {});
-    }
-
-    res.json({ image: `${CDN_DOMAIN}/user-image/${imageName}` });
+    await redisClient.del(`${user}info`);
   } catch (err) {
-    next(err);
+    console.log(err);
   }
-}
 
-export async function getFriendsList(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+  if (imageName) {
+    fs.unlink(`${__dirname}/../../public/userImage/${imageName}`, () => {});
+  }
+
+  res.json({ image: `${CDN_DOMAIN}/user-image/${imageName}` });
+});
+
+export const getFriendsList = catchAsync(
+  async (req: Request, res: Response) => {
     const { user } = req.body;
 
     if (!user) {
@@ -415,17 +330,11 @@ export async function getFriendsList(
     const userFriends = await userModel.getUserFriends(user);
 
     res.json(userFriends);
-  } catch (err) {
-    next(err);
-  }
-}
+  },
+);
 
-export async function getAllFriendsList(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+export const getAllFriendsList = catchAsync(
+  async (req: Request, res: Response) => {
     const { user } = req.body;
 
     const userInfo = await User.findOne({ _id: user });
@@ -454,32 +363,22 @@ export async function getAllFriendsList(
       requested: requestedFriendArray,
       receive: receiveFriendArray,
     });
-  } catch (err) {
-    next(err);
+  },
+);
+
+export const refuseRequest = catchAsync(async (req: Request, res: Response) => {
+  const { user } = req.body;
+  const id = req.query.id as string;
+
+  if (!id) {
+    res.status(500).json({ error: 'target id is missing' });
+    return;
   }
-}
 
-export async function refuseRequest(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { user } = req.body;
-    const id = req.query.id as string;
-
-    if (!id) {
-      res.status(500).json({ error: 'target id is missing' });
-      return;
-    }
-
-    const result = await userModel.refuseRequest(user, id);
-    if (result) {
-      res.json({ status: 'refuse request success' });
-      return;
-    }
-    res.status(500).json({ error: 'refuse request fail' });
-  } catch (err) {
-    next(err);
+  const result = await userModel.refuseRequest(user, id);
+  if (result) {
+    res.json({ status: 'refuse request success' });
+    return;
   }
-}
+  res.status(500).json({ error: 'refuse request fail' });
+});

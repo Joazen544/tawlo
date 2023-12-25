@@ -212,9 +212,9 @@ export function sendNotificationThroughSocket(
   return true;
 }
 
-export function getIO() {
-  if (io) {
-    return io;
-  }
-  return null;
-}
+// export function getIO() {
+//   if (io) {
+//     return io;
+//   }
+//   return null;
+// }

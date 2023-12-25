@@ -11,13 +11,14 @@ import {
   createMessageToDB,
   makeAllMessagesRead,
 } from '../models/message';
+import catchAsync from '../utils/catchAsync';
 
 import { sendMessageThroughSocket } from './socket';
 
-async function getMessagesFromDB(
+const getMessagesFromDB = async (
   lastMessage: ObjectId | null,
   messageGroup: ObjectId,
-) {
+) => {
   let messages;
   if (lastMessage) {
     messages = await getEarlierMessages(messageGroup, lastMessage);
@@ -26,17 +27,28 @@ async function getMessagesFromDB(
   }
 
   return messages;
-}
+};
 
-export async function clickChatRoom(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  // if user click 'send message to specific user'
-  // return the message group info if it exists
-  // else create one for them
+const createMessage = async (group: string, from: string, content: string) => {
   try {
+    const time = new Date();
+    const groupId = new ObjectId(group);
+    const fromId = new ObjectId(from);
+
+    await createMessageToDB(groupId, fromId, content, time);
+    await updateLatestMessageToGroup(groupId, fromId, content, time);
+  } catch (err) {
+    console.log('something goes wrong creating message to DB');
+    console.log(err);
+    throw new Error('something goes wrong creating message to DB');
+  }
+};
+
+export const clickChatRoom = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // if user click 'send message to specific user'
+    // return the message group info if it exists
+    // else create one for them
     const { user } = req.body;
     const target = req.query.target as string;
     const group = req.query.group as string;
@@ -113,17 +125,11 @@ export async function clickChatRoom(
       category: messageGroup.category,
       messages: messagesNotRemoved,
     });
-  } catch (err) {
-    next(err);
-  }
-}
+  },
+);
 
-export async function getMessageGroups(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+export const getMessageGroups = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const { user } = req.body;
     const userId = new ObjectId(user);
     const lastGroup = req.query.lastGroup as string;
@@ -156,18 +162,11 @@ export async function getMessageGroups(
     res.json({
       messageGroups,
     });
-  } catch (err) {
-    next(err);
-  }
-}
+  },
+);
 
-// to load more messages
-export async function getMoreMessages(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
+export const getMoreMessages = catchAsync(
+  async (req: Request, res: Response) => {
     const group = req.query.group as string;
     if (!group) {
       throw new ValidationError('Last message read id should be in query');
@@ -184,62 +183,27 @@ export async function getMoreMessages(
     const messages = await getMessagesFromDB(lastMessageId, groupId);
 
     res.json({ messages });
-  } catch (err) {
-    next(err);
+  },
+);
+
+export const sendMessage = catchAsync(async (req: Request, res: Response) => {
+  const { user, messageTo, messageGroup, content } = req.body;
+
+  await createMessage(messageGroup, user, content);
+
+  sendMessageThroughSocket(user, content, messageTo, messageGroup);
+
+  res.json({ message: 'message sent' });
+});
+
+export const readMessages = catchAsync(async (req: Request, res: Response) => {
+  const { user, messageGroupId } = req.body;
+  const userId = new ObjectId(user);
+  const messageGroup = await MessageGroup.findOne({ _id: messageGroupId });
+  if (!messageGroup) {
+    res.status(400).json({ error: 'message group does not exist' });
+    return;
   }
-}
-
-async function createMessage(group: string, from: string, content: string) {
-  try {
-    const time = new Date();
-    const groupId = new ObjectId(group);
-    const fromId = new ObjectId(from);
-
-    await createMessageToDB(groupId, fromId, content, time);
-    await updateLatestMessageToGroup(groupId, fromId, content, time);
-  } catch (err) {
-    console.log('something goes wrong creating message to DB');
-    console.log(err);
-    throw new Error('something goes wrong creating message to DB');
-  }
-}
-
-export async function sendMessage(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { user, messageTo, messageGroup, content } = req.body;
-
-    await createMessage(messageGroup, user, content);
-
-    sendMessageThroughSocket(user, content, messageTo, messageGroup);
-
-    res.json({ message: 'message sent' });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function readMessages(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    // console.log('making messages read');
-
-    const { user, messageGroupId } = req.body;
-    const userId = new ObjectId(user);
-    const messageGroup = await MessageGroup.findOne({ _id: messageGroupId });
-    if (!messageGroup) {
-      res.status(400).json({ error: 'message group does not exist' });
-      return;
-    }
-    makeAllMessagesRead(userId, messageGroup._id, messageGroup.last_sender);
-    res.json({ message: 'updated read message' });
-  } catch (err) {
-    next(err);
-  }
-}
+  makeAllMessagesRead(userId, messageGroup._id, messageGroup.last_sender);
+  res.json({ message: 'updated read message' });
+});
