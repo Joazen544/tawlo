@@ -250,18 +250,16 @@ export async function updateUserAction(
       }
 
       newPreferenceTags = preferenceTags.slice(0, 9 - newTagsArray.length);
+
       newTagsArray.forEach((tag) => {
         if (tag !== undefined) {
           newPreferenceTags.push({ name: tag, number: 0 });
         }
       });
+    } else {
+      newPreferenceTags = preferenceTags;
     }
 
-    if (!newPreferenceTags) {
-      throw new Error(
-        'something wrong updating user action, no new preference tags array',
-      );
-    }
     newPreferenceTags.sort((aTag, bTag) => +bTag.number - +aTag.number);
 
     const readBoard = userData.read_board;
