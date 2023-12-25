@@ -44,7 +44,7 @@ const messageGroupSchema = new mongoose.Schema<MessageGroupDocument>({
 
 const MessageGroup = mongoose.model('MessageGroup', messageGroupSchema);
 
-export async function getNativeMessageGroupsFromDB(
+export async function getNativeMessageGroups(
   userId: ObjectId,
   lastGroup: ObjectId | null,
 ) {
@@ -52,7 +52,7 @@ export async function getNativeMessageGroupsFromDB(
   if (lastGroup) {
     const lastGroupInfo = await MessageGroup.findOne({ _id: lastGroup });
     if (!lastGroupInfo) {
-      return new Error('last message group does not exist');
+      throw new Error('last message group does not exist');
     }
     const lastGroupUpdateTime = lastGroupInfo.update_time;
     groups = await MessageGroup.find({

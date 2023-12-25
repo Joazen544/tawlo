@@ -12,17 +12,13 @@ export const createPost = catchAsync(async (req: Request, res: Response) => {
   const tags = req.body.tags as string;
 
   if (!['native', 'mother', 'reply'].includes(category)) {
-    res.status(400).json({
-      error: 'The category should either be native, mother or reply',
-    });
-    return;
+    throw new ValidationError(
+      'The category should either be native, mother or reply',
+    );
   }
 
   if (!content) {
-    res.status(400).json({
-      error: 'A post needs to have content',
-    });
-    return;
+    throw new ValidationError('A post needs to have content');
   }
 
   const userId = new ObjectId(user);
@@ -35,9 +31,7 @@ export const createPost = catchAsync(async (req: Request, res: Response) => {
     const motherPostInfo = await Post.findOne({ _id: motherPost });
 
     if (!motherPostInfo) {
-      console.log('mother post does not exist');
-      res.status(400).json({ error: 'mother post does not exist' });
-      return;
+      throw new ValidationError('mother post does not exist');
     }
 
     await postModel.changeMotherPostLastUpdateTime(
@@ -80,8 +74,7 @@ export const createPost = catchAsync(async (req: Request, res: Response) => {
 
   if (category === 'native') {
     if (!tags) {
-      res.status(400).json({ error: 'A native post should have tag' });
-      return;
+      throw new ValidationError('A native post should have tag');
     }
 
     tagsArray = Array.isArray(tags)
@@ -100,16 +93,13 @@ export const createPost = catchAsync(async (req: Request, res: Response) => {
 
   if (category === 'mother') {
     if (!title) {
-      res.status(400).json({ error: 'A mother post should have title' });
-      return;
+      throw new ValidationError('A mother post should have title');
     }
     if (!board) {
-      res.status(400).json({ error: 'A mother post should have a board' });
-      return;
+      throw new ValidationError('A mother post should have a board');
     }
     if (!tags) {
-      res.status(400).json({ error: 'A mother post should have tag' });
-      return;
+      throw new ValidationError('A mother post should have tag');
     }
 
     tagsArray = Array.isArray(tags)
@@ -149,7 +139,7 @@ export const commentPost = catchAsync(async (req: Request, res: Response) => {
   const commentTarget = await Post.findOne({ _id: postId });
 
   if (commentTarget === null) {
-    throw Error('Comment post does not exist');
+    throw new ValidationError('Comment post does not exist');
   }
 
   const postCategory = commentTarget.category;
@@ -164,7 +154,7 @@ export const commentPost = catchAsync(async (req: Request, res: Response) => {
 
   if (postCategory === 'reply') {
     if (!motherPost) {
-      throw Error('reply post must have mother post id');
+      throw new ValidationError('reply post must have mother post id');
     }
 
     await postModel.calculateMotherPostHot(motherPost, 'comment', true);
@@ -196,7 +186,7 @@ export const likePost = catchAsync(async (req: Request, res: Response) => {
   const userId = new ObjectId(user);
 
   if (![true, false].includes(like)) {
-    throw Error('like should be either true or false');
+    throw new ValidationError('like should be either true or false');
   }
 
   const likeTarget = await Post.findOne({ _id: postId });
@@ -237,7 +227,7 @@ export const upvotePost = catchAsync(async (req: Request, res: Response) => {
   const userId = new ObjectId(user);
 
   if (![true, false].includes(upvote)) {
-    throw Error('upvote should be either true or false');
+    throw new ValidationError('upvote should be either true or false');
   }
 
   const upvoteTarget = await Post.findOne({ _id: postId });
@@ -290,7 +280,7 @@ export const downvotePost = catchAsync(async (req: Request, res: Response) => {
   const userId = new ObjectId(user);
 
   if (![true, false].includes(downvote)) {
-    throw Error('upvote should be either true or false');
+    throw new ValidationError('upvote should be either true or false');
   }
 
   const downvoteTarget = await Post.findOne({ _id: postId });
@@ -317,7 +307,7 @@ export const downvotePost = catchAsync(async (req: Request, res: Response) => {
     motherPost,
   );
 
-  res.status(500).json({ error: 'something is wrong downvoting a post' });
+  res.json({ message: `downvote post success ${downvote}` });
 });
 
 export const getRecommendPosts = catchAsync(
@@ -335,7 +325,7 @@ export const getRecommendPosts = catchAsync(
         (tag) => tag.name,
       ) as string[];
     } else {
-      throw Error('No such user, something wrong getting tags');
+      throw new ValidationError('No such user, something wrong getting tags');
     }
 
     const posts = await postModel.getRecommendedPosts(
@@ -354,8 +344,7 @@ export const getCustomizedPosts = catchAsync(
     const { user } = req.body;
     const tags = req.query.tags as string;
     if (!tags) {
-      res.status(400).json({ error: 'no tags' });
-      return;
+      throw new ValidationError('No tags');
     }
     const userInfo = (await userModel.getUserPreference(
       user,

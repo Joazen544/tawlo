@@ -7,6 +7,7 @@ import catchAsync from '../utils/catchAsync';
 import { sendNotificationThroughSocket } from './socket';
 import 'dotenv';
 import redisClient from '../utils/redis';
+import { ValidationError } from '../utils/errorHandler';
 
 const CDN_DOMAIN = process.env.DISTRIBUTION_DOMAIN;
 const USER_INFO_EXPIRE_SECONDS = 21600;
@@ -58,8 +59,7 @@ export const signIn = catchAsync(async (req: Request, res: Response) => {
     !userData ||
     !(await userData.correctPassword(password, userData.password))
   ) {
-    res.status(401).json({ error: 'Incorrect email or password' });
-    return;
+    throw new ValidationError('Incorrect email or password');
   }
 
   const token = await signJWT(userData._id.toString());
@@ -95,13 +95,11 @@ export const updateUserRead = catchAsync(
 export const getUserInfo = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.query;
   if (!id) {
-    res.status(400).json({ error: 'user id is not in req body' });
-    return;
+    throw new ValidationError('user id is not in req body');
   }
 
   if (typeof id !== 'string') {
-    res.status(400).json({ error: 'user id is not string' });
-    return;
+    throw new ValidationError('user id is not string');
   }
 
   try {
@@ -127,8 +125,7 @@ export const getUserInfo = catchAsync(async (req: Request, res: Response) => {
   const userInfo = await userModel.getUserInfo(id);
 
   if (!userInfo) {
-    res.status(400).json({ error: 'user does not exist' });
-    return;
+    throw new ValidationError('user does not exist');
   }
 
   let imageUrl;
@@ -155,8 +152,7 @@ export const getUserRelation = catchAsync(
     const id = req.query.id as string;
 
     if (!id) {
-      res.status(500).json({ error: 'target id is missing' });
-      return;
+      throw new ValidationError('target id is missing');
     }
 
     const relation = await userModel.getUserRelation(user, id);
@@ -170,8 +166,7 @@ export const sendRequest = catchAsync(async (req: Request, res: Response) => {
   const targetId = req.query.id as string;
 
   if (!targetId) {
-    res.status(500).json({ error: 'target id is missing' });
-    return;
+    throw new ValidationError('target id is missing');
   }
 
   const result = await userModel.createRelation(user, targetId);
@@ -209,8 +204,7 @@ export const cancelRequest = catchAsync(async (req: Request, res: Response) => {
   const id = req.query.id as string;
 
   if (!id) {
-    res.status(500).json({ error: 'target id is missing' });
-    return;
+    throw new ValidationError('target id is missing');
   }
 
   const result = await userModel.cancelRequest(user, id);
@@ -228,8 +222,7 @@ export const getNotifications = catchAsync(
 
     const notifications = await userModel.getNotifications(userId);
     if (notifications === false) {
-      res.status(400).json({ error: 'no such user' });
-      return;
+      throw new ValidationError('target id is missing');
     }
 
     notifications.forEach((notification) => {
@@ -283,11 +276,9 @@ export const readAllNotifications = catchAsync(
 
     const updateResult = await userModel.readNotifications(userId);
     if (updateResult === false) {
-      res.status(400).json({
-        error:
-          'no such user or something wrong updating read all notifications',
-      });
-      return;
+      throw new ValidationError(
+        'no such user or something wrong updating read all notifications',
+      );
     }
 
     res.json({ message: 'read all notifications' });
@@ -300,7 +291,7 @@ export const changeImage = catchAsync(async (req: Request, res: Response) => {
   if (req.file) {
     imageName = req.file.filename;
   } else {
-    res.status(400).json({ error: 'no image in req' });
+    throw new ValidationError('no image in req');
   }
 
   await User.updateOne({ _id: user }, { $set: { image: imageName } });
@@ -323,8 +314,7 @@ export const getFriendsList = catchAsync(
     const { user } = req.body;
 
     if (!user) {
-      res.status(400).json({ error: 'no user info' });
-      return;
+      throw new ValidationError('no user info');
     }
 
     const userFriends = await userModel.getUserFriends(user);
@@ -340,8 +330,7 @@ export const getAllFriendsList = catchAsync(
     const userInfo = await User.findOne({ _id: user });
 
     if (!userInfo) {
-      res.status(400).json({ error: 'user does not exist' });
-      return;
+      throw new ValidationError('user does not exist');
     }
 
     const requestedFriendArray: ObjectId[] = [];
@@ -371,8 +360,7 @@ export const refuseRequest = catchAsync(async (req: Request, res: Response) => {
   const id = req.query.id as string;
 
   if (!id) {
-    res.status(500).json({ error: 'target id is missing' });
-    return;
+    throw new ValidationError('target id is missing');
   }
 
   const result = await userModel.refuseRequest(user, id);

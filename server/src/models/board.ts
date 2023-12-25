@@ -17,12 +17,12 @@ const boardSchema = new mongoose.Schema<BoardDocument>({
 
 const Board = mongoose.model('Board', boardSchema);
 
-export async function getAllBoardsFromDB() {
+export async function getAllBoards() {
   const allBoards = await Board.find();
   return allBoards;
 }
 
-export async function getBoardNameFromDB(id: string) {
+export async function getBoardName(id: string) {
   const name = await Board.findOne({ _id: id });
 
   return name;

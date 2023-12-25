@@ -3,46 +3,38 @@ import { ObjectId } from 'mongodb';
 import Meeting, * as meetingModel from '../models/meeting';
 import { sendNotificationThroughSocket } from './socket';
 import User, { UserDocument, addNotification } from '../models/user';
+import { ValidationError } from '../utils/errorHandler';
 import catchAsync from '../utils/catchAsync';
 
 export const accessMeeting = catchAsync(async (req: Request, res: Response) => {
   const { user, role, userIntro, toShare, toAsk } = req.body;
   if (!role || !userIntro || !toShare || !toAsk) {
-    res
-      .status(400)
-      .json({ error: 'role, user info, to share ,to ask must not be null' });
-    return;
+    throw new ValidationError('role, user info, to share, to ask needed');
   }
 
-  const metUsersResult = await User.findOne(
+  const userMeetingInfo = await User.findOne(
     { _id: user },
     { met_users: 1, rating: 1, meeting_comments: 1, meeting_status: 1 },
   );
 
-  if (!metUsersResult) {
-    res.status(500).json({ error: 'user not found' });
-    return;
+  if (!userMeetingInfo) {
+    throw new Error('user not found');
   }
 
-  if (metUsersResult.meeting_status === 'end') {
-    res
-      .status(500)
-      .json({ error: 'user should give last meeting a score first' });
-    return;
+  if (userMeetingInfo.meeting_status === 'end') {
+    throw new Error('user should give last meeting a score first');
   }
 
-  if (metUsersResult.meeting_status !== 'none') {
-    res.status(500).json({ error: 'user already has a meeting' });
-    return;
+  if (userMeetingInfo.meeting_status !== 'none') {
+    throw new Error('user already has a meeting');
   }
 
-  const metUsers = metUsersResult.met_users || [];
-  const meetingComments = metUsersResult.meeting_comments || [];
-  const { rating } = metUsersResult;
+  const metUsers = userMeetingInfo.met_users || [];
+  const meetingComments = userMeetingInfo.meeting_comments || [];
+  const { rating } = userMeetingInfo;
 
   if (!rating) {
-    res.status(400).json({ error: 'user does not have rating property' });
-    return;
+    throw new Error('user does not have rating property');
   }
 
   const joinResult = await meetingModel.joinMeeting(
@@ -57,9 +49,6 @@ export const accessMeeting = catchAsync(async (req: Request, res: Response) => {
   );
 
   if (joinResult) {
-    // joined a meeting
-    // send notification to both users
-
     try {
       await User.updateOne(
         { _id: joinResult.users[0] },
@@ -100,9 +89,9 @@ export const accessMeeting = catchAsync(async (req: Request, res: Response) => {
     });
     return;
   }
-  // else, if false: create a new one
+  // else, no meeting to join: create a new one
 
-  const createResult = await meetingModel.createMeeting(
+  const createMeetingResult = await meetingModel.createMeeting(
     user,
     role,
     rating,
@@ -114,12 +103,12 @@ export const accessMeeting = catchAsync(async (req: Request, res: Response) => {
 
   await User.updateOne(
     { _id: user },
-    { meeting: createResult._id, meeting_status: 'pending' },
+    { meeting: createMeetingResult._id, meeting_status: 'pending' },
   );
 
   res.json({
     status: 'No meeting to join, created meeting',
-    meetingId: createResult._id,
+    meetingId: createMeetingResult._id,
   });
 });
 
@@ -128,7 +117,7 @@ export const getMeeting = catchAsync(async (req: Request, res: Response) => {
 
   const userId = new ObjectId(user);
 
-  const result = await User.aggregate([
+  const [meetingInfo] = await User.aggregate([
     { $match: { _id: userId } },
     {
       $lookup: {
@@ -141,20 +130,24 @@ export const getMeeting = catchAsync(async (req: Request, res: Response) => {
     { $project: { meeting: 1, meeting_status: 1 } },
   ]);
 
-  if (result[0] && result[0].meeting_status === 'none') {
+  if (meetingInfo && meetingInfo.meeting_status === 'none') {
     res.json({ status: 'none', message: 'no meeting now' });
     return;
   }
 
+  console.log(JSON.stringify(meetingInfo, null, 4));
+
   let targetIndex: number = -1;
   let userIndex: number = -1;
 
-  if (!result[0].meeting[0]) {
+  if (!meetingInfo.meeting[0]) {
     res.status(400).json({ error: 'the meeting does not exist' });
     return;
   }
 
-  result[0].meeting[0].users.forEach((userInfo: ObjectId, index: number) => {
+  const [meeting] = meetingInfo.meeting;
+
+  meeting.users.forEach((userInfo: ObjectId, index: number) => {
     if (userInfo.toString() === user) {
       userIndex = index;
     } else {
@@ -162,21 +155,21 @@ export const getMeeting = catchAsync(async (req: Request, res: Response) => {
     }
   });
 
-  if (result[0].meeting_status === 'pending') {
+  if (meetingInfo.meeting_status === 'pending') {
     res.json({
-      _id: result[0]._id,
-      status: result[0].meeting_status,
+      _id: meetingInfo._id,
+      status: meetingInfo.meeting_status,
       meeting: {
-        _id: result[0].meeting[0]._id,
-        status: result[0].meeting[0].status,
+        _id: meeting._id,
+        status: meeting.status,
         user: {
-          userId: result[0].meeting[0].users[0],
-          role: result[0].meeting[0].role[0],
-          user_intro: result[0].meeting[0].user_intro[0],
-          rating: Math.round(result[0].meeting[0].ratings[0] * 10) / 10,
-          meeting_comment: result[0].meeting[0].meeting_comments[0],
-          to_share: result[0].meeting[0].to_share[0],
-          to_ask: result[0].meeting[0].to_ask[0],
+          userId: meeting.users[0],
+          role: meeting.role[0],
+          user_intro: meeting.user_intro[0],
+          rating: Math.round(meeting.ratings[0] * 10) / 10,
+          meeting_comment: meeting.meeting_comments[0],
+          to_share: meeting.to_share[0],
+          to_ask: meeting.to_ask[0],
         },
       },
     });
@@ -185,29 +178,28 @@ export const getMeeting = catchAsync(async (req: Request, res: Response) => {
 
   if (userIndex >= 0 && targetIndex >= 0) {
     res.json({
-      _id: result[0]._id,
-      status: result[0].meeting_status,
+      _id: meetingInfo._id,
+      status: meetingInfo.meeting_status,
       meeting: {
-        _id: result[0].meeting[0]._id,
-        status: result[0].meeting[0].status,
+        _id: meeting._id,
+        status: meeting.status,
         user: {
-          userId: result[0].meeting[0].users[userIndex],
-          role: result[0].meeting[0].role[userIndex],
-          user_intro: result[0].meeting[0].user_intro[userIndex],
-          rating: Math.round(result[0].meeting[0].ratings[userIndex] * 10) / 10,
-          meeting_comment: result[0].meeting[0].meeting_comments[userIndex],
-          to_share: result[0].meeting[0].to_share[userIndex],
-          to_ask: result[0].meeting[0].to_ask[userIndex],
+          userId: meeting.users[userIndex],
+          role: meeting.role[userIndex],
+          user_intro: meeting.user_intro[userIndex],
+          rating: Math.round(meeting.ratings[userIndex] * 10) / 10,
+          meeting_comment: meeting.meeting_comments[userIndex],
+          to_share: meeting.to_share[userIndex],
+          to_ask: meeting.to_ask[userIndex],
         },
         target: {
-          userId: result[0].meeting[0].users[targetIndex],
-          role: result[0].meeting[0].role[targetIndex],
-          user_intro: result[0].meeting[0].user_intro[targetIndex],
-          rating:
-            Math.round(result[0].meeting[0].ratings[targetIndex] * 10) / 10,
-          meeting_comment: result[0].meeting[0].meeting_comments[targetIndex],
-          to_share: result[0].meeting[0].to_share[targetIndex],
-          to_ask: result[0].meeting[0].to_ask[targetIndex],
+          userId: meeting.users[targetIndex],
+          role: meeting.role[targetIndex],
+          user_intro: meeting.user_intro[targetIndex],
+          rating: Math.round(meeting.ratings[targetIndex] * 10) / 10,
+          meeting_comment: meeting.meeting_comments[targetIndex],
+          to_share: meeting.to_share[targetIndex],
+          to_ask: meeting.to_ask[targetIndex],
         },
       },
     });
@@ -223,33 +215,27 @@ export const replyMeeting = catchAsync(
     const { meetingId } = req.params;
 
     if (!reply || !meetingId) {
-      res
-        .status(400)
-        .json({ error: 'reply and meetingId can not be undefined' });
-      return;
+      throw new ValidationError('reply and meetingId needed');
     }
 
     if (!['accept', 'deny'].includes(reply)) {
-      res.status(400).json({ error: 'reply must be accept or deny' });
-      return;
+      throw new ValidationError('reply must be accept or deny');
     }
+
     const meeting = await Meeting.findOne<meetingModel.MeetingDocument>({
       _id: meetingId,
     });
 
     if (!meeting) {
-      res.status(400).json({ error: 'meeting does not exist' });
-      return;
+      throw new ValidationError('meeting does not exist');
     }
 
     if (!meeting.users.includes(user)) {
-      res.status(400).json({ error: 'meeting does not include this user' });
-      return;
+      throw new ValidationError('meeting does not include this user');
     }
 
     if (meeting.status !== 'checking') {
-      res.status(400).json({ error: 'the meeting is not checking' });
-      return;
+      throw new ValidationError('the meeting is not checking');
     }
 
     if (reply === 'accept') {
@@ -316,19 +302,16 @@ export const replyMeeting = catchAsync(
     await Meeting.updateOne({ _id: meetingId }, { $set: { status: 'fail' } });
 
     meeting.users.forEach(async (userId: ObjectId, index: number) => {
-      const metUsersResult = await User.findOne(
+      const metUsersInfo = await User.findOne(
         { _id: userId },
         { met_users: 1, rating: 1, meeting_status: 1 },
       );
 
-      if (!metUsersResult) {
-        res
-          .status(500)
-          .json({ error: 'can not find user while updating meeting' });
-        return;
+      if (!metUsersInfo) {
+        throw new Error('can not find user while updating meeting');
       }
 
-      const metUsers = metUsersResult.met_users || [];
+      const metUsers = metUsersInfo.met_users || [];
 
       const joinResult = await meetingModel.joinMeeting(
         metUsers,
@@ -424,46 +407,38 @@ export const scoreMeeting = catchAsync(async (req: Request, res: Response) => {
   const { user, score, targetUser, comment } = req.body;
   const { meetingId } = req.params;
   if (!comment) {
-    res.status(400).json({ error: 'comment is missing' });
-    return;
+    throw new ValidationError('comment is needed');
   }
   if (!score) {
-    res.status(400).json({ error: 'score is missing' });
-    return;
+    throw new ValidationError('score is needed');
   }
 
   if (typeof score !== 'number') {
-    res.status(400).json({ error: 'score is not number' });
-    return;
+    throw new ValidationError('score is not number');
   }
 
   const meeting = await Meeting.findOne({ _id: meetingId });
 
   if (!meeting) {
-    res.status(400).json({ error: 'meeting does not exist' });
-    return;
+    throw new ValidationError('meeting does not exist');
   }
 
   if (!meeting.users.includes(user)) {
-    res.status(400).json({ error: 'meeting does not include this user' });
-    return;
+    throw new ValidationError('meeting does not include this user');
   }
 
   if (!meeting.users.includes(targetUser)) {
-    res.status(400).json({ error: 'meeting does not include target user' });
-    return;
+    throw new ValidationError('meeting does not include target user');
   }
 
   const userInfo = await User.findOne<UserDocument>({ _id: targetUser });
   if (!userInfo) {
-    res.status(400).json({ error: 'user does not exist' });
-    return;
+    throw new ValidationError('user does not exist');
   }
   const { rating } = userInfo;
   const ratingNumber = userInfo.rating_number;
   const newRatingNumber = ratingNumber + 1;
   const newRating = (rating * ratingNumber + score) / newRatingNumber;
-  // console.log(newRating);
 
   await User.updateOne(
     { _id: targetUser },
@@ -489,13 +464,12 @@ export const cancelMeeting = catchAsync(async (req: Request, res: Response) => {
   );
 
   if (!userMeetingInfo) {
-    res.status(400).json({ error: 'user does not exist' });
+    throw new ValidationError('user does not exist');
     return;
   }
 
   if (userMeetingInfo.meeting_status !== 'pending') {
-    res.status(400).json({ error: 'user can only cancel pending meeting' });
-    return;
+    throw new ValidationError('user can only cancel pending meeting');
   }
 
   await Meeting.updateOne({ _id: userMeetingInfo.meeting }, { status: 'fail' });
@@ -509,8 +483,7 @@ export const getSharings = catchAsync(async (req: Request, res: Response) => {
   const search = req.query.search as string;
 
   if (!search) {
-    res.status(400).json({ error: 'no search words' });
-    return;
+    throw new ValidationError('no search words');
   }
 
   const tags = await meetingModel.getSharings(search);
@@ -522,8 +495,7 @@ export const getAskings = catchAsync(async (req: Request, res: Response) => {
   const search = req.query.search as string;
 
   if (!search) {
-    res.status(400).json({ error: 'no search words' });
-    return;
+    throw new ValidationError('no search words');
   }
 
   const tags = await meetingModel.getAskings(search);

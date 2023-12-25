@@ -70,7 +70,7 @@ export async function getEarlierMessages(
   return returnMessages;
 }
 
-export async function createMessageToDB(
+export async function createMessage(
   group: ObjectId,
   from: ObjectId,
   content: string,

@@ -17,11 +17,11 @@ export function errorHandler(
 ) {
   console.error(err);
   if (err instanceof ValidationError) {
-    res.status(400).json({ errors: err.message });
+    res.status(400).json({ type: err.name, errors: err.message });
     return;
   }
   if (err instanceof Error) {
-    res.status(500).json({ errors: err.message });
+    res.status(500).json({ type: 'server problem', errors: err.message });
     return;
   }
   res.status(500).send('Oops, unknown error');
