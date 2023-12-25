@@ -184,84 +184,97 @@ userSchema.methods.correctPassword = async function (
 
 const User = mongoose.model('User', userSchema);
 
-export function updateUserAction(
+export async function updateUserAction(
   userId: ObjectId,
   tags: string[],
   board: ObjectId,
 ) {
   try {
-    User.findOne({ _id: userId }).then((doc) => {
-      if (doc) {
-        const REPLACE_TAG_TARGET = 5;
-        const TAG_LARGEST_POINT = 30;
+    const REPLACE_TAG_TARGET = 5;
+    const TAG_LARGEST_POINT = 30;
+    const userData = await User.findOne({ _id: userId });
 
-        const newTagsArray: (string | undefined)[] = [];
+    if (!userData) {
+      throw new Error('user does not exist');
+    }
 
-        tags.forEach((tag) => {
-          let ifExist = 0;
-          let lessThan30;
-          const len = doc.preference_tags.length;
+    const preferenceTags = userData.preference_tags;
+    let newPreferenceTags;
 
-          doc.preference_tags.forEach((preference) => {
-            if (
-              preference.name === tag &&
-              +preference.number <= TAG_LARGEST_POINT
-            ) {
-              preference.number = +preference.number + len;
-              ifExist += 1;
-              lessThan30 = true;
-            } else if (preference.name === tag) {
-              lessThan30 = false;
-            }
-          });
+    if (!preferenceTags) {
+      throw new Error('user preference does not exist');
+    }
+    const newTagsArray: (string | undefined)[] = [];
 
-          if (ifExist) {
-            if (lessThan30) {
-              doc.preference_tags.forEach((preference) => {
-                preference.number = +preference.number - ifExist;
-              });
-            }
-          } else if (doc.preference_tags.length === 0) {
-            doc.preference_tags.push({ name: tag, number: 20 });
-          } else if (doc.preference_tags.length < 10) {
-            doc.preference_tags.push({ name: tag, number: 0 });
-          } else {
-            newTagsArray.push(tag);
-          }
-        });
+    tags.forEach((tag) => {
+      let ifExist = 0;
+      let ifScoreLessThanLargestPoint;
+      const userPreferenceLength = preferenceTags.length;
 
-        if (board) doc.read_board.push(board);
-        if (doc.read_board.length > 4) {
-          doc.read_board = doc.read_board.slice(1, 5);
+      preferenceTags.forEach((preference) => {
+        if (
+          preference.name === tag &&
+          +preference.number <= TAG_LARGEST_POINT
+        ) {
+          preference.number = +preference.number + userPreferenceLength;
+          ifExist += 1;
+          ifScoreLessThanLargestPoint = true;
+        } else if (preference.name === tag) {
+          ifScoreLessThanLargestPoint = false;
         }
+      });
 
-        doc.preference_tags.sort((aTag, bTag) => +bTag.number - +aTag.number);
-
-        if (newTagsArray.length > 0) {
-          for (let i = 6; i < doc.preference_tags.length; i += 1) {
-            newTagsArray.forEach((tag, index) => {
-              if (tag === doc.preference_tags[i].name) {
-                doc.preference_tags[REPLACE_TAG_TARGET].name =
-                  doc.preference_tags[i].name;
-                newTagsArray[index] = undefined;
-              }
-            });
-          }
-
-          doc.preference_tags = doc.preference_tags.slice(
-            0,
-            9 - newTagsArray.length,
-          );
-          newTagsArray.forEach((tag) => {
-            if (tag !== undefined) {
-              doc.preference_tags.push({ name: tag, number: 0 });
-            }
+      if (ifExist) {
+        if (ifScoreLessThanLargestPoint) {
+          preferenceTags.forEach((preference) => {
+            preference.number = +preference.number - ifExist;
           });
         }
-
-        doc.save();
+      } else if (preferenceTags.length === 0) {
+        preferenceTags.push({ name: tag, number: 20 });
+      } else if (preferenceTags.length < 10) {
+        preferenceTags.push({ name: tag, number: 0 });
+      } else {
+        newTagsArray.push(tag);
       }
     });
+
+    if (newTagsArray.length > 0) {
+      for (let i = 6; i < preferenceTags.length; i += 1) {
+        newTagsArray.forEach((tag, index) => {
+          if (tag === preferenceTags[i].name) {
+            preferenceTags[REPLACE_TAG_TARGET].name = preferenceTags[i].name;
+            newTagsArray[index] = undefined;
+          }
+        });
+      }
+
+      newPreferenceTags = preferenceTags.slice(0, 9 - newTagsArray.length);
+      newTagsArray.forEach((tag) => {
+        if (tag !== undefined) {
+          newPreferenceTags.push({ name: tag, number: 0 });
+        }
+      });
+    }
+
+    if (!newPreferenceTags) {
+      throw new Error(
+        'something wrong updating user action, no new preference tags array',
+      );
+    }
+    newPreferenceTags.sort((aTag, bTag) => +bTag.number - +aTag.number);
+
+    const readBoard = userData.read_board;
+    readBoard.push(board);
+    const newReadBoard =
+      readBoard.length > 4 ? readBoard.slice(1, 5) : readBoard;
+
+    await User.updateOne(
+      { _id: userId },
+      {
+        $set: { preference_tags: newPreferenceTags, read_board: newReadBoard },
+      },
+    );
   } catch (err) {
     console.log(err);
   }
