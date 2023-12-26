@@ -193,17 +193,21 @@ const Signin = () => {
     <>
       {ifSignIn && <Navigate to="/" replace={true}></Navigate>}
       <div
-        style={{ backgroundColor: import.meta.env.VITE_MAIN_COLOR }}
+        style={{
+          backgroundColor: import.meta.env.VITE_MAIN_COLOR,
+          paddingLeft: '5%',
+          paddingRight: '5%',
+        }}
         className=" min-h-screen flex justify-evenly items-center"
       >
-        <div className="w-1/2 h-72 flex flex-col justify-center items-center ">
+        <div className=" h-72 flex flex-shrink flex-col justify-center items-center ">
           <div className="flex items-end mb-10">
             <h2
               style={{
                 color: import.meta.env.VITE_MAIN_STRING_COLOR,
                 fontSize: '5rem',
               }}
-              className="ml-20"
+              className=" ml-0.5"
             >
               Tawlo
             </h2>
@@ -217,17 +221,16 @@ const Signin = () => {
               職涯社群
             </h2>
           </div>
-          <div className="ml-32 mt-14">
-            <img
-              style={{ maxWidth: '35rem' }}
-              src="/src/assets/landing.png"
-              alt=""
-            />
+          <div className=" mt-14">
+            <div
+              style={{ width: '30rem', height: '30rem' }}
+              className="bg-landing-image bg-contain bg-no-repeat"
+            ></div>
           </div>
         </div>
         <div
           style={{ color: import.meta.env.VITE_THIRD_COLOR }}
-          className="w-3xl mx-auto mb-8 pt-8 flex"
+          className=" flex-shrink mb-8 pt-8 flex"
         >
           <div>
             <h2 className="text-2xl font-bold mb-4">註冊</h2>
@@ -324,7 +327,7 @@ const Signin = () => {
             </form>
           </div>
 
-          <div className="ml-20">
+          <div className="ml-20  w-52">
             <h2 className="text-2xl font-bold mb-4">登入</h2>
             <form onSubmit={handleSigninSubmit}>
               <div className="mb-4">
