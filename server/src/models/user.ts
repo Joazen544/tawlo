@@ -26,7 +26,7 @@ export interface UserDocument extends Document {
   follow: ObjectId[];
   block: ObjectId[];
   read_board: ObjectId[];
-  preference_tags: { name: string; number: Number }[];
+  preference_tags: { name: string; number: number }[];
   recommend_mode: string;
   upvote: number;
   downvote: number;
@@ -44,7 +44,7 @@ export interface UserDocument extends Document {
   correctPassword: (arg1: string, arg2: string) => Boolean;
 }
 
-const userSchema = new mongoose.Schema<UserDocument>({
+export const userSchema = new mongoose.Schema<UserDocument>({
   name: {
     type: String,
     required: [true, 'Please tell us your name'],
@@ -184,6 +184,97 @@ userSchema.methods.correctPassword = async function (
 
 const User = mongoose.model('User', userSchema);
 
+interface Tag {
+  name: string;
+  number: number;
+}
+
+export const updateReadBoards = (readBoards: ObjectId[], board: ObjectId) => {
+  readBoards.push(board);
+  return readBoards.length > 4 ? readBoards.slice(1, 5) : readBoards;
+};
+
+export const adjustOldPreferenceTagsScore = (
+  originalTags: Tag[],
+  tags: string[],
+  TAG_LARGEST_POINT: number,
+) => {
+  const newTagsArray: string[] = [];
+
+  tags.forEach((tag) => {
+    let ifExist = 0;
+    let ifScoreLessThanLargestPoint;
+    const userPreferenceLength = originalTags.length;
+
+    originalTags.forEach((preference) => {
+      if (preference.name === tag && +preference.number <= TAG_LARGEST_POINT) {
+        preference.number = +preference.number + userPreferenceLength;
+        ifExist += 1;
+        ifScoreLessThanLargestPoint = true;
+      } else if (preference.name === tag) {
+        ifScoreLessThanLargestPoint = false;
+      }
+    });
+
+    if (ifExist) {
+      if (ifScoreLessThanLargestPoint) {
+        originalTags.forEach((preference) => {
+          preference.number = +preference.number - ifExist;
+        });
+      }
+    } else if (originalTags.length === 0) {
+      originalTags.push({ name: tag, number: 20 });
+    } else if (originalTags.length < 10) {
+      originalTags.push({ name: tag, number: 0 });
+    } else {
+      newTagsArray.push(tag);
+    }
+  });
+
+  return { originalArray: originalTags, newTags: newTagsArray };
+};
+
+export const addNewTagsToPreference = (
+  originalSortedTags: Tag[],
+  newTags: string[],
+  REPLACE_TAG_TARGET: number,
+) => {
+  const newTagsArray: (string | undefined)[] = newTags;
+  if (newTags.length > 0) {
+    for (
+      let i = REPLACE_TAG_TARGET + 1;
+      i < originalSortedTags.length;
+      i += 1
+    ) {
+      newTags.forEach((tag, index) => {
+        if (tag === originalSortedTags[i].name) {
+          originalSortedTags[REPLACE_TAG_TARGET].name =
+            originalSortedTags[i].name;
+          newTagsArray[index] = undefined;
+        }
+      });
+    }
+
+    const newPreferenceTags = originalSortedTags.slice(
+      0,
+      9 - newTagsArray.length,
+    );
+
+    newTagsArray.forEach((tag) => {
+      if (tag !== undefined) {
+        newPreferenceTags.push({ name: tag, number: 0 });
+      }
+    });
+
+    return newPreferenceTags;
+  }
+  return originalSortedTags;
+};
+
+export const sortOriginalTags = (oldTagsScoreAdjusted: Tag[]) => {
+  return oldTagsScoreAdjusted.sort((aTag, bTag) => +bTag.number - +aTag.number);
+};
+
 export async function updateUserAction(
   userId: ObjectId,
   tags: string[],
@@ -199,78 +290,34 @@ export async function updateUserAction(
     }
 
     const preferenceTags = userData.preference_tags;
-    let newPreferenceTags;
 
     if (!preferenceTags) {
       throw new Error('user preference does not exist');
     }
-    const newTagsArray: (string | undefined)[] = [];
 
-    tags.forEach((tag) => {
-      let ifExist = 0;
-      let ifScoreLessThanLargestPoint;
-      const userPreferenceLength = preferenceTags.length;
+    const { originalArray, newTags } = adjustOldPreferenceTagsScore(
+      preferenceTags,
+      tags,
+      TAG_LARGEST_POINT,
+    );
 
-      preferenceTags.forEach((preference) => {
-        if (
-          preference.name === tag &&
-          +preference.number <= TAG_LARGEST_POINT
-        ) {
-          preference.number = +preference.number + userPreferenceLength;
-          ifExist += 1;
-          ifScoreLessThanLargestPoint = true;
-        } else if (preference.name === tag) {
-          ifScoreLessThanLargestPoint = false;
-        }
-      });
+    const preferenceTagsSorted = sortOriginalTags(originalArray);
 
-      if (ifExist) {
-        if (ifScoreLessThanLargestPoint) {
-          preferenceTags.forEach((preference) => {
-            preference.number = +preference.number - ifExist;
-          });
-        }
-      } else if (preferenceTags.length === 0) {
-        preferenceTags.push({ name: tag, number: 20 });
-      } else if (preferenceTags.length < 10) {
-        preferenceTags.push({ name: tag, number: 0 });
-      } else {
-        newTagsArray.push(tag);
-      }
-    });
+    const preferenceTagsAddingNew = addNewTagsToPreference(
+      preferenceTagsSorted,
+      newTags,
+      REPLACE_TAG_TARGET,
+    );
 
-    if (newTagsArray.length > 0) {
-      for (let i = 6; i < preferenceTags.length; i += 1) {
-        newTagsArray.forEach((tag, index) => {
-          if (tag === preferenceTags[i].name) {
-            preferenceTags[REPLACE_TAG_TARGET].name = preferenceTags[i].name;
-            newTagsArray[index] = undefined;
-          }
-        });
-      }
-
-      newPreferenceTags = preferenceTags.slice(0, 9 - newTagsArray.length);
-
-      newTagsArray.forEach((tag) => {
-        if (tag !== undefined) {
-          newPreferenceTags.push({ name: tag, number: 0 });
-        }
-      });
-    } else {
-      newPreferenceTags = preferenceTags;
-    }
-
-    newPreferenceTags.sort((aTag, bTag) => +bTag.number - +aTag.number);
-
-    const readBoard = userData.read_board;
-    readBoard.push(board);
-    const newReadBoard =
-      readBoard.length > 4 ? readBoard.slice(1, 5) : readBoard;
+    const newReadBoards = updateReadBoards(userData.read_board, board);
 
     await User.updateOne(
       { _id: userId },
       {
-        $set: { preference_tags: newPreferenceTags, read_board: newReadBoard },
+        $set: {
+          preference_tags: preferenceTagsAddingNew,
+          read_board: newReadBoards,
+        },
       },
     );
   } catch (err) {

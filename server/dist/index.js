@@ -19,6 +19,7 @@ const errorHandler_1 = require("./utils/errorHandler");
 const socket_1 = require("./controllers/socket");
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
+exports.default = server;
 // connect socket
 (0, socket_1.initSocket)(server);
 // app.use(cors());

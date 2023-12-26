@@ -15,8 +15,10 @@ import { errorHandler } from './utils/errorHandler';
 import { initSocket } from './controllers/socket';
 
 const app = express();
+
 const server = http.createServer(app);
 
+export default server;
 // connect socket
 initSocket(server);
 

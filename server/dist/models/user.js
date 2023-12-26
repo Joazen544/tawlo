@@ -12,12 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserFriends = exports.refuseRequest = exports.getUserInfo = exports.getUserImage = exports.readNotifications = exports.getNotifications = exports.addNotification = exports.cancelRequest = exports.createRelation = exports.getUserRelation = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = void 0;
+exports.getUserFriends = exports.refuseRequest = exports.getUserInfo = exports.getUserImage = exports.readNotifications = exports.getNotifications = exports.addNotification = exports.cancelRequest = exports.createRelation = exports.getUserRelation = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = exports.sortOriginalTags = exports.addNewTagsToPreference = exports.adjustOldPreferenceTagsScore = exports.updateReadBoards = exports.userSchema = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const validator_1 = __importDefault(require("validator"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const userSchema = new mongoose_1.default.Schema({
+exports.userSchema = new mongoose_1.default.Schema({
     name: {
         type: String,
         required: [true, 'Please tell us your name'],
@@ -134,7 +134,7 @@ const userSchema = new mongoose_1.default.Schema({
     honor_now: { type: String, default: '' },
     honors: { type: [String], default: [] },
 });
-userSchema.pre('save', function (next) {
+exports.userSchema.pre('save', function (next) {
     return __awaiter(this, void 0, void 0, function* () {
         // Only run this function if password was actually modified
         if (!this.isModified('password'))
@@ -145,13 +145,81 @@ userSchema.pre('save', function (next) {
         return next();
     });
 });
-userSchema.methods.correctPassword = function (candidatePassword, userPassword) {
+exports.userSchema.methods.correctPassword = function (candidatePassword, userPassword) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield bcrypt_1.default.compare(candidatePassword, userPassword);
         return result;
     });
 };
-const User = mongoose_1.default.model('User', userSchema);
+const User = mongoose_1.default.model('User', exports.userSchema);
+const updateReadBoards = (readBoards, board) => {
+    readBoards.push(board);
+    return readBoards.length > 4 ? readBoards.slice(1, 5) : readBoards;
+};
+exports.updateReadBoards = updateReadBoards;
+const adjustOldPreferenceTagsScore = (originalTags, tags, TAG_LARGEST_POINT) => {
+    const newTagsArray = [];
+    tags.forEach((tag) => {
+        let ifExist = 0;
+        let ifScoreLessThanLargestPoint;
+        const userPreferenceLength = originalTags.length;
+        originalTags.forEach((preference) => {
+            if (preference.name === tag && +preference.number <= TAG_LARGEST_POINT) {
+                preference.number = +preference.number + userPreferenceLength;
+                ifExist += 1;
+                ifScoreLessThanLargestPoint = true;
+            }
+            else if (preference.name === tag) {
+                ifScoreLessThanLargestPoint = false;
+            }
+        });
+        if (ifExist) {
+            if (ifScoreLessThanLargestPoint) {
+                originalTags.forEach((preference) => {
+                    preference.number = +preference.number - ifExist;
+                });
+            }
+        }
+        else if (originalTags.length === 0) {
+            originalTags.push({ name: tag, number: 20 });
+        }
+        else if (originalTags.length < 10) {
+            originalTags.push({ name: tag, number: 0 });
+        }
+        else {
+            newTagsArray.push(tag);
+        }
+    });
+    return { originalArray: originalTags, newTags: newTagsArray };
+};
+exports.adjustOldPreferenceTagsScore = adjustOldPreferenceTagsScore;
+const addNewTagsToPreference = (originalSortedTags, newTags, REPLACE_TAG_TARGET) => {
+    const newTagsArray = newTags;
+    if (newTags.length > 0) {
+        for (let i = REPLACE_TAG_TARGET + 1; i < originalSortedTags.length; i += 1) {
+            newTags.forEach((tag, index) => {
+                if (tag === originalSortedTags[i].name) {
+                    originalSortedTags[REPLACE_TAG_TARGET].name =
+                        originalSortedTags[i].name;
+                    newTagsArray[index] = undefined;
+                }
+            });
+        }
+        const newPreferenceTags = originalSortedTags.slice(0, 9 - newTagsArray.length);
+        newTagsArray.forEach((tag) => {
+            if (tag !== undefined) {
+                newPreferenceTags.push({ name: tag, number: 0 });
+            }
+        });
+        return newPreferenceTags;
+    }
+    return originalSortedTags;
+};
+exports.addNewTagsToPreference = addNewTagsToPreference;
+const sortOriginalTags = (oldTagsScoreAdjusted) => {
+    return oldTagsScoreAdjusted.sort((aTag, bTag) => +bTag.number - +aTag.number);
+};
+exports.sortOriginalTags = sortOriginalTags;
 function updateUserAction(userId, tags, board) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -162,68 +230,18 @@ function updateUserAction(userId, tags, board) {
                 throw new Error('user does not exist');
             }
             const preferenceTags = userData.preference_tags;
-            let newPreferenceTags;
             if (!preferenceTags) {
                 throw new Error('user preference does not exist');
             }
-            const newTagsArray = [];
-            tags.forEach((tag) => {
-                let ifExist = 0;
-                let ifScoreLessThanLargestPoint;
-                const userPreferenceLength = preferenceTags.length;
-                preferenceTags.forEach((preference) => {
-                    if (preference.name === tag &&
-                        +preference.number <= TAG_LARGEST_POINT) {
-                        preference.number = +preference.number + userPreferenceLength;
-                        ifExist += 1;
-                        ifScoreLessThanLargestPoint = true;
-                    }
-                    else if (preference.name === tag) {
-                        ifScoreLessThanLargestPoint = false;
-                    }
-                });
-                if (ifExist) {
-                    if (ifScoreLessThanLargestPoint) {
-                        preferenceTags.forEach((preference) => {
-                            preference.number = +preference.number - ifExist;
-                        });
-                    }
-                }
-                else if (preferenceTags.length === 0) {
-                    preferenceTags.push({ name: tag, number: 20 });
-                }
-                else if (preferenceTags.length < 10) {
-                    preferenceTags.push({ name: tag, number: 0 });
-                }
-                else {
-                    newTagsArray.push(tag);
-                }
-            });
-            if (newTagsArray.length > 0) {
-                for (let i = 6; i < preferenceTags.length; i += 1) {
-                    newTagsArray.forEach((tag, index) => {
-                        if (tag === preferenceTags[i].name) {
-                            preferenceTags[REPLACE_TAG_TARGET].name = preferenceTags[i].name;
-                            newTagsArray[index] = undefined;
-                        }
-                    });
-                }
-                newPreferenceTags = preferenceTags.slice(0, 9 - newTagsArray.length);
-                newTagsArray.forEach((tag) => {
-                    if (tag !== undefined) {
-                        newPreferenceTags.push({ name: tag, number: 0 });
-                    }
-                });
-            }
-            else {
-                newPreferenceTags = preferenceTags;
-            }
-            newPreferenceTags.sort((aTag, bTag) => +bTag.number - +aTag.number);
-            const readBoard = userData.read_board;
-            readBoard.push(board);
-            const newReadBoard = readBoard.length > 4 ? readBoard.slice(1, 5) : readBoard;
+            const { originalArray, newTags } = (0, exports.adjustOldPreferenceTagsScore)(preferenceTags, tags, TAG_LARGEST_POINT);
+            const preferenceTagsSorted = (0, exports.sortOriginalTags)(originalArray);
+            const preferenceTagsAddingNew = (0, exports.addNewTagsToPreference)(preferenceTagsSorted, newTags, REPLACE_TAG_TARGET);
+            const newReadBoards = (0, exports.updateReadBoards)(userData.read_board, board);
             yield User.updateOne({ _id: userId }, {
-                $set: { preference_tags: newPreferenceTags, read_board: newReadBoard },
+                $set: {
+                    preference_tags: preferenceTagsAddingNew,
+                    read_board: newReadBoards,
+                },
             });
         }
         catch (err) {
