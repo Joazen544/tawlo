@@ -23,7 +23,7 @@
     "dev": "nodemon ./src/index.ts",
     "start": "node ./dist/index.js",
     "build": "tsc",
-    "test": "vitest"
+    "test": "vitest --config ./src/tests/vitest.config.ts"
   },
   "keywords": [],
   "author": "",
