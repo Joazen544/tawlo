@@ -20,8 +20,8 @@ const Signin = () => {
   });
 
   const [signinData, setSigninData] = useState({
-    email: '',
-    password: '',
+    email: 'mock@test.com',
+    password: '12345678',
   });
 
   const [signupError, setSignupError] = useState('');
