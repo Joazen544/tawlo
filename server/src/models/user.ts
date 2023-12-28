@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ObjectId } from 'mongodb';
+import { ObjectId, TransactionOptions } from 'mongodb';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 
@@ -212,6 +212,7 @@ export const adjustOldPreferenceTagsScore = (
         ifExist += 1;
         ifScoreLessThanLargestPoint = true;
       } else if (preference.name === tag) {
+        ifExist += 1;
         ifScoreLessThanLargestPoint = false;
       }
     });
@@ -280,48 +281,64 @@ export async function updateUserAction(
   tags: string[],
   board: ObjectId,
 ) {
+  const session = await User.startSession();
   try {
     const REPLACE_TAG_TARGET = 5;
     const TAG_LARGEST_POINT = 30;
-    const userData = await User.findOne({ _id: userId });
 
-    if (!userData) {
-      throw new Error('user does not exist');
-    }
+    // session.startTransaction();
+    const transactionOptions: TransactionOptions = {
+      readPreference: 'primary',
+      readConcern: { level: 'majority' },
+      writeConcern: { w: 'majority' },
+    };
 
-    const preferenceTags = userData.preference_tags;
+    await session.withTransaction(async () => {
+      const userData = await User.findOne({ _id: userId }).session(session);
 
-    if (!preferenceTags) {
-      throw new Error('user preference does not exist');
-    }
+      if (!userData) {
+        throw new Error('user does not exist');
+      }
 
-    const { originalArray, newTags } = adjustOldPreferenceTagsScore(
-      preferenceTags,
-      tags,
-      TAG_LARGEST_POINT,
-    );
+      const preferenceTags = userData.preference_tags;
 
-    const preferenceTagsSorted = sortOriginalTags(originalArray);
+      if (!preferenceTags) {
+        throw new Error('user preference does not exist');
+      }
 
-    const preferenceTagsAddingNew = addNewTagsToPreference(
-      preferenceTagsSorted,
-      newTags,
-      REPLACE_TAG_TARGET,
-    );
+      const { originalArray, newTags } = adjustOldPreferenceTagsScore(
+        preferenceTags,
+        tags,
+        TAG_LARGEST_POINT,
+      );
 
-    const newReadBoards = updateReadBoards(userData.read_board, board);
+      const preferenceTagsSorted = sortOriginalTags(originalArray);
 
-    await User.updateOne(
-      { _id: userId },
-      {
-        $set: {
-          preference_tags: preferenceTagsAddingNew,
-          read_board: newReadBoards,
+      const preferenceTagsAddingNew = addNewTagsToPreference(
+        preferenceTagsSorted,
+        newTags,
+        REPLACE_TAG_TARGET,
+      );
+
+      const newReadBoards = updateReadBoards(userData.read_board, board);
+
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            preference_tags: preferenceTagsAddingNew,
+            read_board: newReadBoards,
+          },
         },
-      },
-    );
+      ).session(session);
+
+      await session.commitTransaction();
+    }, transactionOptions);
   } catch (err) {
     console.log(err);
+    await session.abortTransaction();
+  } finally {
+    await session.endSession();
   }
 }
 
@@ -392,25 +409,21 @@ export async function createRelation(user: string, target: string) {
       await User.updateOne(
         { _id: user },
         { $push: { friends: { user: target, status: 'requested' } } },
-        { session },
-      );
+      ).session(session);
       await User.updateOne(
         { _id: target },
         { $push: { friends: { user, status: 'received' } } },
-        { session },
-      );
+      ).session(session);
       result = 'send';
     } else if (relation === 'received') {
       await User.updateOne(
         { _id: user, 'friends.user': target },
         { $set: { 'friends.$.status': 'friends' } },
-        { session },
-      );
+      ).session(session);
       await User.updateOne(
         { _id: target, 'friends.user': user },
         { $set: { 'friends.$.status': 'friends' } },
-        { session },
-      );
+      ).session(session);
       result = 'accept';
     } else {
       result = 'error';
@@ -442,14 +455,12 @@ export async function cancelRequest(user: string, target: string) {
     await User.updateOne(
       { _id: user },
       { $pull: { friends: { user: target } } },
-      { session },
-    );
+    ).session(session);
 
     await User.updateOne(
       { _id: target },
       { $pull: { friends: { user } } },
-      { session },
-    );
+    ).session(session);
 
     await session.commitTransaction();
     result = true;
@@ -660,14 +671,12 @@ export async function refuseRequest(user: string, target: string) {
     await User.updateOne(
       { _id: user },
       { $pull: { friends: { user: target } } },
-      { session },
-    );
+    ).session(session);
 
     await User.updateOne(
       { _id: target },
       { $pull: { friends: { user } } },
-      { session },
-    );
+    ).session(session);
 
     await session.commitTransaction();
     result = true;
@@ -695,6 +704,11 @@ export async function getUserFriends(user: string) {
   const returnArray = friendArray.map((el) => el.user);
 
   return returnArray;
+}
+
+export async function findUserPreference(user: string) {
+  const userInfo = await User.findOne({ _id: user }, { preference_tags: 1 });
+  return userInfo?.preference_tags;
 }
 
 export default User;

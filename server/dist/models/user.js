@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserFriends = exports.refuseRequest = exports.getUserInfo = exports.getUserImage = exports.readNotifications = exports.getNotifications = exports.addNotification = exports.cancelRequest = exports.createRelation = exports.getUserRelation = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = exports.sortOriginalTags = exports.addNewTagsToPreference = exports.adjustOldPreferenceTagsScore = exports.updateReadBoards = exports.userSchema = void 0;
+exports.findUserPreference = exports.getUserFriends = exports.refuseRequest = exports.getUserInfo = exports.getUserImage = exports.readNotifications = exports.getNotifications = exports.addNotification = exports.cancelRequest = exports.createRelation = exports.getUserRelation = exports.getUserPreference = exports.updateUserReadPosts = exports.updateUserAction = exports.sortOriginalTags = exports.addNewTagsToPreference = exports.adjustOldPreferenceTagsScore = exports.updateReadBoards = exports.userSchema = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const validator_1 = __importDefault(require("validator"));
@@ -170,6 +170,7 @@ const adjustOldPreferenceTagsScore = (originalTags, tags, TAG_LARGEST_POINT) => 
                 ifScoreLessThanLargestPoint = true;
             }
             else if (preference.name === tag) {
+                ifExist += 1;
                 ifScoreLessThanLargestPoint = false;
             }
         });
@@ -222,30 +223,44 @@ const sortOriginalTags = (oldTagsScoreAdjusted) => {
 exports.sortOriginalTags = sortOriginalTags;
 function updateUserAction(userId, tags, board) {
     return __awaiter(this, void 0, void 0, function* () {
+        const session = yield User.startSession();
         try {
             const REPLACE_TAG_TARGET = 5;
             const TAG_LARGEST_POINT = 30;
-            const userData = yield User.findOne({ _id: userId });
-            if (!userData) {
-                throw new Error('user does not exist');
-            }
-            const preferenceTags = userData.preference_tags;
-            if (!preferenceTags) {
-                throw new Error('user preference does not exist');
-            }
-            const { originalArray, newTags } = (0, exports.adjustOldPreferenceTagsScore)(preferenceTags, tags, TAG_LARGEST_POINT);
-            const preferenceTagsSorted = (0, exports.sortOriginalTags)(originalArray);
-            const preferenceTagsAddingNew = (0, exports.addNewTagsToPreference)(preferenceTagsSorted, newTags, REPLACE_TAG_TARGET);
-            const newReadBoards = (0, exports.updateReadBoards)(userData.read_board, board);
-            yield User.updateOne({ _id: userId }, {
-                $set: {
-                    preference_tags: preferenceTagsAddingNew,
-                    read_board: newReadBoards,
-                },
-            });
+            // session.startTransaction();
+            const transactionOptions = {
+                readPreference: 'primary',
+                readConcern: { level: 'majority' },
+                writeConcern: { w: 'majority' },
+            };
+            yield session.withTransaction(() => __awaiter(this, void 0, void 0, function* () {
+                const userData = yield User.findOne({ _id: userId }).session(session);
+                if (!userData) {
+                    throw new Error('user does not exist');
+                }
+                const preferenceTags = userData.preference_tags;
+                if (!preferenceTags) {
+                    throw new Error('user preference does not exist');
+                }
+                const { originalArray, newTags } = (0, exports.adjustOldPreferenceTagsScore)(preferenceTags, tags, TAG_LARGEST_POINT);
+                const preferenceTagsSorted = (0, exports.sortOriginalTags)(originalArray);
+                const preferenceTagsAddingNew = (0, exports.addNewTagsToPreference)(preferenceTagsSorted, newTags, REPLACE_TAG_TARGET);
+                const newReadBoards = (0, exports.updateReadBoards)(userData.read_board, board);
+                yield User.updateOne({ _id: userId }, {
+                    $set: {
+                        preference_tags: preferenceTagsAddingNew,
+                        read_board: newReadBoards,
+                    },
+                }).session(session);
+                yield session.commitTransaction();
+            }), transactionOptions);
         }
         catch (err) {
             console.log(err);
+            yield session.abortTransaction();
+        }
+        finally {
+            yield session.endSession();
         }
     });
 }
@@ -311,13 +326,13 @@ function createRelation(user, target) {
             session.startTransaction();
             const relation = yield getUserRelation(user, target);
             if (relation === null) {
-                yield User.updateOne({ _id: user }, { $push: { friends: { user: target, status: 'requested' } } }, { session });
-                yield User.updateOne({ _id: target }, { $push: { friends: { user, status: 'received' } } }, { session });
+                yield User.updateOne({ _id: user }, { $push: { friends: { user: target, status: 'requested' } } }).session(session);
+                yield User.updateOne({ _id: target }, { $push: { friends: { user, status: 'received' } } }).session(session);
                 result = 'send';
             }
             else if (relation === 'received') {
-                yield User.updateOne({ _id: user, 'friends.user': target }, { $set: { 'friends.$.status': 'friends' } }, { session });
-                yield User.updateOne({ _id: target, 'friends.user': user }, { $set: { 'friends.$.status': 'friends' } }, { session });
+                yield User.updateOne({ _id: user, 'friends.user': target }, { $set: { 'friends.$.status': 'friends' } }).session(session);
+                yield User.updateOne({ _id: target, 'friends.user': user }, { $set: { 'friends.$.status': 'friends' } }).session(session);
                 result = 'accept';
             }
             else {
@@ -351,8 +366,8 @@ function cancelRequest(user, target) {
             else if (relation === 'friends') {
                 throw Error('friends relation is not request');
             }
-            yield User.updateOne({ _id: user }, { $pull: { friends: { user: target } } }, { session });
-            yield User.updateOne({ _id: target }, { $pull: { friends: { user } } }, { session });
+            yield User.updateOne({ _id: user }, { $pull: { friends: { user: target } } }).session(session);
+            yield User.updateOne({ _id: target }, { $pull: { friends: { user } } }).session(session);
             yield session.commitTransaction();
             result = true;
         }
@@ -532,8 +547,8 @@ function refuseRequest(user, target) {
             else if (relation !== 'received') {
                 throw Error('friends relation is not received');
             }
-            yield User.updateOne({ _id: user }, { $pull: { friends: { user: target } } }, { session });
-            yield User.updateOne({ _id: target }, { $pull: { friends: { user } } }, { session });
+            yield User.updateOne({ _id: user }, { $pull: { friends: { user: target } } }).session(session);
+            yield User.updateOne({ _id: target }, { $pull: { friends: { user } } }).session(session);
             yield session.commitTransaction();
             result = true;
         }
@@ -561,4 +576,11 @@ function getUserFriends(user) {
     });
 }
 exports.getUserFriends = getUserFriends;
+function findUserPreference(user) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userInfo = yield User.findOne({ _id: user }, { preference_tags: 1 });
+        return userInfo === null || userInfo === void 0 ? void 0 : userInfo.preference_tags;
+    });
+}
+exports.findUserPreference = findUserPreference;
 exports.default = User;

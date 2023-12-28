@@ -135,7 +135,7 @@ export const getMeeting = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  console.log(JSON.stringify(meetingInfo, null, 4));
+  // console.log(JSON.stringify(meetingInfo, null, 4));
 
   let targetIndex: number = -1;
   let userIndex: number = -1;

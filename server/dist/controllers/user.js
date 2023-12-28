@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refuseRequest = exports.getAllFriendsList = exports.getFriendsList = exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserInfo = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
+exports.getUserPreference = exports.refuseRequest = exports.getAllFriendsList = exports.getFriendsList = exports.changeImage = exports.readAllNotifications = exports.getNotifications = exports.cancelRequest = exports.sendRequest = exports.getUserRelation = exports.getUserInfo = exports.updateUserRead = exports.signIn = exports.signUp = void 0;
 const mongodb_1 = require("mongodb");
 const fs_1 = __importDefault(require("fs"));
 const user_1 = __importStar(require("../models/user")), userModel = user_1;
@@ -327,4 +327,14 @@ exports.refuseRequest = (0, catchAsync_1.default)((req, res) => __awaiter(void 0
         return;
     }
     res.status(500).json({ error: 'refuse request fail' });
+}));
+exports.getUserPreference = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { user } = req.body;
+    const preferences = yield userModel.findUserPreference(user);
+    if (!preferences) {
+        res.json([]);
+        return;
+    }
+    const returnPreference = preferences.map((preference) => preference.name);
+    res.json(returnPreference);
 }));

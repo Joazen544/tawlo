@@ -115,7 +115,7 @@ exports.getMeeting = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         res.json({ status: 'none', message: 'no meeting now' });
         return;
     }
-    console.log(JSON.stringify(meetingInfo, null, 4));
+    // console.log(JSON.stringify(meetingInfo, null, 4));
     let targetIndex = -1;
     let userIndex = -1;
     if (!meetingInfo.meeting[0]) {

@@ -23,5 +23,6 @@ router
   .post(verifyJWT, userControl.readAllNotifications);
 router.route('/user/friends').get(verifyJWT, userControl.getFriendsList);
 router.route('/user/friends/all').get(verifyJWT, userControl.getAllFriendsList);
+router.route('/user/preference').get(verifyJWT, userControl.getUserPreference);
 
 export default router;

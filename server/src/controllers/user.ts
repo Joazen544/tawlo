@@ -370,3 +370,19 @@ export const refuseRequest = catchAsync(async (req: Request, res: Response) => {
   }
   res.status(500).json({ error: 'refuse request fail' });
 });
+
+export const getUserPreference = catchAsync(
+  async (req: Request, res: Response) => {
+    const { user } = req.body;
+
+    const preferences = await userModel.findUserPreference(user);
+
+    if (!preferences) {
+      res.json([]);
+      return;
+    }
+
+    const returnPreference = preferences.map((preference) => preference.name);
+    res.json(returnPreference);
+  },
+);
