@@ -126,19 +126,9 @@ const Post = ({
       .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${author}`)
       .then((res) => {
         setAuthorName(res.data.name);
-      })
-      .catch((err) => console.log(err));
-  }, []);
-
-  useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${author}`)
-      .then((res) => {
         setAuthorImage(res.data.image);
       })
-      .catch((err) => {
-        console.log(err);
-      });
+      .catch((err) => console.log(err));
   }, []);
 
   useEffect(() => {
