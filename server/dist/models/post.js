@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleVotePost = exports.handlelikePost = exports.commentPost = exports.changeMotherPostLastUpdateTime = exports.calculateMotherPostHot = exports.searchPosts = exports.getPost = exports.getMotherAndReplyPosts = exports.getBoardPosts = exports.getRecommendedPosts = void 0;
+exports.handleVotePost = exports.handlelikePost = exports.commentPost = exports.changeMotherPostLastUpdateTime = exports.calculateMotherPostHot = exports.updatePost = exports.searchPosts = exports.getPost = exports.getMotherAndReplyPosts = exports.getBoardPosts = exports.getRecommendedPosts = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const mongodb_1 = require("mongodb");
 const MOTHER_POST_PER_PAGE = 20;
@@ -343,6 +343,12 @@ function searchPosts(mustArray, shouldArray, tagArray, paging) {
     });
 }
 exports.searchPosts = searchPosts;
+function updatePost(post, content) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield Post.updateOne({ _id: post }, { content });
+    });
+}
+exports.updatePost = updatePost;
 function calculateMotherPostHot(postId, increaseField, increase) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!['comment', 'like', 'upvote'].includes(increaseField)) {

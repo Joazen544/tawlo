@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ObjectId, TransactionOptions } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
 
@@ -281,65 +281,46 @@ export async function updateUserAction(
   tags: string[],
   board: ObjectId,
 ) {
-  const session = await User.startSession();
-  try {
-    const REPLACE_TAG_TARGET = 5;
-    const TAG_LARGEST_POINT = 30;
+  const REPLACE_TAG_TARGET = 5;
+  const TAG_LARGEST_POINT = 30;
 
-    // session.startTransaction();
-    const transactionOptions: TransactionOptions = {
-      readPreference: 'primary',
-      readConcern: { level: 'majority' },
-      writeConcern: { w: 'majority' },
-    };
+  const userData = await User.findOne({ _id: userId });
 
-    await session.withTransaction(async () => {
-      const userData = await User.findOne({ _id: userId }).session(session);
-
-      if (!userData) {
-        throw new Error('user does not exist');
-      }
-
-      const preferenceTags = userData.preference_tags;
-
-      if (!preferenceTags) {
-        throw new Error('user preference does not exist');
-      }
-
-      const { originalArray, newTags } = adjustOldPreferenceTagsScore(
-        preferenceTags,
-        tags,
-        TAG_LARGEST_POINT,
-      );
-
-      const preferenceTagsSorted = sortOriginalTags(originalArray);
-
-      const preferenceTagsAddingNew = addNewTagsToPreference(
-        preferenceTagsSorted,
-        newTags,
-        REPLACE_TAG_TARGET,
-      );
-
-      const newReadBoards = updateReadBoards(userData.read_board, board);
-
-      await User.updateOne(
-        { _id: userId },
-        {
-          $set: {
-            preference_tags: preferenceTagsAddingNew,
-            read_board: newReadBoards,
-          },
-        },
-      ).session(session);
-
-      await session.commitTransaction();
-    }, transactionOptions);
-  } catch (err) {
-    console.log(err);
-    await session.abortTransaction();
-  } finally {
-    await session.endSession();
+  if (!userData) {
+    throw new Error('user does not exist');
   }
+
+  const preferenceTags = userData.preference_tags;
+
+  if (!preferenceTags) {
+    throw new Error('user preference does not exist');
+  }
+
+  const { originalArray, newTags } = adjustOldPreferenceTagsScore(
+    preferenceTags,
+    tags,
+    TAG_LARGEST_POINT,
+  );
+
+  const preferenceTagsSorted = sortOriginalTags(originalArray);
+
+  const preferenceTagsAddingNew = addNewTagsToPreference(
+    preferenceTagsSorted,
+    newTags,
+    REPLACE_TAG_TARGET,
+  );
+
+  const newReadBoards = updateReadBoards(userData.read_board, board);
+
+  await User.updateOne(
+    { _id: userId },
+    {
+      $set: {
+        preference_tags: preferenceTagsAddingNew,
+        read_board: newReadBoards,
+      },
+    },
+  );
 }
 
 export async function updateUserReadPosts(

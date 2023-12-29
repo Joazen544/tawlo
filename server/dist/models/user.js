@@ -223,45 +223,26 @@ const sortOriginalTags = (oldTagsScoreAdjusted) => {
 exports.sortOriginalTags = sortOriginalTags;
 function updateUserAction(userId, tags, board) {
     return __awaiter(this, void 0, void 0, function* () {
-        const session = yield User.startSession();
-        try {
-            const REPLACE_TAG_TARGET = 5;
-            const TAG_LARGEST_POINT = 30;
-            // session.startTransaction();
-            const transactionOptions = {
-                readPreference: 'primary',
-                readConcern: { level: 'majority' },
-                writeConcern: { w: 'majority' },
-            };
-            yield session.withTransaction(() => __awaiter(this, void 0, void 0, function* () {
-                const userData = yield User.findOne({ _id: userId }).session(session);
-                if (!userData) {
-                    throw new Error('user does not exist');
-                }
-                const preferenceTags = userData.preference_tags;
-                if (!preferenceTags) {
-                    throw new Error('user preference does not exist');
-                }
-                const { originalArray, newTags } = (0, exports.adjustOldPreferenceTagsScore)(preferenceTags, tags, TAG_LARGEST_POINT);
-                const preferenceTagsSorted = (0, exports.sortOriginalTags)(originalArray);
-                const preferenceTagsAddingNew = (0, exports.addNewTagsToPreference)(preferenceTagsSorted, newTags, REPLACE_TAG_TARGET);
-                const newReadBoards = (0, exports.updateReadBoards)(userData.read_board, board);
-                yield User.updateOne({ _id: userId }, {
-                    $set: {
-                        preference_tags: preferenceTagsAddingNew,
-                        read_board: newReadBoards,
-                    },
-                }).session(session);
-                yield session.commitTransaction();
-            }), transactionOptions);
+        const REPLACE_TAG_TARGET = 5;
+        const TAG_LARGEST_POINT = 30;
+        const userData = yield User.findOne({ _id: userId });
+        if (!userData) {
+            throw new Error('user does not exist');
         }
-        catch (err) {
-            console.log(err);
-            yield session.abortTransaction();
+        const preferenceTags = userData.preference_tags;
+        if (!preferenceTags) {
+            throw new Error('user preference does not exist');
         }
-        finally {
-            yield session.endSession();
-        }
+        const { originalArray, newTags } = (0, exports.adjustOldPreferenceTagsScore)(preferenceTags, tags, TAG_LARGEST_POINT);
+        const preferenceTagsSorted = (0, exports.sortOriginalTags)(originalArray);
+        const preferenceTagsAddingNew = (0, exports.addNewTagsToPreference)(preferenceTagsSorted, newTags, REPLACE_TAG_TARGET);
+        const newReadBoards = (0, exports.updateReadBoards)(userData.read_board, board);
+        yield User.updateOne({ _id: userId }, {
+            $set: {
+                preference_tags: preferenceTagsAddingNew,
+                read_board: newReadBoards,
+            },
+        });
     });
 }
 exports.updateUserAction = updateUserAction;

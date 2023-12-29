@@ -407,6 +407,10 @@ export async function searchPosts(
   return { posts: returnPosts, ifNextPage };
 }
 
+export async function updatePost(post: string, content: string) {
+  await Post.updateOne({ _id: post }, { content });
+}
+
 export async function calculateMotherPostHot(
   postId: string,
   increaseField: string,

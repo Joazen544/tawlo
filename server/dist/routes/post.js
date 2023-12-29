@@ -31,6 +31,7 @@ const postControl = __importStar(require("../controllers/post"));
 const verifyJWT_1 = __importDefault(require("../middleware/verifyJWT"));
 const router = (0, express_1.Router)();
 router.route('/post').post(verifyJWT_1.default, postControl.createPost);
+router.route('/post/edit').post(verifyJWT_1.default, postControl.editPost);
 router.route('/post').get(postControl.getPost);
 router.route('/post').delete(verifyJWT_1.default, postControl.deletePost);
 router.route('/post/search').get(postControl.searchPost);

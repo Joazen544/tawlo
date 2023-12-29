@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchPost = exports.getRelevantTags = exports.getHotTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getCustomizedPosts = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.commentPost = exports.createPost = void 0;
+exports.searchPost = exports.getRelevantTags = exports.getHotTags = exports.getAutoTags = exports.deletePost = exports.getPost = exports.getMotherAndReplies = exports.getPostsOnBoard = exports.getCustomizedPosts = exports.getRecommendPosts = exports.downvotePost = exports.upvotePost = exports.likePost = exports.commentPost = exports.editPost = exports.createPost = void 0;
 const mongodb_1 = require("mongodb");
 const post_1 = __importStar(require("../models/post")), postModel = post_1;
 const userModel = __importStar(require("../models/user"));
@@ -129,6 +129,17 @@ exports.createPost = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
     res.json({
         postData,
     });
+}));
+exports.editPost = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { content, post } = req.body;
+    if (!content) {
+        throw new errorHandler_1.ValidationError('edit must have content');
+    }
+    if (!post) {
+        throw new errorHandler_1.ValidationError('edit must have post id');
+    }
+    yield postModel.updatePost(post, content);
+    res.json({ message: 'update success' });
 }));
 exports.commentPost = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { postId } = req.params;

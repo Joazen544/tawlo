@@ -21,6 +21,7 @@ const Profile = () => {
   const [userName, setUserName] = useState('');
   const [ifLogOut, setIfLogOut] = useState(false);
   const [userImage, setUserImage] = useState<string>();
+  const [preferenceTags, setPreferenceTags] = useState<string[]>([]);
 
   const { userId } = useParams();
 
@@ -38,8 +39,28 @@ const Profile = () => {
       .get(`${import.meta.env.VITE_DOMAIN}/api/user/info?id=${userId}`)
       .then((res) => {
         setUserName(res.data.name);
+      })
+      .catch((err) => {
+        console.log(err);
       });
   }, [userId]);
+
+  useEffect(() => {
+    if (userName) {
+      axios
+        .get(`${import.meta.env.VITE_DOMAIN}/api/user/preference`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          setPreferenceTags(res.data);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+  }, [userName]);
 
   useEffect(() => {
     axios
@@ -196,7 +217,7 @@ const Profile = () => {
           <div style={{ width: '70rem' }} className="flex">
             <ProfileSideBar page="profile" />
             <div>
-              <div className="max-w-md h-60 p-4 rounded-lg border-black border-2 bg-white shadow-md flex">
+              <div className="max-w-md p-4 rounded-lg border-black border-2 bg-white shadow-md flex">
                 <div>
                   <h1 className="text-2xl font-bold mb-4">{userName}</h1>
                   <div
@@ -216,33 +237,45 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="mb-4 flex ml-10">
-                  <div id="logOutButton">
-                    <button
-                      className={
-                        'bg-red-500 text-white px-4 py-2 text-xs rounded hover:bg-red-600'
-                      }
-                      onClick={logOut}
-                    >
-                      登出
-                    </button>
+                <div>
+                  <div className="mb-4 flex ml-10">
+                    <div id="logOutButton">
+                      <button
+                        className={
+                          'bg-red-500 text-white px-4 py-2 text-xs rounded hover:bg-red-600'
+                        }
+                        onClick={logOut}
+                      >
+                        登出
+                      </button>
+                    </div>
+                    <div id="logOutButton" className="ml-10">
+                      <label
+                        htmlFor="changeImage"
+                        className={
+                          'bg-gray-400 text-white px-4 py-2 text-xs rounded hover:bg-gray-500 cursor-pointer'
+                        }
+                      >
+                        更換頭貼
+                      </label>
+                      <input
+                        id="changeImage"
+                        type="file"
+                        style={{ display: 'none' }}
+                        accept=".png,.jpeg,.jpg"
+                        onChange={handleUserImageChange}
+                      />
+                    </div>
                   </div>
-                  <div id="logOutButton" className="ml-10">
-                    <label
-                      htmlFor="changeImage"
-                      className={
-                        'bg-gray-400 text-white px-4 py-2 text-xs rounded hover:bg-gray-500 cursor-pointer'
-                      }
-                    >
-                      更換頭貼
-                    </label>
-                    <input
-                      id="changeImage"
-                      type="file"
-                      style={{ display: 'none' }}
-                      accept=".png,.jpeg,.jpg"
-                      onChange={handleUserImageChange}
-                    />
+                  <div className="mt-2 ml-5 w-52">
+                    <h1>偏好的貼文</h1>
+                    <div id="preference_container" className="flex flex-wrap">
+                      {preferenceTags.map((tag) => (
+                        <div className="p-2 bg-slate-400 m-2 rounded-xl">
+                          {tag}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

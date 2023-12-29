@@ -5,6 +5,7 @@ import verifyJWT from '../middleware/verifyJWT';
 const router = Router();
 
 router.route('/post').post(verifyJWT, postControl.createPost);
+router.route('/post/edit').post(verifyJWT, postControl.editPost);
 router.route('/post').get(postControl.getPost);
 router.route('/post').delete(verifyJWT, postControl.deletePost);
 

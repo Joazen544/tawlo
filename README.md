@@ -53,6 +53,11 @@ People can share useful information and their own experience about career with o
 
 <img src = "https://github.com/Joazen544/tawlo/assets/136336516/318e4c40-c054-420f-bfef-9ad9ca7987a0">
 
+Here would auto recommend users posts they're interested in. Basically based on:
+
+1. The tags user often interacts with
+   post time', 'read post or not'
+
 ## <a id="how_to_run"></a>How to run it yourself
 
 ## <a id="to_to_next"></a>Plan to do next

@@ -130,6 +130,18 @@ export const createPost = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+export const editPost = catchAsync(async (req: Request, res: Response) => {
+  const { content, post } = req.body;
+  if (!content) {
+    throw new ValidationError('edit must have content');
+  }
+  if (!post) {
+    throw new ValidationError('edit must have post id');
+  }
+  await postModel.updatePost(post, content);
+  res.json({ message: 'update success' });
+});
+
 export const commentPost = catchAsync(async (req: Request, res: Response) => {
   const { postId } = req.params;
   const { content, user } = req.body;
