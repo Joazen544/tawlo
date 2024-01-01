@@ -17,17 +17,18 @@ interface Props {
 const Comment = ({ index, name, comment, time, userId }: Props) => {
   return (
     <div className="flex justify-between mt-1" key={index}>
-      <div className="flex">
+      <div className="flex w-full">
         <Link
           to={`/user/profile/${userId}`}
           id="commentName"
-          className="w-20 text-left text-blue-400"
+          style={{ width: '80px' }}
+          className="mr-2 text-left text-blue-400"
         >
           {name}
         </Link>
-        <p style={{ width: '40rem' }}>{comment.content}</p>
+        <p className="block w-full">{comment.content}</p>
       </div>
-      <div className="flex w-52 justify-end">
+      <div style={{ width: '250px' }} className="flex justify-end">
         <p className="mr-1">{time.toLocaleString()}</p>
       </div>
     </div>

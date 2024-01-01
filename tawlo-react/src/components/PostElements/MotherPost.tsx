@@ -397,7 +397,8 @@ const MotherPost = ({
         </div>
         <div
           id="post_body"
-          className="bg-white w-full rounded-2xl  border-solid border-2 shadow-lg border-gray-300"
+          style={{ width: '720px' }}
+          className="bg-white rounded-2xl  border-solid border-2 shadow-lg border-gray-300"
         >
           <div
             id="title"
