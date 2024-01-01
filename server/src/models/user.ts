@@ -242,32 +242,34 @@ export const addNewTagsToPreference = (
 ) => {
   const newTagsArray: (string | undefined)[] = newTags;
   if (newTags.length > 0) {
-    for (
-      let i = REPLACE_TAG_TARGET + 1;
-      i < originalSortedTags.length;
-      i += 1
-    ) {
-      newTags.forEach((tag, index) => {
+    newTags.forEach((tag, index) => {
+      for (
+        let i = REPLACE_TAG_TARGET + 1;
+        i < originalSortedTags.length;
+        i += 1
+      ) {
         if (tag === originalSortedTags[i].name) {
           originalSortedTags[REPLACE_TAG_TARGET].name =
             originalSortedTags[i].name;
           newTagsArray[index] = undefined;
         }
-      });
-    }
-
-    const newPreferenceTags = originalSortedTags.slice(
-      0,
-      9 - newTagsArray.length,
-    );
-
-    newTagsArray.forEach((tag) => {
-      if (tag !== undefined) {
-        newPreferenceTags.push({ name: tag, number: 0 });
       }
     });
 
-    return newPreferenceTags;
+    // const newPreferenceTags = originalSortedTags.slice(
+    //   0,
+    //   10 - newTagsArray.length,
+    // );
+
+    let count = 0;
+    newTagsArray.forEach((tag) => {
+      if (tag !== undefined) {
+        originalSortedTags[REPLACE_TAG_TARGET + 1 + count].name = tag;
+        count += 1;
+      }
+    });
+
+    return originalSortedTags;
   }
   return originalSortedTags;
 };
