@@ -99,7 +99,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
           const newArray = res.data.filter(
             (el: string) => !relevantTags.includes(el),
           );
-          console.log(newArray);
+          // console.log(newArray);
 
           if (newArray.length > 0) {
             setRelevantTags([...relevantTags].concat(newArray));
@@ -149,7 +149,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         const newArray = res.data.filter(
           (el: string) => !relevantTags.includes(el),
         );
-        console.log(newArray);
+        // console.log(newArray);
 
         if (newArray.length > 0) {
           setRelevantTags([...relevantTags].concat(newArray));
@@ -212,7 +212,7 @@ const CreatePost: React.FC<CreatePostProps> = ({
         setTags([]);
         setRelevantTags([]);
 
-        console.log(res.data.postData);
+        // console.log(res.data.postData);
 
         // Trigger the callback function to notify parent component about the new post
         onPostCreated(res.data.postData);

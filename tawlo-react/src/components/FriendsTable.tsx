@@ -59,6 +59,7 @@ const FriendsTable = ({ friends, handleMessageTarget }: Props) => {
         {friends &&
           friends.map((friend) => (
             <div
+              key={friend.id}
               className="flex items-center mt-2 cursor-pointer"
               onClick={() => sendMessage(friend.id)}
             >

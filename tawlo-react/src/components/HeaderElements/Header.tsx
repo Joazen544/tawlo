@@ -31,8 +31,8 @@ const Header = ({ target, handleSearch, handleFriends }: Props) => {
   useEffect(() => {
     if (socket) {
       socket.on('friends', async (usersArray: string[]) => {
-        console.log('friends');
-        console.log(usersArray);
+        // console.log('friends');
+        // console.log(usersArray);
 
         const friendsArray: FriendInterface[] = [];
         for (let i = 0; i < usersArray.length; i++) {
@@ -81,10 +81,10 @@ const Header = ({ target, handleSearch, handleFriends }: Props) => {
   useEffect(() => {
     if (socket) {
       socket.on('friend-offline', (message) => {
-        const newArray = onlineFriends.filter((el) => el.id !== message);
-        console.log('newArray: ' + newArray);
+        // const newArray = onlineFriends.filter((el) => el.id !== message);
+        // console.log('newArray: ' + newArray);
 
-        console.log('friend offline: ' + message);
+        // console.log('friend offline: ' + message);
 
         setOnlineFriends((pre) => pre.filter((el) => el.id !== message));
         setIfFriendOffline((pre) => pre + 1);

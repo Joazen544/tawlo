@@ -152,7 +152,7 @@ const Signin = () => {
   ) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      console.log(file);
+      // console.log(file);
 
       setUploadImage(file);
 

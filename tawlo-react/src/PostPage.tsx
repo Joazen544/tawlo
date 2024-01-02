@@ -25,12 +25,12 @@ const PostPage = () => {
           setMotherPostId(res.data.mother_post);
           setIfDiscussion(true);
         }
-        console.log('getting data');
+        // console.log('getting data');
 
-        console.log(res.data);
+        // console.log(res.data);
       })
       .catch((err) => {
-        console.log('logging error');
+        // console.log('logging error');
 
         console.log(err);
       });

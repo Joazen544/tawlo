@@ -22,6 +22,8 @@ const Notification = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
   const [notificationsName, setNotificationsName] = useState<string[][]>([]);
+  const [notificationsId, setNotificationsId] = useState<string[][]>([]);
+
   const navigate = useNavigate();
 
   const token = Cookies.get('jwtToken');
@@ -67,10 +69,10 @@ const Notification = () => {
   };
 
   useEffect(() => {
-    // 添加全域點擊事件監聽器
+    // Add listener to all elements
     document.addEventListener('click', handleClickOutside);
     return () => {
-      // 移除全域點擊事件監聽器
+      // remove it
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
@@ -78,6 +80,7 @@ const Notification = () => {
   useEffect(() => {
     const fetchFunction = async () => {
       const nameArray: string[][] = [];
+      const idArray: string[][] = [];
       for (let i = 0; i < notifications.length; i++) {
         for (let j = 0; j < notifications[i].action_users.length; j++) {
           const res = await axios.get(
@@ -94,12 +97,20 @@ const Notification = () => {
             } else if (!nameArray[i].includes(userName)) {
               nameArray[i].push(userName);
             }
+
+            if (!idArray[i]) {
+              idArray[i] = [notifications[i].action_users[j]];
+            } else if (!idArray[i].includes(notifications[i].action_users[j])) {
+              idArray[i].push(notifications[i].action_users[j]);
+            }
           } else {
             nameArray.push([]);
+            idArray.push([]);
           }
         }
       }
       setNotificationsName([...nameArray]);
+      setNotificationsId([...idArray]);
     };
     fetchFunction();
   }, [notifications]);
@@ -108,7 +119,7 @@ const Notification = () => {
     if (socket) {
       socket.on('notificate', (data) => {
         const category = data.category;
-        console.log('receiving notification!!');
+        // console.log('receiving notification!!');
 
         if (
           category === 'reply_post' ||
@@ -219,17 +230,13 @@ const Notification = () => {
   }, [unreadCount]);
 
   const handleClick = async () => {
-    // 在這裡可以額外執行點擊通知圖標後的操作
-    // 例如標記所有通知為已讀
-    // ...
-
-    console.log('click');
+    // console.log('click');
     fetchNotifications();
     setIsNotificationOpen(!isNotificationOpen);
-    // 更新通知狀態
+    // update
     if (!isNotificationOpen) {
-      console.log('updating');
-      console.log('token is: ' + token);
+      // console.log('updating');
+      // console.log('token is: ' + token);
 
       await axios.post(
         `${import.meta.env.VITE_DOMAIN}/api/user/notification`,
@@ -242,7 +249,7 @@ const Notification = () => {
       );
 
       setUnreadCount(0);
-    } // 將未讀數量歸零
+    }
   };
 
   const handleTurnPage = (
@@ -314,9 +321,21 @@ const Notification = () => {
                       </span>
                     </div>
                     {notificationsName[index] && (
-                      <span className="font-bold mr-2">
-                        {notificationsName[index]}
-                      </span>
+                      <div id="name_info" className="flex flex-wrap">
+                        {notificationsName[index].map((_name, num) => {
+                          return (
+                            <div key={notificationsId[index][num]}>
+                              <Link
+                                to={`/user/profile/${notificationsId[index][num]}`}
+                                className="font-bold mr-2 z-10 hover:underline"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {notificationsName[index][num]}
+                              </Link>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
 
                     <p>{notification.message}</p>

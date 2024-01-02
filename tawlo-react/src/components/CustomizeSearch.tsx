@@ -109,8 +109,8 @@ const CustomizeSearch = ({ handleCustomizeTags }: Props) => {
           if (res.data.length > 0) {
             setSearchTags(res.data);
           }
-          console.log(res.data);
-          console.log('~~~~');
+          // console.log(res.data);
+          // console.log('~~~~');
         })
         .catch((err) => {
           console.log(err);

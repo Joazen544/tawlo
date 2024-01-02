@@ -49,7 +49,7 @@ const SearchBar = ({ handleSearchResult }: Props) => {
 
   useEffect(() => {
     if (location.state) {
-      console.log(location.state.search);
+      // console.log(location.state.search);
 
       setSearchInput(location.state.search);
     }
@@ -145,7 +145,7 @@ const SearchBar = ({ handleSearchResult }: Props) => {
         },
       })
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
         setSearchResult(res.data);
         navigate('/post/search', {
           state: { data: res.data, search: searchInput },

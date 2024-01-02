@@ -159,10 +159,10 @@ const Meeting = () => {
   useEffect(() => {
     if (socket) {
       socket.on('notificate_2', (data) => {
-        console.log('yoyo');
+        // console.log('yoyo');
 
         const category = data.category;
-        console.log(data);
+        // console.log(data);
 
         if (
           category === 'meet_match' ||
